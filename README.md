@@ -1,6 +1,17 @@
 # OSAC Project
 
-Development workspace for the Open Sovereign AI Cloud (OSAC) project. This repo aggregates all OSAC components as git submodules for cross-component development and testing.
+Development workspace for the Open Sovereign AI Cloud (OSAC) project. This repo aggregates all OSAC components as git submodules for cross-component development and testing, with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [GSD workflow](https://github.com/cyanheads/gsd) integration pre-configured.
+
+## Getting Started
+
+```bash
+# Clone with submodules
+git clone --recurse-submodules https://github.com/eranco74/claude-code-workspace-template.git osac-project
+cd osac-project
+
+# Or init submodules after cloning
+git submodule update --init --recursive
+```
 
 ## Components
 
@@ -14,21 +25,23 @@ Development workspace for the Open Sovereign AI Cloud (OSAC) project. This repo 
 | [osac-test-infra](https://github.com/osac-project/osac-test-infra) | Integration testing infrastructure |
 | [enhancement-proposals](https://github.com/osac-project/enhancement-proposals) | Design documents and enhancement proposals |
 
-## Getting Started
+## What's Included
 
-```bash
-# Clone with submodules
-git clone --recurse-submodules <this-repo-url>
+Beyond the submodules, this repo provides a pre-configured AI-assisted development environment:
 
-# Or init submodules after cloning
-git submodule update --init --recursive
-```
+| File | Purpose |
+|------|---------|
+| `CLAUDE.md` | Project instructions Claude Code reads automatically — build commands, architecture patterns, conventions |
+| `.claude/settings.json` | Pre-approved shell commands (git, ls, cat, etc.) so Claude doesn't prompt for routine operations |
+| `.planning/config.json` | GSD workflow configuration (parallelization, verification, auto-advance) |
+| `.gitignore` | Ignores `.planning/`, `.claude/`, credentials, editor files, and build artifacts |
 
 ## Setup
 
 1. **kubeconfig**: Place your cluster kubeconfig at `./kubeconfig` (gitignored)
 2. **Go**: Ensure Go is installed (see `CLAUDE.md` for direnv-based setup)
 3. **Tools**: `buf`, `grpcurl`, `kubectl`, `jq`
+4. **Claude Code**: Install from https://docs.anthropic.com/en/docs/claude-code
 
 ## Quick Reference
 
@@ -52,6 +65,20 @@ curl -sk -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/fulfillment/v1/co
 # List resources via gRPC
 grpcurl -insecure -H "Authorization: Bearer $TOKEN" $ROUTE:443 osac.public.v1.VirtualNetworks/List
 ```
+
+## GSD Workflow
+
+Once you have Claude Code running in this workspace, use GSD commands to plan and execute work:
+
+```
+/gsd:new-project     # Initialize project with requirements gathering
+/gsd:plan-phase      # Plan the next phase of work
+/gsd:execute-phase   # Execute a planned phase
+/gsd:progress        # Check current project status
+/gsd:next            # Advance to the next logical step
+```
+
+GSD manages all state under `.planning/` — milestones, phases, plans, and verification are created as you work.
 
 ## Architecture
 
