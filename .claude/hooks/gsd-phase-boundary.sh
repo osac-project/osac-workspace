@@ -1,23 +1,27 @@
 #!/bin/bash
-# gsd-phase-boundary.sh - Detect phase boundary crossings
-# Called after Write/Edit operations to detect when work crosses phase boundaries
+# gsd-phase-boundary.sh — PostToolUse hook: detect .planning/ file writes
+# Outputs a reminder when planning files are modified outside normal workflow.
+# Uses Node.js for JSON parsing (always available in GSD projects, no jq dependency).
+#
+# OPT-IN: This hook is a no-op unless config.json has hooks.community: true.
+# Enable with: "hooks": { "community": true } in .planning/config.json
 
-# Read stdin (hook input JSON with file paths)
-INPUT=$(cat)
-
-# Extract file path from the write/edit operation
-FILE_PATH=$(echo "$INPUT" | jq -r '.file_path // empty')
-
-# Check if we're working in .planning directory (phase work)
-if [[ "$FILE_PATH" == *".planning/phases/"* ]]; then
-    # Extract phase number from path (e.g., .planning/phases/01-name/...)
-    PHASE_DIR=$(echo "$FILE_PATH" | grep -oP '\.planning/phases/\K[^/]+')
-
-    if [ -n "$PHASE_DIR" ]; then
-        # Write current phase to temp file for context monitoring
-        echo "$PHASE_DIR" > /tmp/current_gsd_phase.txt
-    fi
+# Check opt-in config — exit silently if not enabled
+if [ -f .planning/config.json ]; then
+  ENABLED=$(node -e "try{const c=require('./.planning/config.json');process.stdout.write(c.hooks?.community===true?'1':'0')}catch{process.stdout.write('0')}" 2>/dev/null)
+  if [ "$ENABLED" != "1" ]; then exit 0; fi
+else
+  exit 0
 fi
 
-# No output - this hook runs silently
+INPUT=$(cat)
+
+# Extract file_path from JSON using Node (handles escaping correctly)
+FILE=$(echo "$INPUT" | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{try{process.stdout.write(JSON.parse(d).tool_input?.file_path||'')}catch{}})" 2>/dev/null)
+
+if [[ "$FILE" == *.planning/* ]] || [[ "$FILE" == .planning/* ]]; then
+  echo ".planning/ file modified: $FILE"
+  echo "Check: Should STATE.md be updated to reflect this change?"
+fi
+
 exit 0

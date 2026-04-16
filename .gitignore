@@ -51,3 +51,11 @@ osac-installer/
 osac-test-infra/
 enhancement-proposals/
 docs/
+
+# AI Tooling
+.cursor/
+.gemini/
+
+# AI Tooling
+.cursor/
+.gemini/
