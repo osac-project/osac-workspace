@@ -3,6 +3,7 @@ kubeconfig
 *.kubeconfig
 .env
 .env.*
+.envrc
 *.pem
 *.key
 
