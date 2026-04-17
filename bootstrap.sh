@@ -21,7 +21,8 @@ REPOS=(
 for repo in "${REPOS[@]}"; do
   if [ -d "$repo" ]; then
     echo "📦 Updating $repo..."
-    (cd "$repo" && git fetch origin && git reset --hard origin/main)
+    # --autostash hides local changes, rebases, then brings them back
+    (cd "$repo" && git fetch origin && git rebase origin/main --autostash)
   else
     echo "📥 Cloning $repo..."
     git clone "${GITHUB_ORG}/${repo}.git"
