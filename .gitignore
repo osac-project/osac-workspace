@@ -13,10 +13,11 @@ kubeconfig
 .planning/*
 !.planning/codebase/
 
-# Claude Code (but keep hooks and settings for GSD workflow)
+# Claude Code (but keep hooks, settings, and skills)
 .claude/*
 !.claude/hooks/
 !.claude/settings.json
+!.claude/skills/
 .mcp.json
 
 # Editor files
