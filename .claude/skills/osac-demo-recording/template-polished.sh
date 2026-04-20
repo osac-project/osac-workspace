@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-# OSAC API Demo - Polished Template (with colors and animations)
+# OSAC Demo - Polished Template (with colors and animations)
+# Prefer fulfillment-cli commands; use api() only when CLI lacks support.
 #
 set -euo pipefail
 
@@ -8,6 +9,7 @@ NAMESPACE="${NAMESPACE:-default}"
 API_BASE="/api/fulfillment/v1"
 CAST_FILE="${CAST_FILE:-demo.cast}"
 CLEANUP="${CLEANUP:-false}"
+CLI="${CLI:-fulfillment-cli}"
 
 # Colors
 BOLD='\033[1m'
@@ -41,7 +43,7 @@ api() {
   body=$(echo "${response}" | sed '$d')
   if (( http_code >= 400 )); then
     echo -e "${RED}ERROR: HTTP ${http_code}${RESET}" >&2
-    echo "${body}" | jq . 2>/dev/null || echo "${body}" >&2
+    (echo "${body}" | jq . 2>/dev/null || echo "${body}") >&2
     return 1
   fi
   echo "${body}"
@@ -112,6 +114,12 @@ run_demo() {
   refresh_auth
 
   # TODO: Add your demo steps here
+  # Prefer CLI commands:
+  #   ${CLI} get network-classes
+  #   ${CLI} create -f virtual-network.yaml
+  #   ${CLI} get virtual-networks -w
+  #   ${CLI} delete virtual-network <id>
+  # Fall back to api() only when CLI lacks support.
 
   if [[ "${CLEANUP}" == "true" ]]; then
     cleanup_resources
@@ -119,15 +127,19 @@ run_demo() {
 }
 
 # Main
+SCRIPT_PATH=$(printf '%q' "$(readlink -f "$0")")
+
 case "${1:-}" in
   --dry-run)
     run_demo
     ;;
   --cleanup)
-    CLEANUP=true
-    asciinema rec --title "OSAC API Demo" -c "bash -c 'source $0 && run_demo'" "${CAST_FILE}"
+    export CLEANUP=true
+    export NAMESPACE CAST_FILE
+    asciinema rec --title "OSAC API Demo" -c "bash -c \"source ${SCRIPT_PATH} && run_demo\"" "${CAST_FILE}"
     ;;
   *)
-    asciinema rec --title "OSAC API Demo" -c "bash -c 'source $0 && run_demo'" "${CAST_FILE}"
+    export NAMESPACE CAST_FILE
+    asciinema rec --title "OSAC API Demo" -c "bash -c \"source ${SCRIPT_PATH} && run_demo\"" "${CAST_FILE}"
     ;;
 esac

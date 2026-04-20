@@ -1,6 +1,7 @@
 #!/bin/bash
 #
-# OSAC API Demo - Simple Template
+# OSAC Demo - Simple Template
+# Prefer fulfillment-cli commands; use api() only when CLI lacks support.
 #
 set -euo pipefail
 
@@ -8,6 +9,7 @@ NAMESPACE="${NAMESPACE:-default}"
 API_BASE="/api/fulfillment/v1"
 CAST_FILE="${CAST_FILE:-demo.cast}"
 CLEANUP="${CLEANUP:-false}"
+CLI="${CLI:-fulfillment-cli}"
 
 ROUTE=""
 TOKEN=""
@@ -30,7 +32,7 @@ api() {
   body=$(echo "${response}" | sed '$d')
   if (( http_code >= 400 )); then
     echo "ERROR: HTTP ${http_code}" >&2
-    echo "${body}" | jq . 2>/dev/null || echo "${body}" >&2
+    (echo "${body}" | jq . 2>/dev/null || echo "${body}") >&2
     return 1
   fi
   echo "${body}"
@@ -71,11 +73,14 @@ run_demo() {
   refresh_auth
 
   # TODO: Add your demo steps here
-  # Example:
-  # result=$(api POST "${API_BASE}/virtual_networks" -d '{"metadata":{"name":"demo"}, "spec":{...}}')
-  # id=$(echo "$result" | jq -r '.id')
-  # CREATED_RESOURCES+=("virtualnetwork/${id}")
-  # wait_for_state "${API_BASE}/virtual_networks" "${id}" "READY"
+  # Prefer CLI commands:
+  #   ${CLI} get network-classes
+  #   ${CLI} create -f virtual-network.yaml
+  #   ${CLI} get virtual-networks -w
+  #   ${CLI} delete virtual-network <id>
+  # Fall back to api() only when CLI lacks support:
+  #   result=$(api GET "${API_BASE}/virtual_networks")
+  #   result=$(api POST "${API_BASE}/virtual_networks" -d '{"metadata":{"name":"demo"}, "spec":{...}}')
 
   if [[ "${CLEANUP}" == "true" ]]; then
     cleanup_resources
@@ -83,15 +88,19 @@ run_demo() {
 }
 
 # Main
+SCRIPT_PATH=$(printf '%q' "$(readlink -f "$0")")
+
 case "${1:-}" in
   --dry-run)
     run_demo
     ;;
   --cleanup)
-    CLEANUP=true
-    asciinema rec --title "OSAC API Demo" -c "bash -c 'source $0 && run_demo'" "${CAST_FILE}"
+    export CLEANUP=true
+    export NAMESPACE CAST_FILE
+    asciinema rec --title "OSAC API Demo" -c "bash -c \"source ${SCRIPT_PATH} && run_demo\"" "${CAST_FILE}"
     ;;
   *)
-    asciinema rec --title "OSAC API Demo" -c "bash -c 'source $0 && run_demo'" "${CAST_FILE}"
+    export NAMESPACE CAST_FILE
+    asciinema rec --title "OSAC API Demo" -c "bash -c \"source ${SCRIPT_PATH} && run_demo\"" "${CAST_FILE}"
     ;;
 esac
