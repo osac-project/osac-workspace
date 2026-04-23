@@ -39,8 +39,8 @@ build/
 # Dependencies (language-specific -- uncomment as needed)
 # node_modules/
 # vendor/
-# __pycache__/
-# *.pyc
+__pycache__/
+*.pyc
 
 # Bootstrap-managed repositories (cloned by bootstrap.sh)
 fulfillment-service/
