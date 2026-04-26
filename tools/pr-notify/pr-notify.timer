@@ -1,0 +1,9 @@
+[Unit]
+Description=OSAC PR Status Notifier — weekday mornings
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 07:00:00 UTC
+Persistent=true
+
+[Install]
+WantedBy=timers.target

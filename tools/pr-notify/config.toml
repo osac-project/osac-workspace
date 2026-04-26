@@ -1,0 +1,9 @@
+repos = [
+    "osac-project/fulfillment-service",
+    "osac-project/osac-operator",
+    "osac-project/osac-aap",
+    "osac-project/enhancement-proposals",
+]
+
+slack_channel = "C08ESMFV85Q"
+slack_creds_dir = "~/.config/slack/"
