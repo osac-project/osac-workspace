@@ -47,7 +47,11 @@ The tool uses xoxc token + browser cookie authentication (the same pattern used 
 └── d_cookie      # Browser "d" cookie value
 ```
 
-**How to get the tokens:**
+**Automatic extraction (recommended):**
+
+Use [slack-creds-extractor](https://github.com/tzvatot/slack-creds-extractor) — a Chrome extension that extracts the tokens automatically and saves them to `~/.config/slack/` via native messaging. It also auto-refreshes every 6 hours.
+
+**Manual extraction:**
 
 1. Open Slack in your browser and log in to your workspace.
 2. Open browser DevTools (F12) > Network tab.
@@ -60,7 +64,7 @@ The tool uses xoxc token + browser cookie authentication (the same pattern used 
 
 **Refreshing tokens:**
 
-Tokens expire periodically. When you see an auth error in the logs (`invalid_auth`, `token_revoked`, or `not_authed`), repeat the steps above to get fresh values.
+Tokens expire periodically. When you see an auth error in the logs (`invalid_auth`, `token_revoked`, or `not_authed`), either rely on the Chrome extension's auto-refresh or repeat the manual steps above.
 
 ## systemd Installation
 
