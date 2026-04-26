@@ -6,8 +6,11 @@ import logging
 import sys
 from datetime import datetime, timezone
 
+from classifier import classify_prs
 from config import load_config
+from formatter import format_message
 from github import fetch_open_prs
+from slack import post_message
 
 
 def setup_logging() -> None:
@@ -30,7 +33,7 @@ def setup_logging() -> None:
 
 
 def main() -> int:
-    """Entry point: load config, fetch PRs, print summary."""
+    """Entry point: load config, fetch PRs, classify, format, and post."""
     parser = argparse.ArgumentParser(
         description="Fetch open PR status from GitHub repos"
     )
@@ -38,6 +41,11 @@ def main() -> int:
         "--config",
         required=True,
         help="Path to TOML config file",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print formatted message to stdout instead of posting to Slack",
     )
     args = parser.parse_args()
 
@@ -59,19 +67,18 @@ def main() -> int:
             len(config.repos),
         )
 
-        # Print summary to stdout (classification/formatting comes in later phases)
-        print(f"\n{'='*60}")
-        print(f"Open PRs: {len(prs)} across {len(config.repos)} repos")
-        print(f"{'='*60}")
-        for pr in prs:
-            draft_tag = " [DRAFT]" if pr.is_draft else ""
-            ci_tag = f" CI:{pr.ci_status}" if pr.ci_status else ""
-            reviews_count = len(pr.reviews)
-            print(
-                f"  [{pr.repo}] {pr.title}{draft_tag}{ci_tag}"
-                f" (by {pr.author}, {reviews_count} reviews)"
-            )
-        print()
+        classified = classify_prs(prs)
+        logger.info("Classified %d PRs", len(classified))
+
+        message = format_message(classified, config.repos)
+        logger.info("Formatted message (%d chars)", len(message))
+
+        if args.dry_run:
+            print(message)
+            logger.info("Dry run -- message printed to stdout")
+        else:
+            post_message(config.slack_channel, message, config.slack_creds_dir)
+            logger.info("Posted to Slack")
 
         return 0
 
