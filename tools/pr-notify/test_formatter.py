@@ -87,8 +87,8 @@ class TestFormatter(unittest.TestCase):
             prs, ["osac-project/fulfillment-service", "osac-project/osac-operator"]
         )
 
-        self.assertIn("*osac-project/fulfillment-service* (2)", result)
-        self.assertIn("*osac-project/osac-operator* (1)", result)
+        self.assertIn("osac-project/fulfillment-service>* (2)", result)
+        self.assertIn("osac-project/osac-operator>* (1)", result)
 
     def test_empty_pr_list_all_clear(self):
         """3. Empty PR list returns 'All clear' message."""
@@ -107,9 +107,7 @@ class TestFormatter(unittest.TestCase):
             PRStatus.NEEDS_REVIEW: ":eyes:",
             PRStatus.NEEDS_RE_REVIEW: ":warning:",
             PRStatus.CHANGES_REQUESTED: ":red_circle:",
-            PRStatus.APPROVED: ":white_check_mark:",
             PRStatus.CI_FAILING: ":x:",
-            PRStatus.DRAFT: ":construction:",
         }
         for status, expected_emoji in mapping.items():
             reviewer = "bob" if status == PRStatus.CHANGES_REQUESTED else None
@@ -118,6 +116,12 @@ class TestFormatter(unittest.TestCase):
             self.assertIn(
                 expected_emoji, result, f"Missing emoji {expected_emoji} for {status}"
             )
+
+        # Draft and approved PRs are filtered out entirely.
+        for filtered_status in (PRStatus.DRAFT, PRStatus.APPROVED):
+            cpr = _make_classified(status=filtered_status)
+            result = format_message([cpr], ["osac-project/fulfillment-service"])
+            self.assertIn("All clear", result)
 
     @patch("formatter.date")
     def test_staleness_7_days(self, mock_date):
@@ -167,7 +171,7 @@ class TestFormatter(unittest.TestCase):
                 repo="osac-project/fulfillment-service",
             ),
             _make_classified(
-                status=PRStatus.APPROVED,
+                status=PRStatus.CI_FAILING,
                 age_days=8,
                 repo="osac-project/fulfillment-service",
             ),
@@ -187,25 +191,24 @@ class TestFormatter(unittest.TestCase):
         self.assertIn("2 stale (7+ days)", result)
 
     @patch("formatter.date")
-    def test_message_truncation(self, mock_date):
-        """8. Message truncation when exceeding length limit."""
+    def test_per_repo_truncation(self, mock_date):
+        """8. Repos with >6 PRs show top 6 + '... and N more' link."""
         mock_date.today.return_value = date(2026, 4, 23)
         mock_date.side_effect = lambda *a, **kw: date(*a, **kw)
 
-        # Create many PRs with long titles to exceed 3900 chars.
-        long_title = "A" * 120
         prs = [
             _make_classified(
-                title=f"{long_title} #{i}",
+                title=f"PR #{i}",
                 url=f"https://github.com/osac-project/fulfillment-service/pull/{i}",
             )
-            for i in range(40)
+            for i in range(10)
         ]
         result = format_message(prs, ["osac-project/fulfillment-service"])
 
-        self.assertLessEqual(len(result), 3900 + 100)  # Allow for suffix
-        self.assertIn("... and", result)
-        self.assertIn("more PRs", result)
+        # Should show 6 PRs + "... and 4 more" line
+        self.assertEqual(result.count(":eyes:"), 6)
+        self.assertIn("... and 4 more", result)
+        self.assertIn("fulfillment-service/pulls|", result)
 
     @patch("formatter.date")
     def test_repos_with_no_prs_omitted(self, mock_date):
@@ -219,7 +222,7 @@ class TestFormatter(unittest.TestCase):
             ["osac-project/fulfillment-service", "osac-project/osac-operator"],
         )
 
-        self.assertIn("*osac-project/fulfillment-service*", result)
+        self.assertIn("osac-project/fulfillment-service>*", result)
         self.assertNotIn("osac-operator", result)
 
 

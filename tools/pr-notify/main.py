@@ -84,7 +84,7 @@ def main() -> int:
 
     except SystemExit as e:
         logger.error("Fatal: %s", e)
-        raise
+        return 1
     except Exception:
         logger.exception("Unexpected error")
         return 1

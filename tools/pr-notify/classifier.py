@@ -89,7 +89,7 @@ def _classify_single(pr: PRData) -> ClassifiedPR:
     if approvals:
         # Priority 4: Needs re-review if new commits after latest approval.
         latest_approval_date = max(rev["submitted_at"] for rev in approvals)
-        if pr.last_commit_date and pr.last_commit_date > latest_approval_date:
+        if pr.last_commit_date and _parse_iso_date(pr.last_commit_date) > _parse_iso_date(latest_approval_date):
             return ClassifiedPR(
                 pr=pr,
                 status=PRStatus.NEEDS_RE_REVIEW,

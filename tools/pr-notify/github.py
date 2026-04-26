@@ -94,7 +94,7 @@ def _parse_pr_nodes(repo_name: str, pr_nodes: list[dict]) -> list[PRData]:
 
         # Labels
         label_nodes = pr.get("labels", {}).get("nodes", [])
-        labels = [l.get("name", "") for l in label_nodes]
+        labels = [label.get("name", "") for label in label_nodes]
 
         author_obj = pr.get("author") or {}
         results.append(
@@ -130,11 +130,15 @@ def fetch_open_prs(repos: list[str]) -> list[PRData]:
     query = _build_graphql_query(repos)
     logger.debug("GraphQL query:\n%s", query)
 
-    result = subprocess.run(
-        ["gh", "api", "graphql", "-f", f"query={query}"],
-        capture_output=True,
-        text=True,
-    )
+    try:
+        result = subprocess.run(
+            ["gh", "api", "graphql", "-f", f"query={query}"],
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except subprocess.TimeoutExpired:
+        raise SystemExit("GitHub GraphQL query timed out after 60 seconds")
 
     # gh CLI returns non-zero on GraphQL errors but may still include
     # partial data in stdout (e.g., one repo not found but others succeed).

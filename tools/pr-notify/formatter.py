@@ -8,17 +8,15 @@ from datetime import date
 
 from models import ClassifiedPR, PRStatus
 
-# Maximum message length before truncation (Slack limit is 4000).
-_MAX_LENGTH = 3900
+# Maximum PRs shown per repo before collapsing.
+_MAX_PRS_PER_REPO = 6
 
 # Emoji mapping for each PR status.
 _STATUS_EMOJI: dict[PRStatus, str] = {
     PRStatus.NEEDS_REVIEW: ":eyes:",
     PRStatus.NEEDS_RE_REVIEW: ":warning:",
     PRStatus.CHANGES_REQUESTED: ":red_circle:",
-    PRStatus.APPROVED: ":white_check_mark:",
     PRStatus.CI_FAILING: ":x:",
-    PRStatus.DRAFT: ":construction:",
 }
 
 # Human-readable labels for each status.
@@ -26,9 +24,7 @@ _STATUS_LABEL: dict[PRStatus, str] = {
     PRStatus.NEEDS_REVIEW: "needs review",
     PRStatus.NEEDS_RE_REVIEW: "needs re-review",
     PRStatus.CHANGES_REQUESTED: "changes requested",
-    PRStatus.APPROVED: "approved",
     PRStatus.CI_FAILING: "CI failing",
-    PRStatus.DRAFT: "draft",
 }
 
 
@@ -65,6 +61,11 @@ def format_message(classified_prs: list[ClassifiedPR], repos: list[str]) -> str:
     Returns:
         Slack mrkdwn string ready for posting.
     """
+    classified_prs = [
+        cpr for cpr in classified_prs
+        if cpr.status not in (PRStatus.DRAFT, PRStatus.APPROVED)
+    ]
+
     if not classified_prs:
         return f"All clear — no open PRs across {len(repos)} repos :tada:"
 
@@ -85,39 +86,16 @@ def format_message(classified_prs: list[ClassifiedPR], repos: list[str]) -> str:
     header = f"*PR Status Summary* — {today}\n"
     header += f"{total} open across {repos_with_prs} repos | {needs_review} need review | {stale} stale (7+ days)"
 
-    # Build per-repo sections.
+    # Build per-repo sections with per-repo cap.
     sections: list[str] = []
-    all_pr_lines: list[str] = []
     for repo, prs in prs_by_repo.items():
-        repo_header = f"\n*{repo}* ({len(prs)})"
-        lines = [_format_pr_line(cpr) for cpr in prs]
+        pulls_url = f"https://github.com/{repo}/pulls"
+        repo_header = f"\n*<{pulls_url}|{repo}>* ({len(prs)})"
+        shown = prs[:_MAX_PRS_PER_REPO]
+        lines = [_format_pr_line(cpr) for cpr in shown]
+        remaining = len(prs) - len(shown)
+        if remaining > 0:
+            lines.append(f"  _<{pulls_url}|... and {remaining} more>_")
         sections.append(repo_header + "\n" + "\n".join(lines))
-        all_pr_lines.extend(lines)
 
-    full_message = header + "\n" + "\n".join(sections)
-
-    # Truncate if exceeding Slack's length limit.
-    if len(full_message) <= _MAX_LENGTH:
-        return full_message
-
-    # Rebuild with truncation: drop PRs from the end until under limit.
-    truncated_count = 0
-    while len(full_message) > _MAX_LENGTH and classified_prs:
-        truncated_count += 1
-        classified_prs = classified_prs[:-1]
-
-        # Rebuild grouped sections from remaining PRs.
-        prs_by_repo = {}
-        for cpr in classified_prs:
-            prs_by_repo.setdefault(cpr.pr.repo, []).append(cpr)
-
-        sections = []
-        for repo, prs in prs_by_repo.items():
-            repo_header = f"\n*{repo}* ({len(prs)})"
-            lines = [_format_pr_line(cpr) for cpr in prs]
-            sections.append(repo_header + "\n" + "\n".join(lines))
-
-        suffix = f"\n_... and {truncated_count} more PRs_"
-        full_message = header + "\n" + "\n".join(sections) + suffix
-
-    return full_message
+    return header + "\n" + "\n".join(sections)

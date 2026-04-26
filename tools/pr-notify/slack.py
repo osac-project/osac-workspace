@@ -58,7 +58,7 @@ def post_message(channel: str, text: str, creds_dir: str) -> None:
         },
     )
 
-    with urllib.request.urlopen(req) as resp:
+    with urllib.request.urlopen(req, timeout=30) as resp:
         result = json.loads(resp.read().decode())
 
     if not result.get("ok"):
