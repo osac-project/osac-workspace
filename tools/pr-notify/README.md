@@ -64,10 +64,12 @@ Tokens expire periodically. When you see an auth error in the logs (`invalid_aut
 
 ## systemd Installation
 
-Install as a user service for autonomous daily runs:
+Install as a user service for autonomous daily runs.
+
+**Note:** `pr-notify.service` assumes the repo is cloned at `~/work/src/github/osac-workspace`. If your checkout is elsewhere, edit the `ExecStart`, `WorkingDirectory`, and `--config` paths in the service file before copying.
 
 ```bash
-# Copy unit files
+# Copy unit files (edit pr-notify.service first if paths differ)
 cp pr-notify.service pr-notify.timer ~/.config/systemd/user/
 
 # Reload systemd and enable the timer

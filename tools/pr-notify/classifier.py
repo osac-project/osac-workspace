@@ -25,8 +25,10 @@ _BOT_AUTHORS = frozenset(
 )
 
 
-def _parse_iso_date(date_str: str) -> datetime:
+def _parse_iso_date(date_str: str) -> datetime | None:
     """Parse ISO 8601 date string (GitHub format ending with Z)."""
+    if not date_str:
+        return None
     clean = date_str.replace("Z", "+00:00")
     return datetime.fromisoformat(clean)
 
@@ -59,14 +61,15 @@ def _latest_review_per_author(reviews: list[dict]) -> dict[str, dict]:
 
 def _classify_single(pr: PRData) -> ClassifiedPR:
     """Classify a single PR according to priority rules."""
-    age_days = (datetime.now(timezone.utc) - _parse_iso_date(pr.created_at)).days
+    created = _parse_iso_date(pr.created_at)
+    age_days = (datetime.now(timezone.utc) - created).days if created else 0
 
     # Priority 1: Draft overrides everything.
     if pr.is_draft:
         return ClassifiedPR(pr=pr, status=PRStatus.DRAFT, age_days=age_days)
 
     # Priority 2: CI failing overrides review state.
-    if pr.ci_status == "FAILURE":
+    if pr.ci_status in ("FAILURE", "ERROR"):
         return ClassifiedPR(pr=pr, status=PRStatus.CI_FAILING, age_days=age_days)
 
     latest_reviews = _latest_review_per_author(pr.reviews)
@@ -89,7 +92,9 @@ def _classify_single(pr: PRData) -> ClassifiedPR:
     if approvals:
         # Priority 4: Needs re-review if new commits after latest approval.
         latest_approval_date = max(rev["submitted_at"] for rev in approvals)
-        if pr.last_commit_date and _parse_iso_date(pr.last_commit_date) > _parse_iso_date(latest_approval_date):
+        last_commit = _parse_iso_date(pr.last_commit_date)
+        latest_approval = _parse_iso_date(latest_approval_date)
+        if last_commit and latest_approval and last_commit > latest_approval:
             return ClassifiedPR(
                 pr=pr,
                 status=PRStatus.NEEDS_RE_REVIEW,

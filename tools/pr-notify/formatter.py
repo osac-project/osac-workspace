@@ -11,6 +11,8 @@ from models import ClassifiedPR, PRStatus
 # Maximum PRs shown per repo before collapsing.
 _MAX_PRS_PER_REPO = 6
 
+_MAX_MESSAGE_LENGTH = 3900
+
 # Emoji mapping for each PR status.
 _STATUS_EMOJI: dict[PRStatus, str] = {
     PRStatus.NEEDS_REVIEW: ":eyes:",
@@ -98,4 +100,12 @@ def format_message(classified_prs: list[ClassifiedPR], repos: list[str]) -> str:
             lines.append(f"  _<{pulls_url}|... and {remaining} more>_")
         sections.append(repo_header + "\n" + "\n".join(lines))
 
-    return header + "\n" + "\n".join(sections)
+    message = header + "\n" + "\n".join(sections)
+
+    if len(message) > _MAX_MESSAGE_LENGTH:
+        while sections and len(message) > _MAX_MESSAGE_LENGTH:
+            sections.pop()
+            message = header + "\n" + "\n".join(sections)
+            message += "\n_... additional repos truncated_"
+
+    return message

@@ -21,6 +21,8 @@ def _build_graphql_query(repos: list[str]) -> str:
     {alias}: repository(owner: "{owner}", name: "{name}") {{
       nameWithOwner
       pullRequests(states: OPEN, first: 50) {{
+        totalCount
+        pageInfo {{ hasNextPage }}
         nodes {{
           title
           url
@@ -149,7 +151,7 @@ def fetch_open_prs(repos: list[str]) -> list[PRData]:
         if result.returncode != 0:
             error_msg = result.stderr.strip() or result.stdout.strip()
             raise SystemExit(f"GitHub GraphQL query failed: {error_msg}")
-        raise SystemExit(f"Failed to parse GitHub API response (empty output)")
+        raise SystemExit("Failed to parse GitHub API response (malformed JSON)")
 
     # Handle GraphQL-level errors (partial or full)
     if "errors" in response:
@@ -175,7 +177,15 @@ def fetch_open_prs(repos: list[str]) -> list[PRData]:
             continue
 
         repo_name = repo_data.get("nameWithOwner", repo)
-        pr_nodes = repo_data.get("pullRequests", {}).get("nodes", [])
+        pr_data = repo_data.get("pullRequests", {})
+        total_count = pr_data.get("totalCount", 0)
+        has_next = pr_data.get("pageInfo", {}).get("hasNextPage", False)
+        if has_next:
+            logger.warning(
+                "Repo '%s' has %d open PRs but only first 50 were fetched",
+                repo_name, total_count,
+            )
+        pr_nodes = pr_data.get("nodes", [])
         all_prs.extend(_parse_pr_nodes(repo_name, pr_nodes))
 
     return all_prs

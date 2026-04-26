@@ -1,3 +1,6 @@
+# NOTE: Paths below assume the repo is cloned at ~/work/src/github/osac-workspace.
+# Edit ExecStart, WorkingDirectory, and --config to match your local checkout.
+
 [Unit]
 Description=OSAC PR Status Notifier — post daily PR summary to Slack
 After=network.target
