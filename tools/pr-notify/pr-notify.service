@@ -7,7 +7,7 @@ Type=oneshot
 TimeoutStartSec=120
 ExecStart=/usr/bin/python3 %h/work/src/github/osac-workspace/tools/pr-notify/main.py --config %h/work/src/github/osac-workspace/tools/pr-notify/config.toml
 WorkingDirectory=%h/work/src/github/osac-workspace/tools/pr-notify
-Environment=PATH=/usr/local/bin:/usr/bin:/bin:/home/etabak/.local/bin
+Environment=PATH=/usr/local/bin:/usr/bin:/bin:%h/.local/bin
 
 [Install]
 WantedBy=default.target

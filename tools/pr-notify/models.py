@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 
 
@@ -16,7 +16,6 @@ class Config:
     repos: list[str]
     slack_channel: str
     slack_creds_dir: str
-    stale_days: list[int] = field(default_factory=lambda: [3, 7, 14])
 
 
 @dataclass

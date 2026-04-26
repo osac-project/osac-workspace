@@ -18,7 +18,6 @@ The tool reads a TOML config file. All fields are required unless noted.
 | `repos` | list of strings | GitHub repositories to monitor, in `owner/repo` format |
 | `slack_channel` | string | Slack channel ID to post to (e.g. `C08ESMFV85Q`) |
 | `slack_creds_dir` | string | Directory containing Slack credential files (supports `~` expansion) |
-| `stale_days` | list of ints | *(Optional)* Age thresholds in days for staleness warnings. Default: `[3, 7, 14]` |
 
 Example config:
 
@@ -30,9 +29,6 @@ repos = [
 
 slack_channel = "C08ESMFV85Q"
 slack_creds_dir = "~/.config/slack/"
-
-# Optional: customize staleness thresholds
-# stale_days = [3, 7, 14]
 ```
 
 ## Slack Credentials

@@ -154,10 +154,15 @@ def fetch_open_prs(repos: list[str]) -> list[PRData]:
     # Handle GraphQL-level errors (partial or full)
     if "errors" in response:
         for err in response["errors"]:
-            logger.warning("GraphQL error: %s", err.get("message", err))
+            msg = err.get("message", str(err))
+            logger.warning("GraphQL error: %s", msg)
+            if any(s in msg.lower() for s in ("auth", "forbidden", "unauthorized")):
+                raise SystemExit(f"GitHub auth error: {msg}")
 
     data = response.get("data", {})
     if not data:
+        if "errors" in response:
+            raise SystemExit("GitHub GraphQL query returned errors with no data")
         logger.warning("No data in GraphQL response")
         return []
 

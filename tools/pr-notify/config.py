@@ -38,5 +38,4 @@ def load_config(path: str) -> Config:
         repos=data["repos"],
         slack_channel=data["slack_channel"],
         slack_creds_dir=slack_creds_dir,
-        stale_days=data.get("stale_days", [3, 7, 14]),
     )
