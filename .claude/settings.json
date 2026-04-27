@@ -107,5 +107,9 @@
   "statusLine": {
     "type": "command",
     "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/gsd-statusline.js"
+  },
+  "enabledPlugins": {
+    "osac-dev@ecosystem-claude-plugins": true,
+    "jira@ecosystem-claude-plugins": true
   }
 }
