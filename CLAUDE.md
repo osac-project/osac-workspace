@@ -83,6 +83,7 @@ This project uses the GSD workflow system. Planning artifacts live in `.planning
 
 - Use `/gsd:progress` to check project status
 - Use `/gsd:plan-phase` for planning, `/gsd:execute-phase` for implementation
+- Use `/jira-sync status` to check Jira mapping, `/jira-sync link-epic MGMT-XXXXX` to link
 - GSD operates at workspace level but coordinates across component repos
 
 ## OpenShift Deployment
