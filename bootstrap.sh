@@ -37,3 +37,7 @@ echo "📂 Available repos:"
 for repo in "${REPOS[@]}"; do
   echo "   - $repo"
 done
+
+echo ""
+echo "💡 To contribute, add your fork remote:"
+echo "   cd <repo> && git remote add fork https://github.com/\$(gh api user -q .login)/<repo>.git"

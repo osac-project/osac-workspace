@@ -6,7 +6,7 @@ Development workspace for the Open Sovereign AI Cloud (OSAC) project. This repo 
 
 ```bash
 # Clone the workspace
-git clone https://github.com/eranco74/osac-workspace.git
+git clone https://github.com/osac-project/osac-workspace.git
 cd osac-workspace
 
 # Bootstrap all component repos (always pulls latest main)
@@ -44,9 +44,10 @@ This workspace provides a pre-configured AI-assisted development environment:
 After running `./bootstrap.sh` to clone all repos:
 
 1. **kubeconfig**: Place your cluster kubeconfig at `./kubeconfig` (gitignored)
-2. **Go**: Ensure Go is installed (see `CLAUDE.md` for direnv-based setup)
-3. **Tools**: `buf`, `grpcurl`, `kubectl`, `jq`
-4. **Claude Code**: Install from https://docs.anthropic.com/en/docs/claude-code
+2. **Tools**: `buf`, `grpcurl`, `kubectl`, `jq`
+3. **Jira CLI**: `go install github.com/ankitpokhrel/jira-cli/cmd/jira@latest` (or `brew install ankitpokhrel/jira-cli/jira-cli`)
+4. **GSD workflow**: `npx get-shit-done-cc@latest` (run from workspace root)
+   - GSD hooks in `.claude/settings.json` are already configured and will no-op if GSD is not installed
 
 To update all repos to latest `main` at any time, simply re-run:
 ```bash
@@ -87,6 +88,14 @@ Once you have Claude Code running in this workspace, use GSD commands to plan an
 /gsd:progress        # Check current project status
 /gsd:next            # Advance to the next logical step
 ```
+
+| Task Type | GSD Command | When to Use |
+|-----------|-------------|-------------|
+| Epic / new feature | `/gsd:new-project` | Starting a multi-phase initiative |
+| Jira ticket | `/gsd:quick` | Single-ticket work with commit tracking |
+| Tiny fix | `/gsd:fast` | One-file fixes, no planning overhead |
+| Check status | `/gsd:progress` | See where you are in the project |
+| Next step | `/gsd:next` | Auto-advance to the next logical action |
 
 GSD manages all state under `.planning/` — milestones, phases, plans, and verification are created as you work.
 

@@ -18,6 +18,7 @@ kubeconfig
 .claude/*
 !.claude/hooks/
 !.claude/settings.json
+!.claude/rules/
 !.claude/skills/
 .mcp.json
 
