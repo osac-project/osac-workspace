@@ -99,6 +99,34 @@ Once you have Claude Code running in this workspace, use GSD commands to plan an
 
 GSD manages all state under `.planning/` — milestones, phases, plans, and verification are created as you work.
 
+## Enhancement Proposals
+
+This workspace includes the `osac-ep-generator` plugin for drafting and submitting OSAC Enhancement Proposals with Claude Code.
+
+**Generate an EP from requirements or meeting notes:**
+
+```
+/generate-ep
+```
+
+Provide rough requirements, meeting notes, or a Jira ticket (e.g., `MGMT-XXXXX`) and the skill will:
+
+1. Explore the OSAC codebase and existing proposals for context
+2. Ask clarifying questions before drafting
+3. Generate a template-compliant EP under `enhancement-proposals/enhancements/<feature-slug>/README.md`
+4. Submit a PR to [osac-project/enhancement-proposals](https://github.com/osac-project/enhancement-proposals) on approval
+5. Iterate on reviewer feedback
+
+**Convert an approved EP into Jira work items:**
+
+```
+/ep-to-jira
+```
+
+This creates a Jira epic with ordered sub-tasks (proto, backend, controller, tests, docs) and a complexity assessment.
+
+**Prerequisites:** `gh` (authenticated), `jira` CLI, `rg`
+
 ## Architecture
 
 ```
