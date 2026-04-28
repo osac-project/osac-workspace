@@ -110,6 +110,7 @@
   },
   "enabledPlugins": {
     "osac-dev@ecosystem-claude-plugins": true,
-    "jira@ecosystem-claude-plugins": true
+    "jira@ecosystem-claude-plugins": true,
+    "osac-ep-generator@ecosystem-claude-plugins": true
   }
 }
