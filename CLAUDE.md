@@ -64,6 +64,7 @@ When fixing bugs or adding features, **check all controllers** that follow the s
 - **`protobuf-conventions.md`** — Proto naming, API structure, field guidelines, type/service patterns
 - **`cross-repo-workflow.md`** — Git worktrees, cross-component changes, PR rules
 - **`architecture-patterns.md`** — Multi-tenancy, resource hierarchy, service stack, integration testing
+- **`code-review-workflow.md`** — Self-review before PRs (`superpowers:requesting-code-review`), review others' PRs (`code-review:code-review`)
 
 ## Reference Documentation
 
