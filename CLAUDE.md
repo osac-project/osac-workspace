@@ -64,6 +64,7 @@ When fixing bugs or adding features, **check all controllers** that follow the s
 - **`protobuf-conventions.md`** — Proto naming, API structure, field guidelines, type/service patterns
 - **`cross-repo-workflow.md`** — Git worktrees, cross-component changes, PR rules
 - **`architecture-patterns.md`** — Multi-tenancy, resource hierarchy, service stack, integration testing
+- **`gsd-jira-integration.md`** — GSD lifecycle hooks for automatic Jira epic/task creation, status transitions, and commit prefixing
 
 ## Reference Documentation
 
