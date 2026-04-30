@@ -102,12 +102,12 @@ GSD manages all state under `.planning/` — milestones, phases, plans, and veri
 
 ## Enhancement Proposals
 
-This workspace includes the `osac-ep-generator` plugin for drafting and submitting OSAC Enhancement Proposals with Claude Code.
+This workspace includes skills for drafting and submitting OSAC Enhancement Proposals with Claude Code.
 
-**Generate an EP from requirements or meeting notes:**
+**Create an EP from requirements or meeting notes:**
 
 ```
-/generate-ep
+/ep.create
 ```
 
 Provide rough requirements, meeting notes, or a Jira ticket (e.g., `MGMT-XXXXX`) and the skill will:
@@ -121,7 +121,7 @@ Provide rough requirements, meeting notes, or a Jira ticket (e.g., `MGMT-XXXXX`)
 **Convert an approved EP into Jira work items:**
 
 ```
-/ep-to-jira
+/ep.to-jira
 ```
 
 This creates a Jira epic with ordered sub-tasks (proto, backend, controller, tests, docs) and a complexity assessment.

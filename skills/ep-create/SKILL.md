@@ -1,5 +1,5 @@
 ---
-name: generate-ep
+name: ep-create
 description: |
   Generate OSAC enhancement proposals from high-level requirements, meeting notes, or Jira tickets. Use when user wants to create, draft, write, or generate an enhancement proposal, EP, or design document for OSAC. Also trigger when user provides requirements, meeting notes, or feature descriptions and asks to formalize them into an EP. Includes PR submission and review feedback iteration.
 ---
