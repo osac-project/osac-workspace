@@ -13,5 +13,9 @@
   "git": {
     "branching_strategy": "none"
   },
-  "granularity": "standard"
+  "granularity": "standard",
+  "jira": {
+    "epic": "",
+    "phases": {}
+  }
 }

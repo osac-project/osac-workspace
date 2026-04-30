@@ -24,6 +24,8 @@ kubeconfig
 !.claude/commands/*
 !.claude/agents/
 !.claude/agents/*
+!.claude/workflows/
+!.claude/workflows/*
 .mcp.json
 
 # Editor files

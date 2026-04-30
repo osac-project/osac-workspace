@@ -64,6 +64,7 @@ When fixing bugs or adding features, **check all controllers** that follow the s
 - **`protobuf-conventions.md`** — Proto naming, API structure, field guidelines, type/service patterns
 - **`cross-repo-workflow.md`** — Git worktrees, cross-component changes, PR rules
 - **`architecture-patterns.md`** — Multi-tenancy, resource hierarchy, service stack, integration testing
+- **`gsd-jira-integration.md`** — GSD lifecycle hooks for automatic Jira epic/task creation, status transitions, and commit prefixing
 
 ## Reference Documentation
 
@@ -83,6 +84,7 @@ This project uses the GSD workflow system. Planning artifacts live in `.planning
 
 - Use `/gsd:progress` to check project status
 - Use `/gsd:plan-phase` for planning, `/gsd:execute-phase` for implementation
+- Use `/jira-sync status` to check Jira mapping, `/jira-sync link-epic MGMT-XXXXX` to link
 - GSD operates at workspace level but coordinates across component repos
 
 ## OpenShift Deployment
