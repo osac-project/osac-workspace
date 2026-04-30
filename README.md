@@ -9,11 +9,18 @@ Development workspace for the Open Sovereign AI Cloud (OSAC) project. This repo 
 git clone https://github.com/osac-project/osac-workspace.git
 cd osac-workspace
 
-# Bootstrap all component repos (always pulls latest main)
+# Bootstrap all component repos with fork setup (requires gh CLI)
 ./bootstrap.sh
+
+# Or clone read-only without forking
+./bootstrap.sh --no-fork
 ```
 
-The bootstrap script clones all OSAC repos into the workspace. Each repo is an independent Git repository on its `main` branch — no detached HEADs, no parent repo updates needed.
+The bootstrap script clones all OSAC repos into the workspace. Each repo is an independent Git repository on its `main` branch with remotes configured as:
+- `origin` = osac-project (push target for PRs)
+- `fork` = your GitHub fork (for contributors without write access)
+
+Use `--no-fork` if you only need read-only access or are running in CI.
 
 ## Components
 
@@ -44,10 +51,11 @@ This workspace provides a pre-configured AI-assisted development environment:
 
 After running `./bootstrap.sh` to clone all repos:
 
-1. **kubeconfig**: Place your cluster kubeconfig at `./kubeconfig` (gitignored)
-2. **Tools**: `buf`, `grpcurl`, `kubectl`, `jq`
-3. **Jira CLI**: `go install github.com/ankitpokhrel/jira-cli/cmd/jira@latest` (or `brew install ankitpokhrel/jira-cli/jira-cli`)
-4. **GSD workflow**: `npx get-shit-done-cc@latest` (run from workspace root)
+1. **gh CLI**: Install and authenticate with `gh auth login` (required for fork workflow)
+2. **kubeconfig**: Place your cluster kubeconfig at `./kubeconfig` (gitignored)
+3. **Tools**: `buf`, `grpcurl`, `kubectl`, `jq`
+4. **Jira CLI**: `go install github.com/ankitpokhrel/jira-cli/cmd/jira@latest` (or `brew install ankitpokhrel/jira-cli/jira-cli`)
+5. **GSD workflow**: `npx get-shit-done-cc@latest` (run from workspace root)
    - GSD hooks in `.claude/settings.json` are already configured and will no-op if GSD is not installed
 
 To update all repos to latest `main` at any time, simply re-run:
