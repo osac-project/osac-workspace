@@ -66,18 +66,18 @@ Use targeted searches to understand implementation patterns:
 
 ```bash
 # Find similar proto resources
-cd /home/eran/go/src/github/eranco74/osac-workspace/fulfillment-service
+cd fulfillment-service
 rg --type proto "message <RelatedResource>" --files-with-matches
 
 # Find controllers for similar resources
-cd /home/eran/go/src/github/eranco74/osac-workspace/osac-operator
+cd osac-operator
 rg "reconcile.*<RelatedResource>" --type go -A5
 
 # Check directory structure
 tree -L 2 fulfillment-service/proto/
 
 # Find related EPs
-cd /home/eran/go/src/github/eranco74/osac-workspace/enhancement-proposals
+cd enhancement-proposals
 ls enhancements/
 rg "<relevant-term>" enhancements/*/README.md --files-with-matches
 ```
@@ -202,7 +202,7 @@ Use the Write tool to create the EP file at the determined path.
 
 **Step 1: Create branch and commit locally**
 ```bash
-cd /home/eran/go/src/github/eranco74/osac-workspace/enhancement-proposals
+cd enhancement-proposals
 git checkout -b enhancement/<feature-slug>
 git add enhancements/<feature-slug>/README.md
 git commit -m "MGMT-XXXXX: Add <feature-name> enhancement proposal"
@@ -276,7 +276,7 @@ Update the EP file at `enhancement-proposals/enhancements/<feature-slug>/README.
 
 **Step 7: Commit and push**
 ```bash
-cd /home/eran/go/src/github/eranco74/osac-workspace/enhancement-proposals
+cd enhancement-proposals
 git add enhancements/<feature-slug>/README.md
 git commit -m "Address review feedback: <summary-of-changes>"
 git push
@@ -294,8 +294,8 @@ git push
 | Create branch | `git checkout -b enhancement/<feature-slug>` |
 | Create PR | `gh pr create --repo osac-project/enhancement-proposals --title "..." --body "..."` |
 | Fetch reviews | `gh pr view <N> --repo osac-project/enhancement-proposals --json reviews,comments` |
-| List existing EPs | `ls /home/eran/go/src/github/eranco74/osac-workspace/enhancement-proposals/enhancements/` |
-| Check proto structure | `tree -L 2 /home/eran/go/src/github/eranco74/osac-workspace/fulfillment-service/proto/` |
+| List existing EPs | `ls enhancement-proposals/enhancements/` |
+| Check proto structure | `tree -L 2 fulfillment-service/proto/` |
 
 ## Common Issues
 
@@ -319,7 +319,7 @@ git push
 
 ### Enhancement-Proposals Repo Not Cloned
 - **Symptom**: `ls enhancement-proposals/` fails with "No such file or directory"
-- **Check**: Run `ls /home/eran/go/src/github/eranco74/osac-workspace/` to see available repos
+- **Check**: Run `ls` from the workspace root to see available repos
 - **Fix**: Advise user to run `./bootstrap.sh` from workspace root to clone all OSAC repos
 
 ### Skill Doesn't Trigger
@@ -334,7 +334,7 @@ git push
 
 ## Notes
 
-- **File paths**: Always use absolute paths from `/home/eran/go/src/github/eranco74/osac-workspace/`
+- **File paths**: Use paths relative to the workspace root (the directory containing `CLAUDE.md` and `bootstrap.sh`)
 - **Reference files**: The skill loads `ep_template.md`, `review_patterns.md`, and `osac_conventions.md` at runtime — these embed the domain knowledge
 - **Codebase exploration**: Target exploration to the specific feature being proposed; don't re-discover the EP template structure (that's in reference files)
 - **Clarification phase**: Never skip — it's the most critical step for producing a quality EP
