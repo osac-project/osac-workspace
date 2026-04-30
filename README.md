@@ -37,6 +37,7 @@ This workspace provides a pre-configured AI-assisted development environment:
 | `CLAUDE.md` | Project instructions Claude Code reads automatically — build commands, architecture patterns, conventions |
 | `.claude/settings.json` | Pre-approved shell commands (git, ls, cat, etc.) so Claude doesn't prompt for routine operations |
 | `.planning/config.json` | GSD workflow configuration (parallelization, verification, auto-advance) |
+| `skills/` | AI skills for Claude Code — EP generation, Jira management, bug fix workflows, demo recording |
 | `.gitignore` | Ignores cloned repos, `.planning/`, `.claude/`, credentials, editor files, and build artifacts |
 
 ## Setup
