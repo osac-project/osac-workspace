@@ -65,6 +65,14 @@ for repo in "${REPOS[@]}"; do
   if [ -d "$repo" ]; then
     echo "📦 Updating $repo..."
     (cd "$repo" && git fetch origin && git rebase origin/main --autostash)
+    # Add fork remote to existing repos that don't have one yet
+    # (e.g., previously cloned with --no-fork)
+    if [ "$NO_FORK" = false ] && ! git -C "$repo" remote get-url fork &>/dev/null; then
+      echo "🍴 Adding fork remote for existing repo $repo..."
+      gh repo fork "${GITHUB_ORG}/${repo}" --clone=false 2>/dev/null || true
+      git -C "$repo" remote add fork "git@github.com:${GH_USER}/${repo}.git"
+      git -C "$repo" fetch fork
+    fi
   else
     echo "📥 Cloning $repo..."
     git clone "https://github.com/${GITHUB_ORG}/${repo}.git"

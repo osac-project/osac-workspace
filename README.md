@@ -22,8 +22,8 @@ cd osac-workspace
 ```
 
 The bootstrap script clones all OSAC repos into the workspace. Each repo is an independent Git repository on its `main` branch with remotes configured as:
-- `origin` = osac-project (push target for PRs)
-- `fork` = your GitHub fork (for contributors without write access)
+- `origin` = osac-project (upstream source, PR target)
+- `fork` = your GitHub fork (push target for feature branches)
 
 Use `--no-fork` if you only need read-only access or are running in CI.
 
