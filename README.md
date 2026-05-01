@@ -2,6 +2,11 @@
 
 Development workspace for the Open Sovereign AI Cloud (OSAC) project. This repo provides a meta-workspace that bootstraps all OSAC components for cross-component development and testing, with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [GSD workflow](https://github.com/cyanheads/gsd) integration pre-configured.
 
+## Prerequisites
+
+- **git**
+- **[gh CLI](https://cli.github.com/)**: Install and authenticate with `gh auth login` (required for fork workflow; use `--no-fork` if you only need read-only access)
+
 ## Getting Started
 
 ```bash
@@ -9,11 +14,18 @@ Development workspace for the Open Sovereign AI Cloud (OSAC) project. This repo 
 git clone https://github.com/osac-project/osac-workspace.git
 cd osac-workspace
 
-# Bootstrap all component repos (always pulls latest main)
+# Bootstrap all component repos with fork setup (requires gh CLI)
 ./bootstrap.sh
+
+# Or clone read-only without forking
+./bootstrap.sh --no-fork
 ```
 
-The bootstrap script clones all OSAC repos into the workspace. Each repo is an independent Git repository on its `main` branch — no detached HEADs, no parent repo updates needed.
+The bootstrap script clones all OSAC repos into the workspace. Each repo is an independent Git repository on its `main` branch with remotes configured as:
+- `origin` = osac-project (upstream source, PR target)
+- `fork` = your GitHub fork (push target for feature branches)
+
+Use `--no-fork` if you only need read-only access or are running in CI.
 
 ## Components
 
