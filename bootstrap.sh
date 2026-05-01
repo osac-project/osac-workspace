@@ -71,9 +71,11 @@ for repo in "${REPOS[@]}"; do
 
     if [ "$NO_FORK" = false ]; then
       echo "🍴 Adding fork remote for $repo..."
-      # Ensure fork exists on GitHub (no-op if already forked)
+      # Fork the repo on GitHub without cloning it. We already cloned from
+      # osac-project above (as origin), so we only need gh to ensure the
+      # fork exists, then add it as the 'fork' remote.
+      # No-op if already forked.
       gh repo fork "${GITHUB_ORG}/${repo}" --clone=false 2>/dev/null || true
-      # Add fork as 'fork' remote
       (cd "$repo" && git remote add fork "git@github.com:${GH_USER}/${repo}.git" && git fetch fork)
     fi
   fi
