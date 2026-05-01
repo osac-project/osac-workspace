@@ -2,6 +2,11 @@
 
 Development workspace for the Open Sovereign AI Cloud (OSAC) project. This repo provides a meta-workspace that bootstraps all OSAC components for cross-component development and testing, with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [GSD workflow](https://github.com/cyanheads/gsd) integration pre-configured.
 
+## Prerequisites
+
+- **git**
+- **[gh CLI](https://cli.github.com/)**: Install and authenticate with `gh auth login` (required for fork workflow; use `--no-fork` if you only need read-only access)
+
 ## Getting Started
 
 ```bash
@@ -51,11 +56,10 @@ This workspace provides a pre-configured AI-assisted development environment:
 
 After running `./bootstrap.sh` to clone all repos:
 
-1. **gh CLI**: Install and authenticate with `gh auth login` (required for fork workflow)
-2. **kubeconfig**: Place your cluster kubeconfig at `./kubeconfig` (gitignored)
-3. **Tools**: `buf`, `grpcurl`, `kubectl`, `jq`
-4. **Jira CLI**: `go install github.com/ankitpokhrel/jira-cli/cmd/jira@latest` (or `brew install ankitpokhrel/jira-cli/jira-cli`)
-5. **GSD workflow**: `npx get-shit-done-cc@latest` (run from workspace root)
+1. **kubeconfig**: Place your cluster kubeconfig at `./kubeconfig` (gitignored)
+2. **Tools**: `buf`, `grpcurl`, `kubectl`, `jq`
+3. **Jira CLI**: `go install github.com/ankitpokhrel/jira-cli/cmd/jira@latest` (or `brew install ankitpokhrel/jira-cli/jira-cli`)
+4. **GSD workflow**: `npx get-shit-done-cc@latest` (run from workspace root)
    - GSD hooks in `.claude/settings.json` are already configured and will no-op if GSD is not installed
 
 To update all repos to latest `main` at any time, simply re-run:
