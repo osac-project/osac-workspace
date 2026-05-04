@@ -9,7 +9,7 @@ OSAC (Open Sovereign AI Cloud) is a fulfillment system for provisioning Kubernet
 - **Read component CLAUDE.md first** before making changes in any component repo
 - **Never skip tenant isolation metadata** (`osac.openshift.io/tenant`, `osac.io/owner-reference` annotations) in new resources
 - **Always `buf lint` before committing** proto changes; regenerate with `buf generate`
-- **PRs target `origin` remote** unless explicitly told otherwise
+- **Fork-based workflow**: always push to `fork` remote, never to `origin`. PRs go from `fork/<branch>` to `origin/main`
 - When debugging Kubernetes operators, check for stale vendor directories and cached images before rebuilding
 
 ## Repository Structure
@@ -57,7 +57,7 @@ The osac-operator uses controller-runtime to reconcile OSAC custom resources on 
 - **Management-state annotation**: All controllers should check `osac.openshift.io/management-state` and skip reconciliation when set to `Unmanaged`
 - **Namespace isolation**: Networking controllers filter to a configured namespace via `NetworkingNamespacePredicate`
 
-When fixing bugs or adding features, **check all controllers** that follow the same pattern — a bug in one controller likely exists in others.
+When fixing bugs or adding features, **check all controllers** that follow the same pattern — a bug in one controller likely exists in others. A missing feature in one controller is also a bug if all controllers are expected to behave consistently.
 
 ## Detailed Rules (auto-loaded from `.claude/rules/`)
 

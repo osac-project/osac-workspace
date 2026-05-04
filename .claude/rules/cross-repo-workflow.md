@@ -42,11 +42,12 @@ When a feature spans repos (e.g., API + operator):
 - Branch naming: `<type>/<ticket-or-description>` (e.g., `feat/MGMT-23607`, `fix/duplicate-aap-jobs`)
 
 ### Remotes
-- `origin` — the upstream osac-project repo (push target for PRs)
-- `fork` — optional developer fork (for contributors without write access)
+- `origin` — the upstream osac-project repo (read-only, never push here)
+- `fork` — developer fork (push target for all work)
 
-### PR Submission
-- PRs target `origin/main`
+### Pushing and PR Submission
+- **Always push to `fork`**, never to `origin`
+- PRs go from `fork/<branch>` to `origin/main`
 - Always include the Jira ticket key in the PR title (e.g., "MGMT-12345: fix subnet race condition")
 
 ### Commit Conventions
