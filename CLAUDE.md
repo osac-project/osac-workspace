@@ -87,6 +87,13 @@ This project uses the GSD workflow system. Planning artifacts live in `.planning
 - Use `/jira-sync status` to check Jira mapping, `/jira-sync link-epic MGMT-XXXXX` to link
 - GSD operates at workspace level but coordinates across component repos
 
+## E2E Test Skills (from osac-test-infra)
+
+The `osac-test-infra` repo provides skills for writing and debugging E2E tests. These are auto-discovered when working in the `osac-test-infra/` directory:
+
+- `/e2e` — Write a pytest E2E test from a description or Jira ticket
+- `/debug-e2e` — Debug a failing Prow CI job using build logs and gathered OSAC artifacts
+
 ## OpenShift Deployment
 
 ```bash
