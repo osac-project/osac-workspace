@@ -127,7 +127,7 @@ git add <specific-files-only>
 git commit -m "$(cat <<'EOF'
 <KEY>: <imperative description of fix>
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+Assisted-By: Claude Code <noreply@anthropic.com>
 EOF
 )"
 ```
@@ -138,7 +138,7 @@ Example: `MGMT-23626: fix VM namespace lookup when subnetRef is set`
 ## Step 7: Push and Create PR
 
 ```bash
-git push -u origin <branch-name>
+git push -u fork <branch-name>
 
 gh pr create \
   --repo osac-project/<repo-name> \
@@ -157,7 +157,7 @@ gh pr create \
 
 Fixes: https://issues.redhat.com/browse/<KEY>
 
-Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+Assisted-By: Claude Code <noreply@anthropic.com>
 EOF
 )"
 ```
