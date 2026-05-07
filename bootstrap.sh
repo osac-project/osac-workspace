@@ -11,8 +11,8 @@ Usage: ./bootstrap.sh [--no-fork]
 Sets up the OSAC workspace by cloning all component repos.
 
 By default, each repo is forked to your GitHub account and cloned with:
-  origin = osac-project/<repo>  (push target for PRs)
-  fork   = <your-username>/<repo>  (your fork)
+  origin = osac-project/<repo>  (upstream source, PR target)
+  fork   = <your-username>/<repo>  (push target for feature branches)
 
 Options:
   --no-fork    Clone directly from osac-project without forking.
@@ -21,7 +21,6 @@ Options:
 
 Prerequisites:
   - gh CLI installed and authenticated (gh auth login)
-  - SSH access to GitHub (for fork workflow)
 EOF
 }
 
@@ -46,10 +45,35 @@ if [ "$NO_FORK" = false ]; then
     exit 1
   fi
   GH_USER=$(gh api user -q .login)
+  GIT_PROTOCOL=$(gh config get git_protocol 2>/dev/null || echo "https")
   echo "🚀 Setting up OSAC workspace for GitHub user: $GH_USER"
 else
   echo "🚀 Setting up OSAC workspace (read-only, no forks)..."
 fi
+
+get_fork_url() {
+  local repo="$1"
+  if [ "$GIT_PROTOCOL" = "ssh" ]; then
+    echo "git@github.com:${GH_USER}/${repo}.git"
+  else
+    echo "https://github.com/${GH_USER}/${repo}.git"
+  fi
+}
+
+ensure_fork_remote() {
+  local repo="$1"
+  # Ensure fork exists on GitHub, then verify it
+  if ! gh repo fork "${GITHUB_ORG}/${repo}" --clone=false 2>/dev/null; then
+    if ! gh repo view "${GH_USER}/${repo}" &>/dev/null; then
+      echo "❌ Failed to fork ${GITHUB_ORG}/${repo}. Skipping fork remote."
+      return 1
+    fi
+  fi
+  local url
+  url=$(get_fork_url "$repo")
+  git -C "$repo" remote add fork "$url"
+  git -C "$repo" fetch fork
+}
 
 REPOS=(
   "fulfillment-service"
@@ -69,9 +93,7 @@ for repo in "${REPOS[@]}"; do
     # (e.g., previously cloned with --no-fork)
     if [ "$NO_FORK" = false ] && ! git -C "$repo" remote get-url fork &>/dev/null; then
       echo "🍴 Adding fork remote for existing repo $repo..."
-      gh repo fork "${GITHUB_ORG}/${repo}" --clone=false 2>/dev/null || true
-      git -C "$repo" remote add fork "git@github.com:${GH_USER}/${repo}.git"
-      git -C "$repo" fetch fork
+      ensure_fork_remote "$repo" || true
     fi
   else
     echo "📥 Cloning $repo..."
@@ -79,12 +101,7 @@ for repo in "${REPOS[@]}"; do
 
     if [ "$NO_FORK" = false ]; then
       echo "🍴 Adding fork remote for $repo..."
-      # Fork the repo on GitHub without cloning it. We already cloned from
-      # osac-project above (as origin), so we only need gh to ensure the
-      # fork exists, then add it as the 'fork' remote.
-      # No-op if already forked.
-      gh repo fork "${GITHUB_ORG}/${repo}" --clone=false 2>/dev/null || true
-      (cd "$repo" && git remote add fork "git@github.com:${GH_USER}/${repo}.git" && git fetch fork)
+      ensure_fork_remote "$repo" || true
     fi
   fi
 done
@@ -110,5 +127,5 @@ if [ "$NO_FORK" = true ]; then
   echo ""
   echo "💡 Cloned in read-only mode. To contribute, re-run without --no-fork"
   echo "   or add your fork manually:"
-  echo "   cd <repo> && git remote add fork git@github.com:\$(gh api user -q .login)/<repo>.git"
+  echo "   cd <repo> && git remote add fork \$(gh config get git_protocol | grep -q ssh && echo git@github.com: || echo https://github.com/)\$(gh api user -q .login)/<repo>.git"
 fi
