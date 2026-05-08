@@ -1,12 +1,80 @@
 #!/bin/bash
 set -euo pipefail
 
-echo "🚀 Setting up OSAC Workspace..."
+GITHUB_ORG="osac-project"
+NO_FORK=false
 
-# Base URL for all repos
-GITHUB_ORG="https://github.com/osac-project"
+usage() {
+  cat <<'EOF'
+Usage: ./bootstrap.sh [--no-fork]
 
-# List of repos to clone
+Sets up the OSAC workspace by cloning all component repos.
+
+By default, each repo is forked to your GitHub account and cloned with:
+  origin = osac-project/<repo>  (upstream source, PR target)
+  fork   = <your-username>/<repo>  (push target for feature branches)
+
+Options:
+  --no-fork    Clone directly from osac-project without forking.
+               Useful for read-only access or CI environments.
+  --help       Show this help message.
+
+Prerequisites:
+  - gh CLI installed and authenticated (gh auth login)
+EOF
+}
+
+for arg in "$@"; do
+  case "$arg" in
+    --no-fork) NO_FORK=true ;;
+    --help|-h) usage; exit 0 ;;
+    *) echo "Unknown option: $arg"; usage; exit 1 ;;
+  esac
+done
+
+# Verify gh CLI for fork workflow
+if [ "$NO_FORK" = false ]; then
+  if ! command -v gh &>/dev/null; then
+    echo "❌ Error: gh CLI is not installed."
+    echo "Install it (https://cli.github.com/) or use --no-fork for read-only clone."
+    exit 1
+  fi
+  if ! gh auth status &>/dev/null; then
+    echo "❌ Error: gh CLI is not authenticated."
+    echo "Run 'gh auth login' or use --no-fork for read-only clone."
+    exit 1
+  fi
+  GH_USER=$(gh api user -q .login)
+  GIT_PROTOCOL=$(gh config get git_protocol 2>/dev/null || echo "https")
+  echo "🚀 Setting up OSAC workspace for GitHub user: $GH_USER"
+else
+  echo "🚀 Setting up OSAC workspace (read-only, no forks)..."
+fi
+
+get_fork_url() {
+  local repo="$1"
+  if [ "$GIT_PROTOCOL" = "ssh" ]; then
+    echo "git@github.com:${GH_USER}/${repo}.git"
+  else
+    echo "https://github.com/${GH_USER}/${repo}.git"
+  fi
+}
+
+ensure_fork_remote() {
+  local repo="$1"
+  # Ensure fork exists on GitHub, then verify it
+  if ! gh repo fork "${GITHUB_ORG}/${repo}" --clone=false 2>/dev/null; then
+    if ! gh repo view "${GH_USER}/${repo}" &>/dev/null; then
+      echo "❌ Failed to fork ${GITHUB_ORG}/${repo}. Skipping fork remote."
+      return 1
+    fi
+  fi
+  local url
+  url=$(get_fork_url "$repo")
+  git -C "$repo" remote add fork "$url"
+  git -C "$repo" fetch fork
+}
+
 REPOS=(
   "fulfillment-service"
   "osac-operator"
@@ -17,16 +85,24 @@ REPOS=(
   "docs"
 )
 
-# Clone or update each repo
 for repo in "${REPOS[@]}"; do
   if [ -d "$repo" ]; then
     echo "📦 Updating $repo..."
-    # --autostash hides local changes, rebases, then brings them back
     (cd "$repo" && git fetch origin && git rebase origin/main --autostash)
+    # Add fork remote to existing repos that don't have one yet
+    # (e.g., previously cloned with --no-fork)
+    if [ "$NO_FORK" = false ] && ! git -C "$repo" remote get-url fork &>/dev/null; then
+      echo "🍴 Adding fork remote for existing repo $repo..."
+      ensure_fork_remote "$repo" || true
+    fi
   else
     echo "📥 Cloning $repo..."
-    git clone "${GITHUB_ORG}/${repo}.git"
-    (cd "$repo" && git checkout main)
+    git clone "https://github.com/${GITHUB_ORG}/${repo}.git"
+
+    if [ "$NO_FORK" = false ]; then
+      echo "🍴 Adding fork remote for $repo..."
+      ensure_fork_remote "$repo" || true
+    fi
   fi
 done
 
@@ -35,9 +111,21 @@ echo "✅ Workspace ready! All repos are on their latest main branch."
 echo ""
 echo "📂 Available repos:"
 for repo in "${REPOS[@]}"; do
-  echo "   - $repo"
+  if [ -d "$repo" ]; then
+    branch=$(git -C "$repo" branch --show-current 2>/dev/null || echo "unknown")
+    origin_url=$(git -C "$repo" remote get-url origin 2>/dev/null || echo "not set")
+    fork_url=$(git -C "$repo" remote get-url fork 2>/dev/null || echo "not set")
+    echo "   $repo (branch: $branch)"
+    echo "     origin: $origin_url"
+    if [ "$fork_url" != "not set" ]; then
+      echo "     fork:   $fork_url"
+    fi
+  fi
 done
 
-echo ""
-echo "💡 To contribute, add your fork remote:"
-echo "   cd <repo> && git remote add fork https://github.com/\$(gh api user -q .login)/<repo>.git"
+if [ "$NO_FORK" = true ]; then
+  echo ""
+  echo "💡 Cloned in read-only mode. To contribute, re-run without --no-fork"
+  echo "   or add your fork manually:"
+  echo "   cd <repo> && git remote add fork \$(gh config get git_protocol | grep -q ssh && echo git@github.com: || echo https://github.com/)\$(gh api user -q .login)/<repo>.git"
+fi
