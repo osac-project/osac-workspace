@@ -222,7 +222,7 @@ class TestFormatter(unittest.TestCase):
         self.assertIn("2 ready for review across 2 repos", result)
         self.assertIn("2 need review", result)
         self.assertIn("1 stale (7+ days)", result)
-        self.assertIn("1 PRs with CI failures", result)
+        self.assertIn("1 PR with CI failures", result)
 
     @patch("formatter.date")
     def test_per_repo_truncation(self, mock_date):

@@ -102,7 +102,8 @@ def format_message(classified_prs: list[ClassifiedPR], repos: list[str]) -> str:
         header += f" | {stale} stale (7+ days)"
 
     if not reviewable:
-        footer = f"\n:x: {len(ci_failing)} PRs with CI failures (author action needed)"
+        n = len(ci_failing)
+        footer = f"\n:x: {n} PR{'s' if n != 1 else ''} with CI failures (author action needed)"
         return header + footer
 
     # Build per-repo sections with per-repo cap.
@@ -118,8 +119,9 @@ def format_message(classified_prs: list[ClassifiedPR], repos: list[str]) -> str:
         sections.append(repo_header + "\n" + "\n".join(lines))
 
     if ci_failing:
+        n = len(ci_failing)
         sections.append(
-            f"\n:x: {len(ci_failing)} PRs with CI failures (author action needed)"
+            f"\n:x: {n} PR{'s' if n != 1 else ''} with CI failures (author action needed)"
         )
 
     message = header + "\n" + "\n".join(sections)
