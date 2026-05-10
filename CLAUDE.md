@@ -28,6 +28,26 @@ Meta-workspace — run `./bootstrap.sh` to clone/update all component repos to l
 
 Note: `fulfillment-api` and `fulfillment-common` were merged into `fulfillment-service`.
 
+## Deployment Coordination
+
+`osac-installer/setup.sh` pins component versions (AAP collections, fulfillment-service images) via submodule refs. When making changes that cross component boundaries, always update `osac-installer` to match:
+
+- **Proto field additions** in `fulfillment-service` → update CI overlays in `osac-installer` to use the new image version
+- **New AAP roles or collections** in `osac-aap` → bump the submodule ref in `osac-installer`
+- **New CRD types** in `osac-operator` → register in the fulfillment-service reconciler
+
+Failing to update `osac-installer` after cross-component changes causes CI failures and deployment mismatches. See `.planning/codebase/CONVENTIONS.md` for the full cross-repo dependency table.
+
+## Common Fix Locations
+
+Use this table to go directly to the right file for common bug patterns instead of grepping from scratch:
+
+| Bug pattern | File(s) to check |
+|-------------|-----------------|
+| `unknown object type` or unhandled type in switch | `internal/servers/generic_server.go` — `setPayload()` switch statement |
+| Public API missing field (Create/Update not persisting a field) | `internal/servers/*_server.go` — `Create()` and `Update()` methods |
+| Table rendering missing or incorrect column | `internal/rendering/tables/*.yaml` — table definition files |
+
 ## Quick Reference Commands
 
 ```bash
