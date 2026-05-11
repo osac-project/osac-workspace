@@ -23,7 +23,7 @@ All commands use `--plain` for clean output and `--no-input` to skip interactive
 Clarify these details with the user:
 
 **Project identification:**
-- Which Jira project key? (e.g., "MGMT", "ENG")
+- Which Jira project key? (e.g., "OSAC", "ENG")
 - If unsure: `jira project list --plain`
 
 **Time period:**

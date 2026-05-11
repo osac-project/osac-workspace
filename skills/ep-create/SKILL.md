@@ -30,7 +30,7 @@ Trigger this skill when:
 
 **File-based mode indicators:**
 - User provides a file path (e.g., "here's meeting-notes.md")
-- User provides a Jira ticket number (MGMT-XXXXX format)
+- User provides a Jira ticket number (OSAC-XXXXX format)
 - User references a document or requirements file
 
 **Conversational mode indicators:**
@@ -39,9 +39,9 @@ Trigger this skill when:
 
 **Actions:**
 - If file path provided: Read the file content using the Read tool
-- If Jira ticket number provided (matches `MGMT-\d+` pattern):
+- If Jira ticket number provided (matches `OSAC-\d+` pattern):
   ```bash
-  jira issue view MGMT-XXXXX --raw | jq '.fields | {summary, description, labels}'
+  jira issue view OSAC-XXXXX --raw | jq '.fields | {summary, description, labels}'
   ```
 - If conversational: Capture the user's description as the input
 
@@ -205,12 +205,12 @@ Use the Write tool to create the EP file at the determined path.
 cd enhancement-proposals
 git checkout -b enhancement/<feature-slug>
 git add enhancements/<feature-slug>/README.md
-git commit -m "MGMT-XXXXX: Add <feature-name> enhancement proposal"
+git commit -m "OSAC-XXXXX: Add <feature-name> enhancement proposal"
 ```
 
 **Step 2: Show PR preview to user**
 Display:
-- **Title**: `MGMT-XXXXX: Add <feature-name> enhancement proposal`
+- **Title**: `OSAC-XXXXX: Add <feature-name> enhancement proposal`
 - **Body**: Summary + Motivation + Tracking link
 - **Branch**: `enhancement/<feature-slug>`
 - **Files**: `enhancements/<feature-slug>/README.md`
@@ -222,7 +222,7 @@ Display:
 ```bash
 git push -u origin enhancement/<feature-slug>
 gh pr create --repo osac-project/enhancement-proposals \
-  --title "MGMT-XXXXX: Add <feature-name> enhancement proposal" \
+  --title "OSAC-XXXXX: Add <feature-name> enhancement proposal" \
   --body "$(cat <<'EOF'
 ## Summary
 <copy-from-EP-summary-section>
@@ -290,7 +290,7 @@ git push
 | Task | Command |
 |------|---------|
 | Explore codebase | `rg --type proto "<resource>" --files-with-matches` |
-| Fetch Jira ticket | `jira issue view MGMT-XXXXX --raw \| jq '.fields \| {summary, description, labels}'` |
+| Fetch Jira ticket | `jira issue view OSAC-XXXXX --raw \| jq '.fields \| {summary, description, labels}'` |
 | Create branch | `git checkout -b enhancement/<feature-slug>` |
 | Create PR | `gh pr create --repo osac-project/enhancement-proposals --title "..." --body "..."` |
 | Fetch reviews | `gh pr view <N> --repo osac-project/enhancement-proposals --json reviews,comments` |

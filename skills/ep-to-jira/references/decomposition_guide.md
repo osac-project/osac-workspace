@@ -10,16 +10,16 @@ When creating a Jira epic from an approved EP, use these standard mappings:
 - **Epic summary** = "Implement [EP title] enhancement proposal"
 - **Epic body** = Link to EP file in enhancement-proposals repo + tracking ticket link from EP frontmatter
 - **Epic label** = "OSAC" (always applied)
-- **Epic project** = "MGMT" (always use this project key)
+- **Epic project** = "OSAC" (always use this project key)
 
 Example:
 ```bash
 jira epic create \
-  --project MGMT \
+  --project OSAC \
   --name "OSAC Networking API" \
   --summary "Implement OSAC Networking API enhancement proposal" \
   --body "Tracking epic for EP: enhancement-proposals/enhancements/networking/README.md
-Tracking ticket: MGMT-22637" \
+Tracking ticket: OSAC-356" \
   --label OSAC \
   --no-input \
   --raw
