@@ -46,11 +46,13 @@ def _format_pr_line(cpr: ClassifiedPR) -> str:
 
     # Append reviewer name for CHANGES_REQUESTED.
     if cpr.status == PRStatus.CHANGES_REQUESTED and cpr.reviewer_name:
-        label = f"changes requested by {cpr.reviewer_name}"
+        reviewer_link = f"<https://github.com/{cpr.reviewer_name}|{cpr.reviewer_name}>"
+        label = f"changes requested by {reviewer_link}"
 
     stale = _staleness_indicator(cpr.age_days)
+    author_link = f"<https://github.com/{cpr.pr.author}|{cpr.pr.author}>"
 
-    return f"  {emoji} <{cpr.pr.url}|{cpr.pr.title}> — {cpr.pr.author} · {cpr.age_days}d · {label}{stale}"
+    return f"  {emoji} <{cpr.pr.url}|{cpr.pr.title}> — {author_link} · {cpr.age_days}d · {label}{stale}"
 
 
 _REVIEWABLE_STATUSES = frozenset(
