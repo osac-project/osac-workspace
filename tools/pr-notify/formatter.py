@@ -53,8 +53,17 @@ def _format_pr_line(cpr: ClassifiedPR) -> str:
     return f"  {emoji} <{cpr.pr.url}|{cpr.pr.title}> — {cpr.pr.author} · {cpr.age_days}d · {label}{stale}"
 
 
+_REVIEWABLE_STATUSES = frozenset(
+    {PRStatus.NEEDS_REVIEW, PRStatus.NEEDS_RE_REVIEW, PRStatus.CHANGES_REQUESTED}
+)
+
+
 def format_message(classified_prs: list[ClassifiedPR], repos: list[str]) -> str:
     """Format classified PRs into a Slack mrkdwn message.
+
+    Only reviewable PRs (needs review, needs re-review, changes requested) are
+    listed individually.  CI-failing, draft, and approved PRs are summarized in
+    a single footer line so the message stays focused on what the team can act on.
 
     Args:
         classified_prs: List of classified PRs to format.
@@ -63,30 +72,39 @@ def format_message(classified_prs: list[ClassifiedPR], repos: list[str]) -> str:
     Returns:
         Slack mrkdwn string ready for posting.
     """
-    classified_prs = [
+    actionable = [
         cpr for cpr in classified_prs
         if cpr.status not in (PRStatus.DRAFT, PRStatus.APPROVED)
     ]
+    reviewable = [cpr for cpr in actionable if cpr.status in _REVIEWABLE_STATUSES]
+    ci_failing = [cpr for cpr in actionable if cpr.status == PRStatus.CI_FAILING]
 
-    if not classified_prs:
+    if not reviewable and not ci_failing:
         return f"All clear — no open PRs across {len(repos)} repos :tada:"
 
-    # Group PRs by repo, preserving repo order from the list.
+    # Group reviewable PRs by repo.
     prs_by_repo: dict[str, list[ClassifiedPR]] = {}
-    for cpr in classified_prs:
+    for cpr in reviewable:
         prs_by_repo.setdefault(cpr.pr.repo, []).append(cpr)
 
     # Compute summary stats.
-    total = len(classified_prs)
-    repos_with_prs = len(prs_by_repo)
     needs_review = sum(
-        1 for cpr in classified_prs if cpr.status == PRStatus.NEEDS_REVIEW
+        1 for cpr in reviewable if cpr.status == PRStatus.NEEDS_REVIEW
     )
-    stale = sum(1 for cpr in classified_prs if cpr.age_days >= 7)
+    stale = sum(1 for cpr in reviewable if cpr.age_days >= 7)
 
     today = date.today().strftime("%Y-%m-%d")
     header = f"*PR Status Summary* — {today}\n"
-    header += f"{total} open across {repos_with_prs} repos | {needs_review} need review | {stale} stale (7+ days)"
+    header += f"{len(reviewable)} ready for review across {len(prs_by_repo)} repos"
+    if needs_review:
+        header += f" | {needs_review} need review"
+    if stale:
+        header += f" | {stale} stale (7+ days)"
+
+    if not reviewable:
+        n = len(ci_failing)
+        footer = f"\n:x: {n} PR{'s' if n != 1 else ''} with CI failures (author action needed)"
+        return header + footer
 
     # Build per-repo sections with per-repo cap.
     sections: list[str] = []
@@ -99,6 +117,12 @@ def format_message(classified_prs: list[ClassifiedPR], repos: list[str]) -> str:
         if remaining > 0:
             lines.append(f"  _<{pulls_url}|... and {remaining} more>_")
         sections.append(repo_header + "\n" + "\n".join(lines))
+
+    if ci_failing:
+        n = len(ci_failing)
+        sections.append(
+            f"\n:x: {n} PR{'s' if n != 1 else ''} with CI failures (author action needed)"
+        )
 
     message = header + "\n" + "\n".join(sections)
 

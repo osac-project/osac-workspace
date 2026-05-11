@@ -99,7 +99,7 @@ class TestFormatter(unittest.TestCase):
 
     @patch("formatter.date")
     def test_status_emoji_mapping(self, mock_date):
-        """4. Status emoji mapping for all 6 states."""
+        """4. Status emoji mapping for reviewable states."""
         mock_date.today.return_value = date(2026, 4, 23)
         mock_date.side_effect = lambda *a, **kw: date(*a, **kw)
 
@@ -107,7 +107,6 @@ class TestFormatter(unittest.TestCase):
             PRStatus.NEEDS_REVIEW: ":eyes:",
             PRStatus.NEEDS_RE_REVIEW: ":warning:",
             PRStatus.CHANGES_REQUESTED: ":red_circle:",
-            PRStatus.CI_FAILING: ":x:",
         }
         for status, expected_emoji in mapping.items():
             reviewer = "bob" if status == PRStatus.CHANGES_REQUESTED else None
@@ -122,6 +121,41 @@ class TestFormatter(unittest.TestCase):
             cpr = _make_classified(status=filtered_status)
             result = format_message([cpr], ["osac-project/fulfillment-service"])
             self.assertIn("All clear", result)
+
+    @patch("formatter.date")
+    def test_ci_failing_shown_as_summary(self, mock_date):
+        """4b. CI-failing PRs shown as a summary line, not listed individually."""
+        mock_date.today.return_value = date(2026, 4, 23)
+        mock_date.side_effect = lambda *a, **kw: date(*a, **kw)
+
+        prs = [
+            _make_classified(status=PRStatus.NEEDS_REVIEW, title="Good PR"),
+            _make_classified(status=PRStatus.CI_FAILING, title="Broken PR 1"),
+            _make_classified(status=PRStatus.CI_FAILING, title="Broken PR 2"),
+        ]
+        result = format_message(prs, ["osac-project/fulfillment-service"])
+
+        self.assertIn("Good PR", result)
+        self.assertNotIn("Broken PR 1", result)
+        self.assertNotIn("Broken PR 2", result)
+        self.assertIn("2 PRs with CI failures (author action needed)", result)
+
+    @patch("formatter.date")
+    def test_only_ci_failing_prs(self, mock_date):
+        """4c. When all PRs are CI-failing, show summary only."""
+        mock_date.today.return_value = date(2026, 4, 23)
+        mock_date.side_effect = lambda *a, **kw: date(*a, **kw)
+
+        prs = [
+            _make_classified(status=PRStatus.CI_FAILING, title="Broken 1"),
+            _make_classified(status=PRStatus.CI_FAILING, title="Broken 2"),
+        ]
+        result = format_message(prs, ["osac-project/fulfillment-service"])
+
+        self.assertNotIn("Broken 1", result)
+        self.assertNotIn("Broken 2", result)
+        self.assertIn("2 PRs with CI failures (author action needed)", result)
+        self.assertIn("0 ready for review", result)
 
     @patch("formatter.date")
     def test_staleness_7_days(self, mock_date):
@@ -160,7 +194,7 @@ class TestFormatter(unittest.TestCase):
 
     @patch("formatter.date")
     def test_summary_stats_header(self, mock_date):
-        """7. Summary stats header has correct counts."""
+        """7. Summary stats header counts only reviewable PRs."""
         mock_date.today.return_value = date(2026, 4, 23)
         mock_date.side_effect = lambda *a, **kw: date(*a, **kw)
 
@@ -185,10 +219,10 @@ class TestFormatter(unittest.TestCase):
             prs, ["osac-project/fulfillment-service", "osac-project/osac-operator"]
         )
 
-        # 3 open across 2 repos | 2 need review | 2 stale (7+ days)
-        self.assertIn("3 open across 2 repos", result)
+        self.assertIn("2 ready for review across 2 repos", result)
         self.assertIn("2 need review", result)
-        self.assertIn("2 stale (7+ days)", result)
+        self.assertIn("1 stale (7+ days)", result)
+        self.assertIn("1 PR with CI failures", result)
 
     @patch("formatter.date")
     def test_per_repo_truncation(self, mock_date):
