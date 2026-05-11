@@ -190,7 +190,7 @@ class TestFormatter(unittest.TestCase):
             reviewer_name="carol",
         )
         result = format_message([cpr], ["osac-project/fulfillment-service"])
-        self.assertIn("changes requested by carol", result)
+        self.assertIn("changes requested by <https://github.com/carol|carol>", result)
 
     @patch("formatter.date")
     def test_summary_stats_header(self, mock_date):
