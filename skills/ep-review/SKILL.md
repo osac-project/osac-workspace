@@ -60,7 +60,7 @@ Check:
 - [ ] All required sections present: Summary, Motivation (User Stories, Goals, Non-Goals), Proposal (Workflow Description, API Extensions, Implementation Details, Risks and Mitigations, Drawbacks), Alternatives, Test Plan, Graduation Criteria, Upgrade/Downgrade Strategy, Version Skew Strategy, Support Procedures, Infrastructure Needed
 - [ ] No placeholder-only sections (every section has substantive content or explains N/A)
 - [ ] Date format is YYYY-MM-DD
-- [ ] Tracking link is a full URL (https://issues.redhat.com/browse/MGMT-XXXXX)
+- [ ] Tracking link is a full URL (https://redhat.atlassian.net/browse/OSAC-XXXXX)
 
 ### 2. Clarity and Structure
 

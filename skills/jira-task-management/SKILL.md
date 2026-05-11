@@ -1,11 +1,11 @@
 ---
 name: jira-task-management
-description: Manage Jira issues on Red Hat Jira (redhat.atlassian.net) using jira-cli. Use this skill whenever the user mentions Jira tickets, issues, bugs, tasks, epics, sprints, or wants to create/update/search work items. Also use when the user references issue keys like MGMT-*, NVIDIA-*, RHEL-*, asks about task status, or wants to track work.
+description: Manage Jira issues on Red Hat Jira (redhat.atlassian.net) using jira-cli. Use this skill whenever the user mentions Jira tickets, issues, bugs, tasks, epics, sprints, or wants to create/update/search work items. Also use when the user references issue keys like OSAC-*, NVIDIA-*, RHEL-*, asks about task status, or wants to track work.
 ---
 
 # Jira Task Management
 
-Manage issues on Red Hat Jira (`redhat.atlassian.net`) via `jira-cli`. The tool is pre-configured with bearer token auth for the MGMT project.
+Manage issues on Red Hat Jira (`redhat.atlassian.net`) via `jira-cli`. The tool is pre-configured with bearer token auth for the OSAC project.
 
 ## Setup
 
@@ -13,7 +13,7 @@ Manage issues on Red Hat Jira (`redhat.atlassian.net`) via `jira-cli`. The tool 
 - **Config:** `~/.config/.jira/.config.yml` — initialized with `jira init --installation cloud --server https://redhat.atlassian.net --auth-type bearer`
 - **Auth:** Bearer token in `~/.netrc` (`machine redhat.atlassian.net login <user> password <token>`)
 - **Token generation:** https://id.atlassian.com/manage-profile/security/api-tokens
-- **Default project:** MGMT
+- **Default project:** OSAC
 - **Jira URL pattern:** `https://redhat.atlassian.net/browse/<KEY>`
 
 ## Before Creating Issues
@@ -39,16 +39,16 @@ jira issue view <KEY> --plain --comments 100     # Include comments
 
 ### Search
 
-**IMPORTANT: `jira-cli` always prepends `project="MGMT"` to `-q`/`--jql` queries.** Use `-q` (not `--jql`) for all searches, and follow these rules:
+**IMPORTANT: `jira-cli` always prepends `project="OSAC"` to `-q`/`--jql` queries.** Use `-q` (not `--jql`) for all searches, and follow these rules:
 
-- **Within MGMT project:** Use `-q` normally — the project is auto-prepended.
+- **Within OSAC project:** Use `-q` normally — the project is auto-prepended.
 - **Across all projects:** Start the query with `project IS NOT EMPTY AND ...` — jira-cli detects the existing `project` clause and skips prepending.
 - **Specific other project:** Start with `project = OTHERKEY AND ...`.
 - **Never include `ORDER BY`** in `-q` queries — jira-cli appends its own `ORDER BY created DESC`, causing a JQL syntax error from duplicate ORDER BY clauses.
 - **Use filter flags** (`-r`, `-t`, `-a`, `-s`) instead of embedding them in JQL when possible — they're appended cleanly.
 
 ```bash
-# Within MGMT (project auto-prepended)
+# Within OSAC (project auto-prepended)
 jira issue list -q 'status = "In Progress"' --plain
 jira issue list -q 'labels = OSAC AND updated >= -7d' --plain
 jira issue list -q 'assignee = currentUser() AND status not in (Closed, Done)' --plain
@@ -66,7 +66,7 @@ jira issue list "search text" --plain
 jira issue list -q '...' --paginate 50 --plain
 ```
 
-JQL tips: String values with spaces need double quotes inside single quotes — `'status = "In Progress"'`. Field names with spaces need double quotes too — `'"Epic Link" = MGMT-22619'`.
+JQL tips: String values with spaces need double quotes inside single quotes — `'status = "In Progress"'`. Field names with spaces need double quotes too — `'"Epic Link" = OSAC-37'`.
 
 ### Epics
 
@@ -182,7 +182,7 @@ jira open           # Open project page
 
 ## Troubleshooting
 
-- **"No result found for given query in project MGMT":** The query is scoped to the default MGMT project. To search across projects, start `-q` with `project IS NOT EMPTY AND ...`. See the Search section above.
+- **"No result found for given query in project OSAC":** The query is scoped to the default OSAC project. To search across projects, start `-q` with `project IS NOT EMPTY AND ...`. See the Search section above.
 - **"Expecting ',' but got 'ORDER'" JQL error:** You included `ORDER BY` in a `-q` query. Remove it — jira-cli appends its own `ORDER BY created DESC` automatically.
 - **"unknown flag: --no-input" on move/assign/comment:** `--no-input` is only valid for `create` and `edit`. Remove it — move, assign, comment, and link don't need it.
 - **Auth errors / HTML in response:** Token may be expired. Regenerate at https://id.atlassian.com/manage-profile/security/api-tokens, update `~/.netrc`.

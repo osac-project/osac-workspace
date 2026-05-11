@@ -32,13 +32,13 @@ enhancement-proposals/
 
 ### Title Format
 ```
-MGMT-XXXXX: Add <feature-name> enhancement proposal
+OSAC-XXXXX: Add <feature-name> enhancement proposal
 ```
 
 Examples:
-- `MGMT-22637: Add Networking API enhancement proposal`
-- `MGMT-23384: Add Carbide integration enhancement proposal`
-- `MGMT-22638: ComputeInstance Phase and Condition Updates`
+- `OSAC-356: Add Networking API enhancement proposal`
+- `OSAC-102: Add Carbide integration enhancement proposal`
+- `OSAC-395: ComputeInstance Phase and Condition Updates`
 
 If no Jira ticket exists (rare), use:
 ```
@@ -61,7 +61,7 @@ This enhancement introduces a Networking API for OSAC fulfillment services, prov
 OSAC needs a unified networking layer aligned with major cloud providers. A standalone API with first-class resources lets tenants define topology before workloads, reference existing networks, and manage SecurityGroups centrally.
 
 ## Tracking
-https://issues.redhat.com/browse/MGMT-22637
+https://redhat.atlassian.net/browse/OSAC-356
 
 ## Related
 - Region and Availability Zone API: https://github.com/osac-project/enhancement-proposals/pull/20
@@ -70,14 +70,14 @@ https://issues.redhat.com/browse/MGMT-22637
 ## Jira Integration
 
 ### Jira Project
-- **Project key**: `MGMT`
-- **Jira instance**: `issues.redhat.com`
-- **Full URL format**: `https://issues.redhat.com/browse/MGMT-XXXXX`
+- **Project key**: `OSAC`
+- **Jira instance**: `redhat.atlassian.net`
+- **Full URL format**: `https://redhat.atlassian.net/browse/OSAC-XXXXX`
 
 ### Tracking Link in YAML Frontmatter
 ```yaml
 tracking-link:
-  - https://issues.redhat.com/browse/MGMT-22637
+  - https://redhat.atlassian.net/browse/OSAC-356
 ```
 
 **Important**: Use the full URL, not just the ticket key. The frontmatter expects a list (array), so use the `-` prefix even for a single link.
@@ -206,7 +206,7 @@ No additional infrastructure is required for this enhancement. All work will be 
 
 When committing the EP file:
 ```
-MGMT-XXXXX: Add <feature-name> enhancement proposal
+OSAC-XXXXX: Add <feature-name> enhancement proposal
 
 - <key change 1>
 - <key change 2>
@@ -231,10 +231,10 @@ git checkout -b enhancement/<feature-slug>
 mkdir -p enhancements/<feature-slug>
 # Write enhancements/<feature-slug>/README.md
 git add enhancements/<feature-slug>/README.md
-git commit -m "MGMT-XXXXX: Add <feature-name> enhancement proposal"
+git commit -m "OSAC-XXXXX: Add <feature-name> enhancement proposal"
 git push -u origin enhancement/<feature-slug>
 gh pr create --repo osac-project/enhancement-proposals \
-  --title "MGMT-XXXXX: Add <feature-name> enhancement proposal" \
+  --title "OSAC-XXXXX: Add <feature-name> enhancement proposal" \
   --body "<summary + motivation + tracking link>"
 ```
 

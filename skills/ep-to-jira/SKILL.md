@@ -25,7 +25,7 @@ The decomposition process follows these phases:
 2. **Dependency Mapping** - Identify cross-repo impacts using codebase exploration (rg, find, tree)
 3. **Complexity Assessment** - Rate architectural impact on 5 dimensions (LOW/MEDIUM/HIGH)
 4. **Task Decomposition** - Break EP into ordered sub-tasks following extraction rules
-5. **Create Jira Epic** - Create epic with MGMT project and OSAC label
+5. **Create Jira Epic** - Create epic with OSAC project and OSAC label
 6. **Create Sub-Tasks** - Create linked tasks under the epic with --parent flag
 7. **Summary Report** - Present epic key, sub-task keys, complexity assessment, dependency map
 
@@ -269,7 +269,7 @@ Once user confirms task list, create the Jira epic using jira CLI.
 **Create epic:**
 ```bash
 epic_key=$(jira epic create \
-  --project MGMT \
+  --project OSAC \
   --name "<EP Title from frontmatter>" \
   --summary "Implement <EP Title> enhancement proposal" \
   --body "Tracking epic for EP: enhancement-proposals/enhancements/<slug>/README.md
@@ -284,8 +284,8 @@ See full proposal: <github-link-to-ep-file>" \
 
 **Link to tracking ticket (if tracking-link exists in EP frontmatter):**
 ```bash
-# Extract tracking ticket key from URL (e.g., MGMT-22637 from https://issues.redhat.com/browse/MGMT-22637)
-tracking_ticket=$(echo "<tracking-link>" | grep -oP 'MGMT-\d+')
+# Extract tracking ticket key from URL (e.g., OSAC-356 from https://redhat.atlassian.net/browse/OSAC-356)
+tracking_ticket=$(echo "<tracking-link>" | grep -oP 'OSAC-\d+')
 
 if [[ -n "$tracking_ticket" ]]; then
   jira issue link "$epic_key" "$tracking_ticket" --type "implements"
@@ -295,7 +295,7 @@ fi
 Report epic creation:
 ```
 Created epic: $epic_key
-Epic URL: https://issues.redhat.com/browse/$epic_key
+Epic URL: https://redhat.atlassian.net/browse/$epic_key
 Linked to tracking ticket: $tracking_ticket (if applicable)
 
 Creating sub-tasks...
@@ -308,7 +308,7 @@ For each task identified in Step 4, create a Jira task linked to the epic.
 **Task creation pattern:**
 ```bash
 jira issue create \
-  --project MGMT \
+  --project OSAC \
   --type Task \
   --parent "$epic_key" \
   --summary "<task summary>" \
@@ -339,10 +339,10 @@ Report progress:
 ```
 Creating sub-tasks... (<N> total)
 
-[1/N] Created: MGMT-XXXXX - Define VirtualNetwork proto schema
-[2/N] Created: MGMT-XXXXY - Define Subnet proto schema
+[1/N] Created: OSAC-XXXXX - Define VirtualNetwork proto schema
+[2/N] Created: OSAC-XXXXY - Define Subnet proto schema
 ...
-[N/N] Created: MGMT-XXXXZ - Update CLAUDE.md with networking patterns
+[N/N] Created: OSAC-XXXXZ - Update CLAUDE.md with networking patterns
 
 All sub-tasks created.
 ```
@@ -355,13 +355,13 @@ Present final summary with all key information:
 === EP Decomposition Complete ===
 
 Epic: $epic_key
-Epic URL: https://issues.redhat.com/browse/$epic_key
+Epic URL: https://redhat.atlassian.net/browse/$epic_key
 Sub-tasks created: <count>
 
 Sub-Task List:
-- MGMT-XXXXX: Define VirtualNetwork proto schema
-- MGMT-XXXXY: Define Subnet proto schema
-- MGMT-XXXXZ: Implement VirtualNetworks CRUD service
+- OSAC-XXXXX: Define VirtualNetwork proto schema
+- OSAC-XXXXY: Define Subnet proto schema
+- OSAC-XXXXZ: Implement VirtualNetworks CRUD service
 ...
 
 Complexity Assessment:
@@ -384,9 +384,9 @@ Next steps:
 |------|---------|
 | Check Jira auth | `jira me` |
 | Check GitHub auth | `gh auth status` |
-| Create epic | `jira epic create --project MGMT --name "..." --summary "..." --label OSAC --no-input --raw` |
-| Create sub-task | `jira issue create --project MGMT --type Task --parent "MGMT-XXXXX" --summary "..." --body "..." --label OSAC --no-input` |
-| Link issues | `jira issue link "MGMT-XXXXX" "MGMT-YYYYY" --type "implements"` |
+| Create epic | `jira epic create --project OSAC --name "..." --summary "..." --label OSAC --no-input --raw` |
+| Create sub-task | `jira issue create --project OSAC --type Task --parent "OSAC-XXXXX" --summary "..." --body "..." --label OSAC --no-input` |
+| Link issues | `jira issue link "OSAC-XXXXX" "OSAC-YYYYY" --type "implements"` |
 | Search proto files | `rg --type proto "<resource>" --files-with-matches` |
 | Search Go files | `rg --type go "<pattern>" -l` |
 | Find CRD samples | `find osac-operator/config/samples/ -name "*<resource>*"` |
@@ -400,15 +400,15 @@ Next steps:
 ```bash
 jira init
 # Follow prompts to:
-# 1. Enter Jira instance URL (e.g., https://issues.redhat.com)
+# 1. Enter Jira instance URL (e.g., https://redhat.atlassian.net)
 # 2. Choose authentication method (usually "Browser" for SSO)
 # 3. Complete authentication in browser
 ```
 
 ### Epic creation fails with project error
-**Symptom:** `jira epic create` fails with "Project MGMT not found" or "Invalid project key"
+**Symptom:** `jira epic create` fails with "Project OSAC not found" or "Invalid project key"
 
-**Solution:** Verify project key with `jira project list`. If MGMT doesn't exist, check with team for correct project key.
+**Solution:** Verify project key with `jira project list`. If OSAC doesn't exist, check with team for correct project key.
 
 ### Sub-task type not found
 **Symptom:** `jira issue create --type Task` fails with "Issue type not found"
@@ -416,7 +416,7 @@ jira init
 **Solution:** Try alternative type names:
 - `--type "Sub-task"` (with hyphen and capital S)
 - `--type Story` (if project doesn't support sub-tasks)
-- Check available types: `jira issue types --project MGMT`
+- Check available types: `jira issue types --project OSAC`
 
 ### rg type proto not recognized
 **Symptom:** `rg --type proto` fails with "Type not recognized"

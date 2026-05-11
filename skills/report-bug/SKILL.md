@@ -29,7 +29,7 @@ Collect from conversation context. Ask only if truly ambiguous:
 ## Create the Bug
 
 ```bash
-KEY=$(jira issue create -t Bug --project MGMT \
+KEY=$(jira issue create -t Bug --project OSAC \
   --summary "<concise bug title>" \
   --body "**Description of the problem:**
 
@@ -78,7 +78,7 @@ Output to user:
 ```
 Bug reported:
 
-Jira:   https://issues.redhat.com/browse/<KEY>
+Jira:   https://redhat.atlassian.net/browse/<KEY>
 Epic:   <EPIC-KEY>
 Status: New
 ```

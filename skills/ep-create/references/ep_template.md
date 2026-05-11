@@ -426,7 +426,7 @@ This section provides guidance on how to fill out each section of the template b
 - **authors**: Email addresses (e.g., `agentil@redhat.com`)
 - **creation-date**: ISO date format (YYYY-MM-DD)
 - **last-updated**: ISO date format, update when making significant changes
-- **tracking-link**: Full Jira URL (e.g., `https://issues.redhat.com/browse/MGMT-22637`)
+- **tracking-link**: Full Jira URL (e.g., `https://redhat.atlassian.net/browse/OSAC-356`)
 - **see-also**: Related enhancements as paths (e.g., `/enhancements/networking`)
 - **replaces/superseded-by**: Usually `N/A` for new proposals
 

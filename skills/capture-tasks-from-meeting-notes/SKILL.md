@@ -78,7 +78,7 @@ TODO: Update docs - Mike
 
 Before creating tasks, identify the target Jira project and epic.
 
-**Ask:** "Which Jira project and epic should I create these tasks in? (e.g., project MGMT, epic MGMT-12345)"
+**Ask:** "Which Jira project and epic should I create these tasks in? (e.g., project OSAC, epic OSAC-12345)"
 
 If the user is unsure about the project, list available projects:
 
