@@ -57,7 +57,7 @@ This workspace provides a pre-configured AI-assisted development environment:
 After running `./bootstrap.sh` to clone all repos:
 
 1. **kubeconfig**: Place your cluster kubeconfig at `./kubeconfig` (gitignored)
-2. **Tools**: `buf`, `grpcurl`, `kubectl`, `jq`
+2. **Tools**: `buf`, `grpcurl`, `kubectl`, `jq`, [`rg`](https://github.com/BurntSushi/ripgrep)
 3. **Jira CLI**: `go install github.com/ankitpokhrel/jira-cli/cmd/jira@latest` (or `brew install ankitpokhrel/jira-cli/jira-cli`)
 4. **GSD workflow**: `npx get-shit-done-cc@latest` (run from workspace root)
    - GSD hooks in `.claude/settings.json` are already configured and will no-op if GSD is not installed
@@ -138,7 +138,7 @@ Provide rough requirements, meeting notes, or a Jira ticket (e.g., `MGMT-XXXXX`)
 
 This creates a Jira epic with ordered sub-tasks (proto, backend, controller, tests, docs) and a complexity assessment.
 
-**Prerequisites:** `gh` (authenticated), `jira` CLI, `rg` ([ripgrep](https://github.com/burntsushi/ripgrep))
+**Prerequisites:** `gh` (authenticated), `jira` CLI, `rg`
 
 ## Architecture
 
