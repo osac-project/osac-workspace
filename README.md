@@ -138,7 +138,7 @@ Provide rough requirements, meeting notes, or a Jira ticket (e.g., `MGMT-XXXXX`)
 
 This creates a Jira epic with ordered sub-tasks (proto, backend, controller, tests, docs) and a complexity assessment.
 
-**Prerequisites:** `gh` (authenticated), `jira` CLI, `rg`
+**Prerequisites:** `gh` (authenticated), `jira` CLI, `rg` ([ripgrep](https://github.com/burntsushi/ripgrep))
 
 ## Architecture
 
