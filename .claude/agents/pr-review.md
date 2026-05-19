@@ -1,8 +1,8 @@
 ---
-name: pr-review
+name: osac-dev:pr-review
 description: |
-  Review a PR against OSAC conventions — tenant isolation, proto lint, controller patterns,
-  cross-repo dependencies, commit format. Produces structured BLOCK/WARN/INFO findings.
+  Review a PR against OSAC-specific conventions — tenant isolation, protobuf naming,
+  controller patterns, cross-repo deps, commit format. Produces structured BLOCK/WARN/INFO findings.
 model: inherit
 ---
 
