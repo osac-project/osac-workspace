@@ -69,8 +69,11 @@ Agent tool call:
 When the agent completes:
 
 1. Report the findings to the user (always).
-2. If `POST_COMMENT` is true, post the review as a PR comment:
+2. If `POST_COMMENT` is true, write the review to a temp file and post via `--body-file`:
    ```bash
-   gh pr comment <PR-URL> --body "<agent's review output>"
+   REVIEW_FILE=$(mktemp /tmp/pr-review-XXXXXX.md)
+   # Write the agent's review output to $REVIEW_FILE
+   gh pr comment <PR-URL> --body-file "$REVIEW_FILE"
+   rm -f "$REVIEW_FILE"
    ```
-   Use a heredoc to pass the body to avoid quoting issues. Confirm to the user that the comment was posted.
+   This avoids quoting/newline issues with inline `--body` for multiline markdown. Confirm to the user that the comment was posted.
