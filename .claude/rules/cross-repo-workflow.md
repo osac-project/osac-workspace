@@ -48,7 +48,8 @@ When a feature spans repos (e.g., API + operator):
 ### Pushing and PR Submission
 - **Always push to `fork`**, never to `origin`
 - PRs go from `fork/<branch>` to `origin/main`
-- Always include the Jira ticket key in the PR title (e.g., "MGMT-12345: fix subnet race condition")
+- Always include the Jira ticket key in the PR title (e.g., "OSAC-853: fix subnet race condition")
+- **Use the `create-pr` skill** (`/create-pr`) to run repo-specific validation, push, and create the PR
 
 ### Commit Conventions
 - Sign off all commits with DCO: `git commit -s`
