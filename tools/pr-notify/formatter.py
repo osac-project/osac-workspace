@@ -204,7 +204,7 @@ def _status_badge(status: PRStatus) -> str:
 
 def _check_run_rows(cpr: ClassifiedPR) -> str:
     if not cpr.pr.check_runs:
-        return '<tr><td colspan="3" class="muted">No check data</td></tr>'
+        return '<tr><td colspan="2" class="muted">No check data</td></tr>'
     rows = []
     for cr in cpr.pr.check_runs:
         color, label = _CONCLUSION_STYLE.get(
@@ -281,10 +281,11 @@ def format_html_dashboard(
 </section>""")
 
     ci_summary_rows = []
-    for repo_name in sorted(set(cpr.pr.repo for cpr in classified_prs)):
-        repo_prs = [cpr for cpr in classified_prs if cpr.pr.repo == repo_name]
+    repo_names = sorted(set(p.pr.repo for p in classified_prs))
+    for repo_name in repo_names:
+        repo_prs = [p for p in classified_prs if p.pr.repo == repo_name]
         all_checks = [
-            cr for cpr in repo_prs for cr in cpr.pr.check_runs
+            cr for p in repo_prs for cr in p.pr.check_runs
         ]
         if not all_checks:
             continue

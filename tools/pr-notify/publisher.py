@@ -53,7 +53,7 @@ def _put_file(
         input=json.dumps(payload),
         capture_output=True,
         text=True,
-        timeout=30,
+        timeout=60,
     )
     if result.returncode != 0:
         raise SystemExit(

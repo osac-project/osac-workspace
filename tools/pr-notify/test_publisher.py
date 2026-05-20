@@ -3,7 +3,7 @@
 import base64
 import json
 import unittest
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock, patch
 
 from models import DashboardConfig
 from publisher import publish_dashboard
