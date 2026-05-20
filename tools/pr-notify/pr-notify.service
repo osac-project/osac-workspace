@@ -2,13 +2,13 @@
 # Edit ExecStart, WorkingDirectory, and --config to match your local checkout.
 
 [Unit]
-Description=OSAC PR Status Notifier — post daily PR summary to Slack
+Description=OSAC PR Dashboard — publish dashboard and post summary to Slack
 After=network.target
 
 [Service]
 Type=oneshot
 TimeoutStartSec=120
-ExecStart=/usr/bin/python3 %h/work/src/github/osac-workspace/tools/pr-notify/main.py --config %h/work/src/github/osac-workspace/tools/pr-notify/config.toml
+ExecStart=/usr/bin/python3 %h/work/src/github/osac-workspace/tools/pr-notify/main.py --config %h/work/src/github/osac-workspace/tools/pr-notify/config.toml --mode dashboard
 WorkingDirectory=%h/work/src/github/osac-workspace/tools/pr-notify
 Environment=PATH=/usr/local/bin:/usr/bin:/bin:%h/.local/bin
 

@@ -8,8 +8,9 @@ from datetime import datetime, timezone
 
 from classifier import classify_prs
 from config import load_config
-from formatter import format_message
+from formatter import format_compact_summary, format_html_dashboard, format_message
 from github import fetch_open_prs
+from publisher import publish_dashboard
 from slack import post_message
 
 
@@ -43,6 +44,12 @@ def main() -> int:
         help="Path to TOML config file",
     )
     parser.add_argument(
+        "--mode",
+        choices=["slack", "dashboard"],
+        default="slack",
+        help="slack: full Slack message (default); dashboard: HTML dashboard + compact Slack summary",
+    )
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Print formatted message to stdout instead of posting to Slack",
@@ -70,8 +77,29 @@ def main() -> int:
         classified = classify_prs(prs)
         logger.info("Classified %d PRs", len(classified))
 
-        message = format_message(classified, config.repos)
-        logger.info("Formatted message (%d chars)", len(message))
+        if args.mode == "dashboard":
+            if not config.dashboard:
+                raise SystemExit(
+                    "Dashboard mode requires a [dashboard] section in config"
+                )
+
+            html = format_html_dashboard(classified, config.repos)
+            logger.info("Generated HTML dashboard (%d chars)", len(html))
+
+            if args.dry_run:
+                dashboard_url = config.dashboard.base_url
+                logger.info("Dry run -- skipping publish")
+            else:
+                dashboard_url = publish_dashboard(html, config.dashboard)
+                logger.info("Published dashboard: %s", dashboard_url)
+
+            message = format_compact_summary(
+                classified, config.repos, dashboard_url
+            )
+            logger.info("Compact summary (%d chars)", len(message))
+        else:
+            message = format_message(classified, config.repos)
+            logger.info("Formatted message (%d chars)", len(message))
 
         if args.dry_run:
             print(message)

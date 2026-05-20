@@ -7,3 +7,8 @@ repos = [
 
 slack_channel = "C08ESMFV85Q"
 slack_creds_dir = "~/.config/slack/"
+
+[dashboard]
+repo = "your-user/your-repo"
+branch = "gh-pages"
+base_url = "https://your-user.github.io/your-repo"

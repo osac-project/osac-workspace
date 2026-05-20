@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 
@@ -12,10 +12,25 @@ class PRStatus(Enum):
 
 
 @dataclass
+class DashboardConfig:
+    repo: str
+    branch: str
+    base_url: str
+
+
+@dataclass
 class Config:
     repos: list[str]
     slack_channel: str
     slack_creds_dir: str
+    dashboard: DashboardConfig | None = None
+
+
+@dataclass
+class CheckRun:
+    name: str
+    conclusion: str | None
+    details_url: str
 
 
 @dataclass
@@ -31,6 +46,7 @@ class PRData:
     review_requests: list[str]
     last_commit_date: str
     ci_status: str | None
+    check_runs: list[CheckRun] = field(default_factory=list)
 
 
 @dataclass

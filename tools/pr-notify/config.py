@@ -1,7 +1,7 @@
 import os
 import tomllib
 
-from models import Config
+from models import Config, DashboardConfig
 
 
 def load_config(path: str) -> Config:
@@ -34,8 +34,23 @@ def load_config(path: str) -> Config:
 
     slack_creds_dir = os.path.expanduser(data["slack_creds_dir"])
 
+    dashboard = None
+    if "dashboard" in data:
+        d = data["dashboard"]
+        for f in ("repo", "branch", "base_url"):
+            if f not in d:
+                raise SystemExit(
+                    f"Missing required field 'dashboard.{f}' in config '{path}'"
+                )
+        dashboard = DashboardConfig(
+            repo=d["repo"],
+            branch=d["branch"],
+            base_url=d["base_url"],
+        )
+
     return Config(
         repos=data["repos"],
         slack_channel=data["slack_channel"],
         slack_creds_dir=slack_creds_dir,
+        dashboard=dashboard,
     )

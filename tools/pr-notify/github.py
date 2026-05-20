@@ -2,7 +2,7 @@ import json
 import logging
 import subprocess
 
-from models import PRData
+from models import CheckRun, PRData
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,17 @@ def _build_graphql_query(repos: list[str]) -> str:
                 statusCheckRollup {{
                   state
                 }}
+                checkSuites(first: 10) {{
+                  nodes {{
+                    checkRuns(first: 20) {{
+                      nodes {{
+                        name
+                        conclusion
+                        detailsUrl
+                      }}
+                    }}
+                  }}
+                }}
               }}
             }}
           }}
@@ -73,6 +84,17 @@ def _parse_pr_nodes(repo_name: str, pr_nodes: list[dict]) -> list[PRData]:
         # CI status from statusCheckRollup
         rollup = last_commit.get("statusCheckRollup")
         ci_status = rollup.get("state") if rollup else None
+
+        # Individual check runs
+        check_suites = last_commit.get("checkSuites", {}).get("nodes", [])
+        check_runs = []
+        for suite in check_suites:
+            for run in suite.get("checkRuns", {}).get("nodes", []):
+                check_runs.append(CheckRun(
+                    name=run.get("name", ""),
+                    conclusion=run.get("conclusion"),
+                    details_url=run.get("detailsUrl", ""),
+                ))
 
         # Reviews
         review_nodes = pr.get("reviews", {}).get("nodes", [])
@@ -112,6 +134,7 @@ def _parse_pr_nodes(repo_name: str, pr_nodes: list[dict]) -> list[PRData]:
                 review_requests=review_requests,
                 last_commit_date=last_commit_date,
                 ci_status=ci_status,
+                check_runs=check_runs,
             )
         )
     return results
