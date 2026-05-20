@@ -52,8 +52,10 @@ def _build_graphql_query(repos: list[str]) -> str:
                   state
                 }}
                 checkSuites(first: 10) {{
+                  pageInfo {{ hasNextPage }}
                   nodes {{
                     checkRuns(first: 20) {{
+                      pageInfo {{ hasNextPage }}
                       nodes {{
                         name
                         conclusion
@@ -86,10 +88,21 @@ def _parse_pr_nodes(repo_name: str, pr_nodes: list[dict]) -> list[PRData]:
         ci_status = rollup.get("state") if rollup else None
 
         # Individual check runs
-        check_suites = last_commit.get("checkSuites", {}).get("nodes", [])
+        check_suites_data = last_commit.get("checkSuites", {})
+        if check_suites_data.get("pageInfo", {}).get("hasNextPage"):
+            logger.warning(
+                "PR '%s' has more than 10 check suites; results truncated",
+                pr.get("title", ""),
+            )
         check_runs = []
-        for suite in check_suites:
-            for run in suite.get("checkRuns", {}).get("nodes", []):
+        for suite in check_suites_data.get("nodes", []):
+            check_runs_data = suite.get("checkRuns", {})
+            if check_runs_data.get("pageInfo", {}).get("hasNextPage"):
+                logger.warning(
+                    "PR '%s' has more than 20 check runs in a suite; results truncated",
+                    pr.get("title", ""),
+                )
+            for run in check_runs_data.get("nodes", []):
                 check_runs.append(CheckRun(
                     name=run.get("name", ""),
                     conclusion=run.get("conclusion"),

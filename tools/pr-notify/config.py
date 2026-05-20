@@ -37,6 +37,10 @@ def load_config(path: str) -> Config:
     dashboard = None
     if "dashboard" in data:
         d = data["dashboard"]
+        if not isinstance(d, dict):
+            raise SystemExit(
+                f"Field 'dashboard' must be a table in config '{path}'"
+            )
         for f in ("repo", "branch", "base_url"):
             if f not in d:
                 raise SystemExit(

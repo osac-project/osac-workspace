@@ -90,8 +90,18 @@ def main() -> int:
                 dashboard_url = config.dashboard.base_url
                 logger.info("Dry run -- skipping publish")
             else:
-                dashboard_url = publish_dashboard(html, config.dashboard)
-                logger.info("Published dashboard: %s", dashboard_url)
+                try:
+                    dashboard_url = publish_dashboard(html, config.dashboard)
+                    logger.info("Published dashboard: %s", dashboard_url)
+                except SystemExit as pub_err:
+                    logger.error("Dashboard publish failed: %s", pub_err)
+                    logger.info("Falling back to full Slack message")
+                    message = format_message(classified, config.repos)
+                    logger.info("Formatted message (%d chars)", len(message))
+                    if not args.dry_run:
+                        post_message(config.slack_channel, message, config.slack_creds_dir)
+                        logger.info("Posted to Slack (fallback)")
+                    return 0
 
             message = format_compact_summary(
                 classified, config.repos, dashboard_url
