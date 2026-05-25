@@ -6,6 +6,7 @@ OSAC (Open Sovereign AI Cloud) is a fulfillment system for provisioning Kubernet
 
 ## Critical Rules
 
+- **`osac-workspace/` is the project root** — all work happens from here; component `CLAUDE.md` files are loaded via progressive disclosure
 - **Read component CLAUDE.md first** before making changes in any component repo
 - **Never skip tenant isolation metadata** (`osac.openshift.io/tenant`, `osac.io/owner-reference` annotations) in new resources
 - **Always `buf lint` before committing** proto changes; regenerate with `buf generate`
@@ -105,11 +106,11 @@ This project uses the GSD workflow system. Planning artifacts live in `.planning
 - Use `/gsd:progress` to check project status
 - Use `/gsd:plan-phase` for planning, `/gsd:execute-phase` for implementation
 - Use `/jira-sync status` to check Jira mapping, `/jira-sync link-epic MGMT-XXXXX` to link
-- GSD operates at workspace level but coordinates across component repos
+- GSD operates at workspace level and coordinates across component repos
 
 ## E2E Test Skills (from osac-test-infra)
 
-The `osac-test-infra` repo provides skills for writing and debugging E2E tests. These are auto-discovered when working in the `osac-test-infra/` directory:
+The `osac-test-infra` repo provides skills for writing and debugging E2E tests. These skills are available from the `osac-workspace/` root:
 
 - `/e2e` — Write a pytest E2E test from a description or Jira ticket
 - `/debug-e2e` — Debug a failing Prow CI job using build logs and gathered OSAC artifacts
