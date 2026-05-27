@@ -58,7 +58,8 @@ osac-aap/
 osac-installer/
 osac-test-infra/
 enhancement-proposals/
-docs/
+docs/*
+!docs/pr-dashboard/
 
 # AI Tooling
 .cursor/

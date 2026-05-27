@@ -50,6 +50,7 @@ def load_config(path: str) -> Config:
             repo=d["repo"],
             branch=d["branch"],
             base_url=d["base_url"],
+            data_path=d.get("data_path", "docs/pr-dashboard/data.json"),
         )
 
     return Config(

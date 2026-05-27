@@ -2,15 +2,17 @@
 """PR status notifier -- fetches open PRs and surfaces stale/blocked ones."""
 
 import argparse
+import json
 import logging
 import sys
 from datetime import datetime, timezone
 
 from classifier import classify_prs
 from config import load_config
-from formatter import format_compact_summary, format_html_dashboard, format_message
+from data_formatter import format_dashboard_data
+from formatter import format_compact_summary, format_message
 from github import fetch_open_prs
-from publisher import publish_dashboard
+from publisher import publish_data
 from slack import post_message
 
 
@@ -47,7 +49,7 @@ def main() -> int:
         "--mode",
         choices=["slack", "dashboard"],
         default="slack",
-        help="slack: full Slack message (default); dashboard: HTML dashboard + compact Slack summary",
+        help="slack: full Slack message (default); dashboard: publish data + compact Slack summary",
     )
     parser.add_argument(
         "--dry-run",
@@ -83,16 +85,18 @@ def main() -> int:
                     "Dashboard mode requires a [dashboard] section in config"
                 )
 
-            html = format_html_dashboard(classified, config.repos)
-            logger.info("Generated HTML dashboard (%d chars)", len(html))
+            data = format_dashboard_data(classified, config.repos)
+            data_json = json.dumps(data, indent=2)
+            logger.info("Generated dashboard data (%d chars)", len(data_json))
 
             if args.dry_run:
+                print(data_json)
                 dashboard_url = config.dashboard.base_url
-                logger.info("Dry run -- skipping publish")
+                logger.info("Dry run -- data printed to stdout")
             else:
                 try:
-                    dashboard_url = publish_dashboard(html, config.dashboard)
-                    logger.info("Published dashboard: %s", dashboard_url)
+                    dashboard_url = publish_data(data_json, config.dashboard)
+                    logger.info("Published dashboard data: %s", dashboard_url)
                 except SystemExit as pub_err:
                     logger.error("Dashboard publish failed: %s", pub_err)
                     logger.info("Falling back to full Slack message")

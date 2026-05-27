@@ -16,6 +16,7 @@ class DashboardConfig:
     repo: str
     branch: str
     base_url: str
+    data_path: str = "docs/pr-dashboard/data.json"
 
 
 @dataclass

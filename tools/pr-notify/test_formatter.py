@@ -1,11 +1,11 @@
-"""Unit tests for Slack mrkdwn, compact summary, and HTML dashboard formatters."""
+"""Unit tests for Slack mrkdwn and compact summary formatters."""
 
 import unittest
 from datetime import date
 from unittest.mock import patch
 
-from formatter import format_compact_summary, format_html_dashboard, format_message
-from models import CheckRun, ClassifiedPR, PRData, PRStatus
+from formatter import format_compact_summary, format_message
+from models import ClassifiedPR, PRData, PRStatus
 
 
 def _make_pr_data(**overrides) -> PRData:
@@ -290,82 +290,6 @@ class TestCompactSummary(unittest.TestCase):
         ]
         result = format_compact_summary(prs, ["r1"], "https://example.com")
         self.assertIn("1 stale", result)
-
-
-class TestHtmlDashboard(unittest.TestCase):
-    """Tests for the HTML dashboard formatter."""
-
-    def test_html_structure(self):
-        prs = [_make_classified(status=PRStatus.NEEDS_REVIEW)]
-        html = format_html_dashboard(prs, ["osac-project/fulfillment-service"])
-        self.assertTrue(html.startswith("<!DOCTYPE html>"))
-        self.assertIn("<html", html)
-        self.assertIn("</html>", html)
-        self.assertIn("OSAC PR Dashboard", html)
-
-    def test_summary_cards(self):
-        prs = [
-            _make_classified(status=PRStatus.NEEDS_REVIEW),
-            _make_classified(status=PRStatus.CI_FAILING),
-            _make_classified(status=PRStatus.APPROVED),
-        ]
-        html = format_html_dashboard(prs, ["osac-project/fulfillment-service"])
-        self.assertIn("Needs Review", html)
-        self.assertIn("CI Failing", html)
-        self.assertIn("Approved", html)
-
-    def test_pr_table_rows(self):
-        prs = [_make_classified(
-            status=PRStatus.NEEDS_REVIEW,
-            title="Fix widget rendering",
-            author="alice",
-        )]
-        html = format_html_dashboard(prs, ["osac-project/fulfillment-service"])
-        self.assertIn("Fix widget rendering", html)
-        self.assertIn("alice", html)
-        self.assertIn("osac-project/fulfillment-service", html)
-
-    def test_check_runs_in_details(self):
-        pr = _make_pr_data(check_runs=[
-            CheckRun(name="unit-tests", conclusion="SUCCESS", details_url="https://example.com/1"),
-            CheckRun(name="lint", conclusion="FAILURE", details_url="https://example.com/2"),
-        ])
-        cpr = ClassifiedPR(pr=pr, status=PRStatus.NEEDS_REVIEW, age_days=1)
-        html = format_html_dashboard([cpr], ["osac-project/fulfillment-service"])
-        self.assertIn("<details>", html)
-        self.assertIn("unit-tests", html)
-        self.assertIn("lint", html)
-        self.assertIn("Pass", html)
-        self.assertIn("Fail", html)
-
-    def test_empty_prs_all_clear(self):
-        html = format_html_dashboard([], ["r1"])
-        self.assertIn("All clear", html)
-
-    def test_html_escaping(self):
-        prs = [_make_classified(
-            status=PRStatus.NEEDS_REVIEW,
-            title='<script>alert("xss")</script>',
-        )]
-        html = format_html_dashboard(prs, ["osac-project/fulfillment-service"])
-        self.assertNotIn("<script>", html)
-        self.assertIn("&lt;script&gt;", html)
-
-    def test_stale_age_class(self):
-        prs = [_make_classified(status=PRStatus.NEEDS_REVIEW, age_days=10)]
-        html = format_html_dashboard(prs, ["osac-project/fulfillment-service"])
-        self.assertIn("age-stale", html)
-
-    def test_ci_health_section(self):
-        pr = _make_pr_data(check_runs=[
-            CheckRun(name="tests", conclusion="SUCCESS", details_url=""),
-            CheckRun(name="lint", conclusion="SUCCESS", details_url=""),
-            CheckRun(name="build", conclusion="FAILURE", details_url=""),
-        ])
-        cpr = ClassifiedPR(pr=pr, status=PRStatus.NEEDS_REVIEW, age_days=1)
-        html = format_html_dashboard([cpr], ["osac-project/fulfillment-service"])
-        self.assertIn("CI Health", html)
-        self.assertIn("66%", html)
 
 
 if __name__ == "__main__":
