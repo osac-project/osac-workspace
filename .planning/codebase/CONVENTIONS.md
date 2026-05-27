@@ -197,6 +197,7 @@ When changing one repo, check all dependent repos in this table before submittin
 | `osac-operator` CRD types | `fulfillment-service` reconciler registration | New CRD types must be registered in the fulfillment-service reconciler |
 | `osac-operator` CRD spec changes | `osac-aap` roles that read CRD fields | Adding a field to `ClusterOrderSpec` requires the AAP playbook to extract and use it |
 | `fulfillment-service` CLI flag changes | `osac-test-infra` test helpers | Adding `--pull-secret-file` required updating `OsacCLI.create_cluster` in the test infra |
+| `osac-installer` submodule bumps (`base/`) | `base/kustomization.yaml` image tags | After bumping any submodule under `base/`, run `scripts/sync-image-tags.sh --fix` to update image tags. CI fails if tags don't match submodule SHAs. (OSAC-912) |
 
 Evidence: MGMT-24226 eval scored 3/5 because the agent fixed `fulfillment-service` and `osac-aap` but missed updating `osac-installer` CI overlays.
 
