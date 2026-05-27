@@ -202,6 +202,7 @@ Do not force-push automatically. Show the push error to the user and ask them fo
 ```bash
 gh pr list --repo <upstream> --head <fork-owner>:<branch>
 ```
+
 If a PR already exists, show its URL instead of creating a duplicate.
 
 ## Red Flags
