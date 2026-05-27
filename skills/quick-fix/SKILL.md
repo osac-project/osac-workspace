@@ -1,17 +1,17 @@
 ---
-name: fix-bug
-description: End-to-end bug fix workflow — opens a Jira bug, writes the fix with tests, verifies build/format/tests pass, commits, posts a PR, and moves the ticket to Code Review. Use when the user says 'fix this bug', 'open a bug and fix it', 'file a bug', or describes a bug they want tracked and resolved in Jira with a PR.
+name: quick-fix
+description: Unattended bug fix — creates a Jira bug, fixes it in the background, posts a PR, and moves the ticket to Code Review. Use when a bug is found during the current session and needs an immediate fix without interactive phases. For attended, phase-by-phase bug investigation, use /bugfix instead.
 ---
 
-# Fix Bug Workflow
+# Quick Fix Workflow
 
-This skill delegates to the `osac-dev:fix-bug` agent which runs in its own context.
+This skill delegates to the `osac-dev:fix-bug` agent which runs in the background.
 
 ## When to Use
 
-- User describes a bug and wants it tracked + fixed
-- User says "fix this bug", "open a bug for this", "file a bug and fix it"
-- A bug is discovered during development and needs the full workflow
+- A bug is discovered during the current session and the root cause is already known
+- User wants an unattended fix: Jira ticket → code fix → tests → PR in one shot
+- For interactive, phase-by-phase investigation of an existing Jira bug, use `/bugfix` instead
 
 ## Gather Inputs
 

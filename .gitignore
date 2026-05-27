@@ -14,8 +14,9 @@ kubeconfig
 .planning/*
 !.planning/codebase/
 
-# Claude Code (but keep hooks, settings, skills, commands, and agents)
+# Claude Code (but keep hooks, settings, skills, commands, agents, and CLAUDE.md)
 .claude/*
+!.claude/CLAUDE.md
 !.claude/hooks/
 !.claude/settings.json
 !.claude/rules/
@@ -60,6 +61,10 @@ osac-test-infra/
 enhancement-proposals/
 docs/*
 !docs/pr-dashboard/
+.ai-workflows/
+
+# Workflow artifacts (bugfix, implement)
+.artifacts/
 
 # AI Tooling
 .cursor/

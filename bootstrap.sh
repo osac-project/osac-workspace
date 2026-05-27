@@ -106,6 +106,26 @@ for repo in "${REPOS[@]}"; do
   fi
 done
 
+# Install ai-workflows (bugfix, implement, etc.)
+AI_WORKFLOWS_REPO="flightctl/ai-workflows"
+AI_WORKFLOWS_DIR=""
+# Prefer existing ~/.ai-workflows if present; otherwise clone locally
+if [ -d "${HOME}/.ai-workflows" ]; then
+  AI_WORKFLOWS_DIR="$(readlink -f "${HOME}/.ai-workflows")"
+  echo "📦 Updating ai-workflows (${AI_WORKFLOWS_DIR})..."
+  (cd "$AI_WORKFLOWS_DIR" && git fetch origin && git rebase origin/main --autostash)
+elif [ -d ".ai-workflows" ]; then
+  AI_WORKFLOWS_DIR="$(pwd)/.ai-workflows"
+  echo "📦 Updating ai-workflows (.ai-workflows)..."
+  (cd "$AI_WORKFLOWS_DIR" && git fetch origin && git rebase origin/main --autostash)
+else
+  AI_WORKFLOWS_DIR="$(pwd)/.ai-workflows"
+  echo "📥 Cloning ai-workflows..."
+  git clone "https://github.com/${AI_WORKFLOWS_REPO}.git" ".ai-workflows"
+fi
+echo "🔧 Installing ai-workflows skills..."
+"$AI_WORKFLOWS_DIR/install.sh" claude --project . --workflows bugfix,implement
+
 echo ""
 echo "✅ Workspace ready! All repos are on their latest main branch."
 echo ""
