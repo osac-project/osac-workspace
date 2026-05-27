@@ -110,7 +110,7 @@ Examples:
 Extract the ticket key from the branch name if it follows the convention (`feat/OSAC-123`, `fix/MGMT-456`):
 
 ```bash
-TICKET=$(echo "$BRANCH" | grep -oP '(OSAC|MGMT)-\d+' || true)
+TICKET=$(echo "$BRANCH" | grep -oE '(OSAC|MGMT)-[0-9]+' || true)
 ```
 
 If no ticket key is found, ask: "Is there a Jira ticket for this work? (e.g., OSAC-123)"
@@ -194,6 +194,7 @@ gh auth login
 ```
 
 ### Push rejected (branch exists on fork)
+
 Do not force-push automatically. Show the push error to the user and ask them for explicit instructions on how to proceed.
 
 ### PR already exists
