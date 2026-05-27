@@ -23,6 +23,10 @@ user before taking action.
 - **No direct commits to main.** The feature branch must already exist from `/code`.
 - **Validation must have passed.** Check for a passing validation report before proceeding.
 
+## OSAC Projects
+
+For OSAC component repos, follow the fork-based PR workflow in `skills/create-pr/SKILL.md` — push to `fork` remote (never `origin`), include the Jira ticket key in the PR title, and use the OSAC PR body template. Validation (build, test, lint) should already be complete from the `/validate` phase.
+
 ## Process
 
 ### Step 1: Pre-Flight Checks

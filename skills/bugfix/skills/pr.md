@@ -35,6 +35,10 @@ the documented recovery paths instead of guessing.
 - **Never attempt `gh repo fork` without asking the user first.**
 - **Never fall back to patch files without exhausting all other options.**
 
+## OSAC Projects
+
+For OSAC component repos, follow the fork-based PR workflow in `skills/create-pr/SKILL.md` — push to `fork` remote (never `origin`), include the Jira ticket key in the PR title, and use the OSAC PR body template. Validation (build, test, lint) should already be complete from earlier phases (`/test`, `/review`).
+
 ## Process
 
 ### Placeholders Used in This Skill
