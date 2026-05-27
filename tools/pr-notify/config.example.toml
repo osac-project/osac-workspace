@@ -1,3 +1,4 @@
+# Repos to monitor (used by generate.py and notify.py)
 repos = [
     "osac-project/fulfillment-service",
     "osac-project/osac-operator",
@@ -5,9 +6,11 @@ repos = [
     "osac-project/enhancement-proposals",
 ]
 
+# Slack settings (used by notify.py only)
 slack_channel = "C08ESMFV85Q"
 slack_creds_dir = "~/.config/slack/"
 
+# Dashboard settings (used by generate.py for output path, notify.py for data URL)
 [dashboard]
 repo = "osac-project/osac-workspace"
 branch = "main"

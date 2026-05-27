@@ -134,37 +134,36 @@ def format_message(classified_prs: list[ClassifiedPR], repos: list[str]) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Compact Slack summary (for dashboard mode)
+# Compact Slack summary from pre-computed dashboard data.json
 # ---------------------------------------------------------------------------
 
-def format_compact_summary(
-    classified_prs: list[ClassifiedPR],
-    repos: list[str],
-    dashboard_url: str,
-) -> str:
-    actionable = [
-        cpr for cpr in classified_prs
-        if cpr.status not in (PRStatus.DRAFT, PRStatus.APPROVED)
-    ]
-    reviewable = [cpr for cpr in actionable if cpr.status in _REVIEWABLE_STATUSES]
-    ci_failing = [cpr for cpr in actionable if cpr.status == PRStatus.CI_FAILING]
-    stale = sum(1 for cpr in reviewable if cpr.age_days >= 7)
+def format_summary_from_data(data: dict, dashboard_url: str) -> str:
+    """Format a compact Slack summary from a dashboard data dict.
 
-    if not reviewable and not ci_failing:
+    Takes the pre-computed JSON structure (as served by GitHub Pages)
+    rather than ClassifiedPR objects.
+    """
+    summary = data.get("summary", {})
+    needs_review = summary.get("needs_review", 0)
+    ci_failing = summary.get("ci_failing", 0)
+    stale = summary.get("stale", 0)
+    repo_count = len(data.get("repos", []))
+
+    if not needs_review and not ci_failing:
         return (
-            f"All clear — no actionable PRs across {len(repos)} repos :tada:\n"
+            f"All clear - no actionable PRs across {repo_count} repos :tada:\n"
             f":chart_with_upwards_trend: <{dashboard_url}|Full PR Dashboard>"
         )
 
     parts = []
-    if reviewable:
-        parts.append(f"{len(reviewable)} need review")
+    if needs_review:
+        parts.append(f"{needs_review} need review")
     if ci_failing:
-        parts.append(f"{len(ci_failing)} CI failing")
+        parts.append(f"{ci_failing} CI failing")
     if stale:
         parts.append(f"{stale} stale (7+ days)")
 
     today = date.today().strftime("%Y-%m-%d")
-    summary = f"*PR Status* — {today} | " + " · ".join(parts)
-    summary += f"\n:chart_with_upwards_trend: <{dashboard_url}|Full PR Dashboard>"
-    return summary
+    text = f"*PR Status* - {today} | " + " · ".join(parts)
+    text += f"\n:chart_with_upwards_trend: <{dashboard_url}|Full PR Dashboard>"
+    return text

@@ -22,8 +22,8 @@ class DashboardConfig:
 @dataclass
 class Config:
     repos: list[str]
-    slack_channel: str
-    slack_creds_dir: str
+    slack_channel: str | None = None
+    slack_creds_dir: str | None = None
     dashboard: DashboardConfig | None = None
 
 

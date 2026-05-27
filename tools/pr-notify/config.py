@@ -25,14 +25,11 @@ def load_config(path: str) -> Config:
     except tomllib.TOMLDecodeError as e:
         raise SystemExit(f"Failed to parse TOML config '{path}': {e}")
 
-    required_fields = ["repos", "slack_channel", "slack_creds_dir"]
-    for field_name in required_fields:
-        if field_name not in data:
-            raise SystemExit(
-                f"Missing required field '{field_name}' in config '{path}'"
-            )
+    if "repos" not in data:
+        raise SystemExit(f"Missing required field 'repos' in config '{path}'")
 
-    slack_creds_dir = os.path.expanduser(data["slack_creds_dir"])
+    raw_creds_dir = data.get("slack_creds_dir")
+    slack_creds_dir = os.path.expanduser(raw_creds_dir) if raw_creds_dir else None
 
     dashboard = None
     if "dashboard" in data:
@@ -55,7 +52,7 @@ def load_config(path: str) -> Config:
 
     return Config(
         repos=data["repos"],
-        slack_channel=data["slack_channel"],
+        slack_channel=data.get("slack_channel"),
         slack_creds_dir=slack_creds_dir,
         dashboard=dashboard,
     )

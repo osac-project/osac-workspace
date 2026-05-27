@@ -4,7 +4,7 @@ import unittest
 from datetime import date
 from unittest.mock import patch
 
-from formatter import format_compact_summary, format_message
+from formatter import format_message, format_summary_from_data
 from models import ClassifiedPR, PRData, PRStatus
 
 
@@ -260,36 +260,40 @@ class TestFormatter(unittest.TestCase):
         self.assertNotIn("osac-operator", result)
 
 
-class TestCompactSummary(unittest.TestCase):
-    """Tests for the compact Slack summary formatter."""
+class TestSummaryFromData(unittest.TestCase):
+    """Tests for format_summary_from_data (notify mode)."""
 
     def test_includes_counts(self):
-        prs = [
-            _make_classified(status=PRStatus.NEEDS_REVIEW),
-            _make_classified(status=PRStatus.CI_FAILING),
-        ]
-        result = format_compact_summary(prs, ["r1", "r2"], "https://example.com")
-        self.assertIn("1 need review", result)
+        data = {
+            "summary": {"needs_review": 3, "ci_failing": 1, "stale": 2},
+            "repos": [{"name": "r1"}, {"name": "r2"}],
+        }
+        result = format_summary_from_data(data, "https://example.com")
+        self.assertIn("3 need review", result)
         self.assertIn("1 CI failing", result)
+        self.assertIn("2 stale", result)
 
     def test_includes_dashboard_link(self):
-        prs = [_make_classified(status=PRStatus.NEEDS_REVIEW)]
-        result = format_compact_summary(prs, ["r1"], "https://example.com")
+        data = {
+            "summary": {"needs_review": 1, "ci_failing": 0, "stale": 0},
+            "repos": [{"name": "r1"}],
+        }
+        result = format_summary_from_data(data, "https://example.com")
         self.assertIn("<https://example.com|Full PR Dashboard>", result)
 
-    def test_empty_prs_all_clear(self):
-        result = format_compact_summary([], ["r1", "r2"], "https://example.com")
+    def test_all_clear_when_no_actionable(self):
+        data = {
+            "summary": {"needs_review": 0, "ci_failing": 0, "stale": 0},
+            "repos": [{"name": "r1"}, {"name": "r2"}],
+        }
+        result = format_summary_from_data(data, "https://example.com")
         self.assertIn("All clear", result)
         self.assertIn("2 repos", result)
-        self.assertIn("Full PR Dashboard", result)
 
-    def test_stale_count(self):
-        prs = [
-            _make_classified(status=PRStatus.NEEDS_REVIEW, age_days=10),
-            _make_classified(status=PRStatus.NEEDS_REVIEW, age_days=2),
-        ]
-        result = format_compact_summary(prs, ["r1"], "https://example.com")
-        self.assertIn("1 stale", result)
+    def test_empty_summary_defaults(self):
+        data = {"summary": {}, "repos": []}
+        result = format_summary_from_data(data, "https://example.com")
+        self.assertIn("All clear", result)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 [Unit]
-Description=OSAC PR Status Notifier — weekday mornings
+Description=OSAC PR Slack Notifier - weekday mornings
 
 [Timer]
 OnCalendar=Mon..Fri *-*-* 09:00:00 UTC
