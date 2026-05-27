@@ -1,6 +1,6 @@
 ---
 name: implement:ingest
-description: "Fetch Jira story, load design/PRD context, explore codebase, build validation profile"
+description: "Fetch Jira task, load design/PRD context, explore codebase, build validation profile"
 ---
 # /ingest
 

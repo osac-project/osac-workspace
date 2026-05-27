@@ -23,7 +23,7 @@ and repeat until everything passes.
 - **Coverage is a signal, not a target.** If coverage shows an uncovered branch in a public function, ask "Is there a behavioral contract I missed?" Write a test for the behavior, not the line.
 - **New tests follow the same standards.** Any tests added during validation must validate behavioral contracts through public interfaces — no coverage-gaming tests.
 - **Commit fixes separately.** Validation fixes get their own commits following the project's commit format.
-- **Do not modify code outside the story's scope** to fix pre-existing lint or test issues. Note them in the validation report.
+- **Do not modify code outside the task's scope** to fix pre-existing lint or test issues. Note them in the validation report.
 
 ## Process
 
@@ -118,19 +118,19 @@ Typical checks (discovered, not hardcoded):
 
 **If a check fails:**
 
-1. Diagnose the failure — is it caused by the story's changes or pre-existing?
-2. If caused by the story's changes: fix it, commit the fix, re-run the check
+1. Diagnose the failure — is it caused by the task's changes or pre-existing?
+2. If caused by the task's changes: fix it, commit the fix, re-run the check
 3. If pre-existing: note it in the validation report, do not fix it
 4. If unclear: report to the user
 
 ### Step 4: Analyze Coverage
 
-Run coverage analysis on the packages affected by the story:
+Run coverage analysis on the packages affected by the task:
 
 1. Use the coverage command from the validation profile
 2. Focus on the **new and modified code** specifically — compare the
    coverage report's per-function or per-line breakdown against the
-   story's diff to isolate new-code coverage from pre-existing code
+   task's diff to isolate new-code coverage from pre-existing code
    in the same package
 3. For each public function added or modified:
    - Are all behavioral paths exercised by tests?
@@ -171,20 +171,20 @@ thin wrapper over an external system).
 
 ### Step 5: Regression Check
 
-Verify that the story's changes haven't broken existing functionality:
+Verify that the task's changes haven't broken existing functionality:
 
 1. Run the full unit test suite (not just affected packages)
 2. Run the full integration test suite (if applicable)
-3. Check for any test failures unrelated to the story
+3. Check for any test failures unrelated to the task
 
 If regressions are found:
-- Diagnose whether the story's changes caused them
-- Fix regressions caused by the story, commit separately
+- Diagnose whether the task's changes caused them
+- Fix regressions caused by the task, commit separately
 - Note pre-existing failures in the validation report
 
 ### Step 6: Code Quality Review
 
-After automated checks pass, review the story's full diff for issues
+After automated checks pass, review the task's full diff for issues
 that automated tooling does not catch. Read the base branch from the
 `## Branch` section of `02-plan.md`, then run the self-review gate.
 
@@ -196,7 +196,7 @@ parameters:
 | DIFF_COMMAND | `git diff {base}..HEAD` |
 | MAX_ROUNDS | `3` |
 | CONTEXT_FILES | `.artifacts/implement/{jira-key}/01-context.md`, `.artifacts/implement/{jira-key}/02-plan.md` (if they exist) |
-| SUPPLEMENTARY_CRITERIA | This is the full-branch validation review — the last quality gate before PR creation. The reviewer has the complete diff, not a per-task slice. In addition to the standard protocol criteria, evaluate: (1) **Backward compatibility** — does the change modify public APIs, error formats, configuration, or wire protocols? If so, is it backward-compatible or is the break documented and justified? (2) **Completeness across call sites** — if the story introduces a guard, wrapper, or handling pattern in one location, search the codebase for similar patterns needing the same treatment. A pattern applied to 7 of 8 identical call sites is itself a bug. |
+| SUPPLEMENTARY_CRITERIA | This is the full-branch validation review — the last quality gate before PR creation. The reviewer has the complete diff, not a per-task slice. In addition to the standard protocol criteria, evaluate: (1) **Backward compatibility** — does the change modify public APIs, error formats, configuration, or wire protocols? If so, is it backward-compatible or is the break documented and justified? (2) **Completeness across call sites** — if the task introduces a guard, wrapper, or handling pattern in one location, search the codebase for similar patterns needing the same treatment. A pattern applied to 7 of 8 identical call sites is itself a bug. |
 
 If the gate reports FLAG (unfixed CRITICAL or HIGH findings), stop and
 present the findings to the user before proceeding.
@@ -216,8 +216,8 @@ git commit -m "{JIRA-KEY}: address validation review findings"
 ### Step 7: Acceptance Criteria Verification
 
 After automated checks and code quality review, verify that every
-acceptance criterion from the story has been satisfied. This is the
-workflow's primary contract — the acceptance criteria are what the story
+acceptance criterion from the task has been satisfied. This is the
+workflow's primary contract — the acceptance criteria are what the task
 promises to deliver, and this is the last gate before publishing.
 
 1. Read the **Acceptance Criteria** from `01-context.md`
@@ -299,7 +299,7 @@ Write `.artifacts/implement/{jira-key}/05-validation-report.md`:
 ## Regressions
 
 {Any test failures in existing tests. Distinguish between:
- - Caused by this story's changes (should be fixed)
+ - Caused by this task's changes (should be fixed)
  - Pre-existing (noted but not fixed)
  If none: "No regressions detected."}
 
@@ -324,7 +324,7 @@ Write `.artifacts/implement/{jira-key}/05-validation-report.md`:
 ## Pre-existing Issues
 
 {Lint warnings, test failures, or other issues that existed before this
- story and were not fixed. If none: "No pre-existing issues observed."}
+ task and were not fixed. If none: "No pre-existing issues observed."}
 
 ## Validation Commits
 

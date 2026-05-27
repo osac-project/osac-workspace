@@ -115,6 +115,13 @@ The `osac-test-infra` repo provides skills for writing and debugging E2E tests. 
 - `/e2e` — Write a pytest E2E test from a description or Jira ticket
 - `/debug-e2e` — Debug a failing Prow CI job using build logs and gathered OSAC artifacts
 
+## Development Workflows
+
+- `/bugfix` — Systematic bug fix: assess → diagnose → reproduce → fix → test → review → pr
+- `/implement` — Task-to-code: ingest Jira task → plan → code (TDD) → validate → publish PR
+
+Both workflows are phase-based — you can jump to any phase directly (e.g., `/bugfix:fix`, `/implement:code`).
+
 ## OpenShift Deployment
 
 ```bash

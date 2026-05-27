@@ -1,10 +1,10 @@
 ---
 name: implement
 description: >-
-  Story-to-code workflow that takes a Jira Story, plans the implementation,
+  Task-to-code workflow that takes a Jira Task, plans the implementation,
   writes contract-based tests and production code via TDD, validates against
   the project's CI expectations, and manages review via GitHub PRs.
-  Use when implementing Jira stories produced by the design workflow.
+  Use when implementing Jira tasks produced by the design workflow.
   Activated by commands: /ingest, /plan, /revise, /code, /validate, /publish, /respond.
 ---
 # Implement Workflow Orchestrator

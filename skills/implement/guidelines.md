@@ -2,23 +2,23 @@
 
 ## Principles
 
-- The implementation must satisfy the **story's acceptance criteria** as written. Do not reinterpret, expand, or reduce scope.
+- The implementation must satisfy the **task's acceptance criteria** as written. Do not reinterpret, expand, or reduce scope.
 - **Tests validate contracts, not implementations.** Test through public interfaces. Every behavioral path reachable through a public interface is a distinct contract that needs its own test case. Tests should remain valid if the implementation were rewritten.
-- **Unit tests are always required. Integration tests are required when the story touches component interactions** (API-to-service, service-to-store, agent-to-server). Unit and integration tests are complementary, not alternatives.
+- **Unit tests are always required. Integration tests are required when the task touches component interactions** (API-to-service, service-to-store, agent-to-server). Unit and integration tests are complementary, not alternatives.
 - Follow the **project's existing patterns.** Read neighboring code and tests before writing new code. Match naming conventions, package organization, test style, and error handling patterns.
 - **Follow the project's commit format** as discovered during `/ingest` and recorded in the validation profile. Commit one logical unit of work per commit — typically one commit per plan task. Don't batch everything into a single commit, but don't create a commit per file either.
-- Each completed story must leave the system in a **stable state**. All tests pass, linter is clean, no regressions.
+- Each completed task must leave the system in a **stable state**. All tests pass, linter is clean, no regressions.
 - The implementation plan is a **living document**. Update `02-plan.md` as tasks are completed so it reflects current progress.
 - **Discover, don't assume.** The project's build commands, test commands, lint commands, coverage tooling, and commit format are discovered during `/ingest` and recorded in the validation profile. Never hardcode language-specific or project-specific assumptions.
 - **Shipped artifacts describe the final state, not the journey.** Code comments, commit messages, PR descriptions, and test names describe what the code does now — not the process of getting there. Do not reference abandoned approaches, intermediate bugs introduced and fixed during the same session, or prior states that no longer exist. Internal artifacts (implementation report, review responses, plan) may document the journey.
 
 ## Hard Limits
 
-- No fabricated implementations. Every code change must trace to a story requirement, acceptance criterion, or explicit user direction.
+- No fabricated implementations. Every code change must trace to a task requirement, acceptance criterion, or explicit user direction.
 - No auto-advancing between phases. Always wait for the user.
 - No publishing (creating PRs, pushing branches) without explicit user approval.
 - No Jira modifications. This workflow is read-only with respect to Jira.
-- **No scope creep.** Do not refactor adjacent code, add features beyond the story, or "improve" code you didn't need to change. If you discover something that should be fixed, note it in the implementation report — don't fix it silently.
+- **No scope creep.** Do not refactor adjacent code, add features beyond the task, or "improve" code you didn't need to change. If you discover something that should be fixed, note it in the implementation report — don't fix it silently.
 - **No test shortcuts.** Do not write tests that test implementation details, mock internal logic, or exist solely to increase coverage numbers. Every test must validate a behavioral contract through a public interface.
 - No committing to `main` directly. Use a feature branch.
 - No force-push or destructive git operations.
@@ -30,7 +30,7 @@
 - Before `/publish`, confirm the PR target branch and description with the user.
 - **Read before writing.** Before modifying any file, read it first. Before writing tests for a package, read existing tests in that package to match patterns.
 - **Deviation transparency.** If during `/code` you encounter something unexpected (a bug in adjacent code, a missing dependency, a design assumption that doesn't hold), report it. Apply deviation rules (see `skills/code.md`) but never silently change approach.
-- Flag assumptions explicitly. If the story or design doesn't specify something and you made a judgment call, note it in the implementation report.
+- Flag assumptions explicitly. If the task or design doesn't specify something and you made a judgment call, note it in the implementation report.
 
 ## Quality
 
@@ -45,12 +45,12 @@
 
 Stop and request human guidance when:
 
-- Story acceptance criteria are ambiguous or contradictory
+- Task acceptance criteria are ambiguous or contradictory
 - The implementation approach requires architectural decisions not covered by the design document
-- A story dependency is unmerged and blocks meaningful progress
+- A task dependency is unmerged and blocks meaningful progress
 - The design document's guidance contradicts the current state of the codebase
 - Test infrastructure is unavailable or broken (not a code problem — an environment problem)
-- A code change would affect components outside the story's scope
+- A code change would affect components outside the task's scope
 - Confidence in the implementation approach is low
 
 ## Working With the Project

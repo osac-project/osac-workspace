@@ -1,6 +1,6 @@
 ---
 name: controller
-description: Top-level workflow controller that manages phase transitions for story implementation.
+description: Top-level workflow controller that manages phase transitions for task implementation.
 ---
 
 # Implement Workflow Controller
@@ -11,7 +11,7 @@ workflow by executing phases and handling transitions between them.
 ## Phases
 
 1. **Ingest** (`/ingest`) — `ingest.md`
-   Fetch the Jira story, load design and PRD context, explore the relevant
+   Fetch the Jira task, load design and PRD context, explore the relevant
    codebase, and build a validation profile.
 
 2. **Plan** (`/plan`) — `plan.md`
@@ -46,7 +46,7 @@ the source repo:
 
 | Artifact | File | Written by |
 |----------|------|------------|
-| Story context | `01-context.md` | `/ingest` |
+| Task context | `01-context.md` | `/ingest` |
 | Implementation plan | `02-plan.md` | `/plan`, `/revise`, `/code` |
 | Test report | `03-test-report.md` | `/code` |
 | Implementation report | `04-impl-report.md` | `/code` |
@@ -93,7 +93,7 @@ ingest → plan → [revise loop] → code → validate → publish → [respond
 
 **Looping back:**
 
-- `/plan` reveals story gaps or contradictions → suggest the user clarify with the story author or update the story
+- `/plan` reveals task gaps or contradictions → suggest the user clarify with the task author or update the task
 - `/code` reveals plan gaps → the plan is updated inline during implementation; offer `/validate` when implementation is complete
 - `/validate` reveals test failures → offer to diagnose and fix, then re-run `/validate`
 - `/validate` reveals a design concern (e.g., low public-API coverage signals a component needs decomposition) → present the concern to the user; user decides whether to loop back to `/plan` for redesign or accept an exception

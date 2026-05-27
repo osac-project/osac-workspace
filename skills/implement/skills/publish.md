@@ -11,13 +11,13 @@ create a draft pull request in the source repository.
 ## Your Role
 
 Verify the branch is ready, push it, and create a draft PR with a clear
-description linking back to the Jira story. Confirm all details with the
+description linking back to the Jira task. Confirm all details with the
 user before taking action.
 
 ## Critical Rules
 
 - **Confirm before pushing.** Verify the target branch, PR title, and PR details with the user.
-- **One story per PR.** Each pull request corresponds to exactly one Jira story. Do not combine multiple stories into a single PR.
+- **One task per PR.** Each pull request corresponds to exactly one Jira task. Do not combine multiple tasks into a single PR.
 - **Draft PR.** Always create as a draft — the user decides when to mark it ready for review.
 - **No force-push.** No destructive git operations.
 - **No direct commits to main.** The feature branch must already exist from `/code`.
@@ -106,7 +106,7 @@ git log --oneline {base}..HEAD
 ```
 
 - **PR title:** Use the title format from the **PR Conventions** section of
-  `01-context.md` (typically `{JIRA-KEY}: {story title}`)
+  `01-context.md` (typically `{JIRA-KEY}: {task title}`)
 
 Confirm with the user before proceeding.
 
@@ -121,7 +121,7 @@ git push -u origin {branch-name}
 Check the **PR Conventions** section of `01-context.md`:
 
 - If a **PR template** path is listed, read the template and populate it
-  with content from the story context and implementation/test reports.
+  with content from the task context and implementation/test reports.
 - If no project template exists, use the default template below.
 
 In either case, save the result to
@@ -130,10 +130,10 @@ In either case, save the result to
 **Default template** (used when the project has no PR template):
 
 ```markdown
-## {JIRA-KEY}: {story title}
+## {JIRA-KEY}: {task title}
 
 **Jira:** {jira-link}
-**Story type:** {[DEV], [UI], etc.}
+**Task type:** {[DEV], [UI], etc.}
 
 ### Summary
 {2-3 sentence summary of what was implemented and why.}
@@ -147,7 +147,7 @@ In either case, save the result to
 - **Coverage:** {qualitative assessment}
 
 ### Acceptance Criteria
-{Checklist of acceptance criteria from the story, each prefixed with a
+{Checklist of acceptance criteria from the task, each prefixed with a
  checkbox. Reviewers can use this to verify completeness.}
 
 - [ ] AC-1: {description}
@@ -163,7 +163,7 @@ whether this is a fork-based workflow.
 `{upstream-owner}/{repo}`):
 
 ```bash
-gh pr create --draft --repo {upstream-owner}/{repo} --base {base-branch} --head {fork-owner}:{branch-name} --title "{JIRA-KEY}: {story title}" --body-file .artifacts/implement/{jira-key}/06-pr-description.md
+gh pr create --draft --repo {upstream-owner}/{repo} --base {base-branch} --head {fork-owner}:{branch-name} --title "{JIRA-KEY}: {task title}" --body-file .artifacts/implement/{jira-key}/06-pr-description.md
 ```
 
 The `--repo` flag targets the upstream repository (where the PR lives),
@@ -173,7 +173,7 @@ branch (on the fork).
 **If the repo is a direct clone** (not a fork):
 
 ```bash
-gh pr create --draft --base {base-branch} --head {branch-name} --title "{JIRA-KEY}: {story title}" --body-file .artifacts/implement/{jira-key}/06-pr-description.md
+gh pr create --draft --base {base-branch} --head {branch-name} --title "{JIRA-KEY}: {task title}" --body-file .artifacts/implement/{jira-key}/06-pr-description.md
 ```
 
 Parse the PR number and URL from the `gh pr create` output. The command

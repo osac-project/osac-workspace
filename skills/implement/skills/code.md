@@ -21,10 +21,10 @@ the contract. Commit each logical unit of work independently.
 - **Follow the plan.** Execute tasks in the order specified in `02-plan.md`. If you need to deviate, update the plan and note why.
 - **Read before writing.** Before modifying any file, read it. Before writing tests for a package, read existing tests in that package.
 - **Tests validate contracts, not implementations.** Test through public interfaces only. Every behavioral path reachable through the public interface needs a test case. Tests should remain valid if the implementation were rewritten.
-- **Unit tests are always required. Integration tests are required when the story touches component interactions.** These are complementary — both may test the same functionality through different lenses.
+- **Unit tests are always required. Integration tests are required when the task touches component interactions.** These are complementary — both may test the same functionality through different lenses.
 - **One commit per plan task.** Each commit must follow the project's commit format (from the validation profile) and be independently meaningful. Don't batch everything into a single commit, but don't create a commit per file either — one logical unit of work per commit.
 - **Update the plan.** Mark tasks as completed in `02-plan.md` as you go. On re-invocation, check the plan to see what's already done.
-- **No scope creep.** Do not refactor adjacent code, fix unrelated bugs, or add features beyond the story. Note discoveries in the implementation report.
+- **No scope creep.** Do not refactor adjacent code, fix unrelated bugs, or add features beyond the task. Note discoveries in the implementation report.
 
 ## Process
 
@@ -32,7 +32,7 @@ the contract. Commit each logical unit of work independently.
 
 Read these files:
 1. `.artifacts/implement/{jira-key}/02-plan.md` (implementation plan)
-2. `.artifacts/implement/{jira-key}/01-context.md` (story context and validation profile)
+2. `.artifacts/implement/{jira-key}/01-context.md` (task context and validation profile)
 3. The project's `AGENTS.md` and/or `CLAUDE.md` (coding conventions)
 
 If the plan doesn't exist, tell the user that `/plan` should be run first.
@@ -366,7 +366,7 @@ When tests fail, diagnose **where** the problem is before fixing:
 | **Test is wrong** | Test asserts implementation details, or the assertion doesn't match the contract | Fix the test |
 | **Implementation is wrong** | Code doesn't satisfy the behavioral contract | Fix the implementation |
 | **Plan was wrong** | Interface design is flawed, approach doesn't work | Update the plan, note the deviation, flag to user if significant |
-| **Existing code has a bug** | Pre-existing issue revealed by new tests | Note in implementation report — do not fix unless it blocks the story |
+| **Existing code has a bug** | Pre-existing issue revealed by new tests | Note in implementation report — do not fix unless it blocks the task |
 | **Environment issue** | Test infrastructure unavailable, missing dependency | Report to user — this is not a code problem |
 
 ### Step 5: Deviation Rules
@@ -375,12 +375,12 @@ During implementation, you may encounter unexpected situations:
 
 | Situation | Action | Approval |
 |-----------|--------|----------|
-| Minor bug in adjacent code that blocks the story | Fix it, add a test, commit separately, note in report | Auto |
+| Minor bug in adjacent code that blocks the task | Fix it, add a test, commit separately, note in report | Auto |
 | Missing input validation at a public API boundary | Add it, add a test, commit separately, note in report | Auto |
 | Architectural question (new package, schema change, breaking API) | **Stop and ask the user** | Required |
-| Story guidance contradicts current codebase state | **Stop and ask the user** | Required |
+| Task guidance contradicts current codebase state | **Stop and ask the user** | Required |
 | Implementation is significantly simpler than planned | Note in report, continue | Auto |
-| Implementation is significantly more complex than planned | **Stop and ask the user** — the story may need re-scoping | Required |
+| Implementation is significantly more complex than planned | **Stop and ask the user** — the task may need re-scoping | Required |
 
 ### Step 6: Write Reports
 
@@ -403,7 +403,7 @@ After all tasks are complete (or if interrupted), write:
 |-----------|-------|----------------------|
 | {path} | {count} | {brief description} |
 
-{If no integration tests: "No integration tests written — story does not
+{If no integration tests: "No integration tests written — task does not
  touch component interactions."}
 
 ## Coverage Notes
@@ -437,7 +437,7 @@ After all tasks are complete (or if interrupted), write:
 ## Discoveries
 
 {Anything notable found during implementation that doesn't affect this
- story but may be relevant to the team. E.g., adjacent bugs, tech debt,
+ task but may be relevant to the team. E.g., adjacent bugs, tech debt,
  missing test coverage in existing code.
  If none: "No notable discoveries."}
 

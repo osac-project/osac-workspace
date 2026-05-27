@@ -1,12 +1,12 @@
 # Implement Workflow
 
-A story-to-code workflow that takes a Jira Story, plans the implementation, writes contract-based tests and production code via TDD, validates against the project's CI expectations, and manages review via GitHub PRs.
+A task-to-code workflow that takes a Jira Task, plans the implementation, writes contract-based tests and production code via TDD, validates against the project's CI expectations, and manages review via GitHub PRs.
 
 ## Prerequisites
 
 | Tool | Required | Purpose |
 |------|----------|---------|
-| Jira access (MCP or CLI) | For `/ingest` | Fetch Story issue details |
+| Jira access (MCP or CLI) | For `/ingest` | Fetch Task issue details |
 | GitHub CLI (`gh`) | For `/publish`, `/respond` | Create PRs, post review comments |
 | Git | Yes | Branch management, commits |
 | Project build/test tooling | Yes | Discovered during `/ingest` from project's AGENTS.md, Makefile, CI workflows |
@@ -16,7 +16,7 @@ A story-to-code workflow that takes a Jira Story, plans the implementation, writ
 
 | Phase | Command | Purpose | Artifact(s) |
 |-------|---------|---------|-------------|
-| Ingest | `/ingest` | Fetch story, load context, explore codebase | `01-context.md` |
+| Ingest | `/ingest` | Fetch task, load context, explore codebase | `01-context.md` |
 | Plan | `/plan` | Design implementation approach and test strategy | `02-plan.md` |
 | Revise | `/revise` | Incorporate feedback into the plan | Updated `02-plan.md` |
 | Code | `/code` | Write tests and code via TDD | `03-test-report.md`, `04-impl-report.md` |
@@ -28,7 +28,7 @@ A story-to-code workflow that takes a Jira Story, plans the implementation, writ
 
 ```text
 /ingest OSAC-1234
-  → fetches story from Jira
+  → fetches task from Jira
   → loads design document and PRD context
   → explores affected codebase areas
   → discovers validation profile (build, test, lint commands)
@@ -75,7 +75,7 @@ All artifacts are stored in `.artifacts/implement/{jira-key}/`.
 
 ```text
 .artifacts/implement/OSAC-1234/
-  01-context.md              (story context, validation profile)
+  01-context.md              (task context, validation profile)
   02-plan.md                 (task breakdown, test strategy — updated as tasks complete)
   03-test-report.md          (tests written, contracts covered)
   04-impl-report.md          (changes, commits, deviations)
@@ -92,7 +92,7 @@ All artifacts are stored in `.artifacts/implement/{jira-key}/`.
 Tests validate behavioral contracts through public interfaces:
 - Every behavioral path reachable through a public function gets its own test case
 - Tests should remain valid if the implementation were rewritten
-- Unit tests are always required; integration tests are required when the story touches component interactions
+- Unit tests are always required; integration tests are required when the task touches component interactions
 - Coverage tooling is a signal ("is there a behavioral contract I missed?"), not a numeric target. However, new code that cannot reach the project's coverage threshold (discovered during `/ingest`, default 90%) through public API tests signals a design problem — the component likely needs decomposition into smaller units, not tests that reach into internals
 
 ### Discovery-Based Validation
@@ -116,7 +116,7 @@ implement/
 ├── README.md                   # This file
 ├── skills/
 │   ├── controller.md           # Phase dispatcher and transitions
-│   ├── ingest.md               # Fetch story, explore codebase
+│   ├── ingest.md               # Fetch task, explore codebase
 │   ├── plan.md                 # Design implementation approach
 │   ├── revise.md               # Incorporate plan feedback
 │   ├── code.md                 # Write tests and code via TDD
@@ -143,4 +143,4 @@ implement/
 ./install.sh all
 ```
 
-Then in your project, run the `implement` workflow's `ingest` command for your Jira story (e.g., OSAC-1234).
+Then in your project, run the `implement` workflow's `ingest` command for your Jira task (e.g., OSAC-1234).

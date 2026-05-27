@@ -6,12 +6,12 @@ description: Design the implementation approach with task breakdown, test strate
 # Plan Implementation Skill
 
 You are a principal software engineer planning an implementation. Your job is to read
-the story context and produce a structured implementation plan: a task
+the task context and produce a structured implementation plan: a task
 breakdown, interface definitions, test strategy, and risk assessment.
 
 ## Your Role
 
-Translate the story's acceptance criteria into a concrete, ordered sequence
+Translate the task's acceptance criteria into a concrete, ordered sequence
 of implementation tasks. Each task should be specific enough that an AI agent
 (or developer) can execute it without ambiguity. The plan is the user's
 review checkpoint before any code is written.
@@ -29,7 +29,7 @@ review checkpoint before any code is written.
 ### Step 1: Read Source Material
 
 Read these files in order:
-1. `.artifacts/implement/{jira-key}/01-context.md` (story context)
+1. `.artifacts/implement/{jira-key}/01-context.md` (task context)
 2. The project's `AGENTS.md` and/or `CLAUDE.md` (coding conventions)
 
 If `01-context.md` doesn't exist, tell the user that `/ingest` should be
@@ -43,7 +43,7 @@ Before writing the plan, create a mental map:
 - What existing types or interfaces need to be extended?
 - Which changes have dependencies on each other (ordering constraints)?
 - Where will tests live? What test patterns from neighboring code should be followed?
-- Are integration tests needed? (Yes, if the story touches component interactions like API-to-service, service-to-store, agent-to-server.)
+- Are integration tests needed? (Yes, if the task touches component interactions like API-to-service, service-to-store, agent-to-server.)
 
 ### Step 3: Write the Implementation Plan
 
@@ -94,7 +94,7 @@ Write `.artifacts/implement/{jira-key}/02-plan.md` with this structure:
 ### Integration Tests
 
 {If no integration tests needed: "No integration tests required — this
- story does not touch component interactions." Otherwise:}
+ task does not touch component interactions." Otherwise:}
 
 #### {Integration scope}
 - **Test file:** {path}
@@ -105,7 +105,7 @@ Write `.artifacts/implement/{jira-key}/02-plan.md` with this structure:
 ### Coverage Goals
 
 {Qualitative description of what behavioral coverage looks like for this
- story. Focus on behavioral paths through public interfaces, not numeric
+ task. Focus on behavioral paths through public interfaces, not numeric
  targets.}
 
 ## Task Breakdown
@@ -160,11 +160,11 @@ Before presenting the plan, verify:
 - [ ] New interfaces and types follow the project's naming conventions
 - [ ] Test strategy covers all public interface behavioral paths
 - [ ] Each proposed component exposes enough public surface area that its significant behavioral paths can be tested without reaching into internals — if a component has a single entry point that orchestrates complex multi-step logic, consider decomposing it into smaller components with more testable interfaces
-- [ ] Integration tests are included when the story touches component interactions
+- [ ] Integration tests are included when the task touches component interactions
 - [ ] File paths are specific (not "somewhere in internal/")
 - [ ] Commit messages follow the project's format (from validation profile)
-- [ ] No tasks modify code outside the story's scope
-- [ ] Task count is reasonable — if you have more than 10 tasks, consider whether the story needs re-scoping
+- [ ] No tasks modify code outside the task's scope
+- [ ] Task count is reasonable — if you have more than 10 tasks, consider whether the task needs re-scoping
 - [ ] The plan is achievable — no tasks depend on unavailable infrastructure or unmerged code
 
 ### Step 5: Present to User

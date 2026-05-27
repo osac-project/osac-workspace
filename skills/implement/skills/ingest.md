@@ -1,11 +1,11 @@
 ---
 name: ingest
-description: Fetch the Jira story, load design and PRD context, explore the codebase, and build a validation profile.
+description: Fetch the Jira task, load design and PRD context, explore the codebase, and build a validation profile.
 ---
 
-# Ingest Story Context Skill
+# Ingest Task Context Skill
 
-You are a principal technical researcher. Your job is to fetch the Jira story, gather
+You are a principal technical researcher. Your job is to fetch the Jira task, gather
 all upstream context (design document, PRD, clarifications), explore the
 relevant codebase, and produce a structured context document that will inform
 the implementation.
@@ -21,17 +21,17 @@ approach.
 
 - **Read-only.** Jira access is read-only. Never create, update, or modify Jira issues.
 - **Capture, don't implement.** Record what you find — implementation decisions happen in `/plan`.
-- **Explore relevant areas only.** Don't map the entire codebase. Focus on components the story will affect.
+- **Explore relevant areas only.** Don't map the entire codebase. Focus on components the task will affect.
 - **Note unknowns.** If you can't determine something from the codebase, say so explicitly.
 - **Re-invocation diffs before overwriting.** If `01-context.md` already exists, preserve it before exploring. After compiling new context, diff against the previous version and present changes to the user before overwriting (see Steps 2a and 7a).
 
 ## Process
 
-### Step 1: Identify the Story
+### Step 1: Identify the Task
 
 The user will provide one of:
 - A Jira issue key or URL (fetch via Jira MCP)
-- A path to an existing story file from the design workflow
+- A path to an existing task file from the design workflow
 
 Extract the Jira key (e.g., `OSAC-1234`) and set it as the context identifier.
 
@@ -51,26 +51,26 @@ If `.artifacts/implement/{jira-key}/01-context.md` already exists, this is a
 re-invocation. Copy the existing file to `01-context.md.prev` so it is
 preserved for the diff in Step 7a.
 
-### Step 3: Fetch the Jira Story
+### Step 3: Fetch the Jira Task
 
-Fetch the story from Jira. Capture:
+Fetch the task from Jira. Capture:
 - Summary and description
 - User story (As a... I want... So that...)
 - Acceptance criteria
 - Implementation guidance (if present)
 - Testing approach (if present)
-- Story type prefix (`[DEV]`, `[UI]`, etc.)
+- Task type prefix (`[DEV]`, `[UI]`, etc.)
 - Parent epic key
-- Story dependencies (linked issues — "depends on", "is blocked by")
+- Task dependencies (linked issues — "depends on", "is blocked by")
 - Fix version / sprint (if set)
 
-### Step 4: Check Story Dependencies
+### Step 4: Check Task Dependencies
 
 For each dependency identified in Step 3:
-1. Check if the dependent story's Jira status indicates completion
+1. Check if the dependent task's Jira status indicates completion
    (Done, Closed, Resolved)
-2. Check if the dependent story's code has been merged to the main branch
-   (search git log for the dependent story's Jira key)
+2. Check if the dependent task's code has been merged to the main branch
+   (search git log for the dependent task's Jira key)
 
 If dependencies are unresolved, **warn the user** but do not block. Report:
 - Which dependencies are unresolved
@@ -111,9 +111,9 @@ Write `.artifacts/prd/config.json` with the validated `docs_repo_path` and
 #### 5b: Find the PRD and Design Document
 
 The docs repo organizes documents by Feature-level Jira issue. To find the
-right directory, walk the Jira hierarchy from the story:
+right directory, walk the Jira hierarchy from the task:
 
-1. The story (e.g., `OSAC-1234`) has a parent **Epic** — fetch it from Jira
+1. The task (e.g., `OSAC-1234`) has a parent **Epic** — fetch it from Jira
    to get the Epic key
 2. The Epic has a parent **Feature** — fetch it from Jira to get the
    Feature key (e.g., `OSAC-1100`)
@@ -141,13 +141,13 @@ Read these from the docs repo:
    reflected in the requirements text
 
 If the docs repo documents are not found, ask the user for their location
-or proceed with only the Jira story content. The design document and PRD
-are valuable context but not strictly required — the story's acceptance
+or proceed with only the Jira task content. The design document and PRD
+are valuable context but not strictly required — the task's acceptance
 criteria are the primary contract.
 
 ### Step 6: Explore the Codebase
 
-Based on the story's scope, explore the areas of the codebase that will be
+Based on the task's scope, explore the areas of the codebase that will be
 affected. Focus on:
 
 1. **Project configuration:**
@@ -183,7 +183,7 @@ affected. Focus on:
      so the Repository Topology section is complete for downstream sync steps
 
 3. **Affected components:**
-   - Which packages, modules, or services will this story touch?
+   - Which packages, modules, or services will this task touch?
    - Read key files to understand current patterns
    - Read existing tests in those packages to understand test conventions
 
@@ -212,12 +212,12 @@ If this is a first invocation, write
 `.artifacts/implement/{jira-key}/01-context.md` with this structure:
 
 ```markdown
-# Story Context — {jira-key}
+# Task Context — {jira-key}
 
-## Story Summary
+## Task Summary
 
 - **Title:** {title}
-- **Type:** {story type prefix, e.g., [DEV]}
+- **Type:** {task type prefix, e.g., [DEV]}
 - **Jira:** {jira-key}
 - **Epic:** {parent epic key and title}
 - **Feature:** {parent feature key, if known}
@@ -232,47 +232,47 @@ If this is a first invocation, write
 
 ### Implementation Guidance
 
-{From the story or design document. If none: "No implementation guidance
+{From the task or design document. If none: "No implementation guidance
  provided."}
 
 ### Testing Approach
 
-{From the story or design document. If none: "No specific testing approach
+{From the task or design document. If none: "No specific testing approach
  prescribed — follow project conventions."}
 
 ### Dependencies
 
-| Story | Status | Merged | Risk |
+| Task | Status | Merged | Risk |
 |-------|--------|--------|------|
 | {key} | {jira status} | {yes/no} | {brief risk note} |
 
-{If no dependencies: "No story dependencies."}
+{If no dependencies: "No task dependencies."}
 
 ## Design Context
 
 ### Relevant Design Sections
 
-{Summary of design document sections relevant to this story, with
+{Summary of design document sections relevant to this task, with
  section references (e.g., [Design: §4.1]). Not a full copy. Include
  any locked decisions or binding constraints stated in the design
- document or PRD that affect this story.}
+ document or PRD that affect this task.}
 
 ### PRD Requirements Covered
 
-{Which FR-N and NFR-N requirements this story addresses, from the
- coverage matrix or story metadata.}
+{Which FR-N and NFR-N requirements this task addresses, from the
+ coverage matrix or task metadata.}
 
 ## Codebase Context
 
 ### Affected Components
 
-{For each component the story will touch:}
+{For each component the task will touch:}
 
 #### {Component Name}
 - **Location:** {path}
 - **Purpose:** {what it does}
 - **Current patterns:** {relevant patterns to follow}
-- **What changes:** {brief note on what the story requires}
+- **What changes:** {brief note on what the task requires}
 - **Existing tests:** {test file locations, test framework, patterns used}
 
 ### Relevant Types and Interfaces
@@ -282,7 +282,7 @@ If this is a first invocation, write
 
 ### Relevant APIs
 
-{Existing API endpoints or specifications the story will extend or
+{Existing API endpoints or specifications the task will extend or
  interact with.}
 
 ## Repository Topology
@@ -364,7 +364,7 @@ the user declines, delete the `.prev` file and stop without overwriting.
 ### Step 8: Report to User
 
 Present a brief summary:
-- Story scope and acceptance criteria
+- Task scope and acceptance criteria
 - Design and PRD context loaded (or what was missing)
 - Dependency status (any warnings)
 - Key affected components identified
@@ -385,7 +385,7 @@ what changes were found and that the existing context was preserved.
 ## When This Phase Is Done
 
 Report your findings:
-- Story scope and key acceptance criteria
+- Task scope and key acceptance criteria
 - Affected components and current patterns
 - Validation profile summary
 - Dependency warnings (if any)
