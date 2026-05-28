@@ -105,7 +105,7 @@ This project uses the GSD workflow system. Planning artifacts live in `.planning
 
 - Use `/gsd:progress` to check project status
 - Use `/gsd:plan-phase` for planning, `/gsd:execute-phase` for implementation
-- Use `/jira-sync status` to check Jira mapping, `/jira-sync link-epic MGMT-XXXXX` to link
+- Use `/jira-sync status` to check Jira mapping, `/jira-sync link-epic OSAC-XXXXX` to link
 - GSD operates at workspace level and coordinates across component repos
 
 ## E2E Test Skills (from osac-test-infra)

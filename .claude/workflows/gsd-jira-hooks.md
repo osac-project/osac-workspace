@@ -19,7 +19,7 @@ if command -v jira &>/dev/null; then
     MILESTONE_GOAL="<one-sentence goal from the milestone>"
 
     EPIC_OUTPUT=$(jira epic create -s "${MILESTONE_TITLE}" -n "${MILESTONE_TITLE}" -b "GSD Milestone: ${MILESTONE_GOAL}" -l OSAC --no-input 2>&1)
-    EPIC_KEY=$(echo "$EPIC_OUTPUT" | grep -oE 'MGMT-[0-9]+' | head -1)
+    EPIC_KEY=$(echo "$EPIC_OUTPUT" | grep -oE 'OSAC-[0-9]+' | head -1)
 
     if [ -n "$EPIC_KEY" ]; then
       node -e "
@@ -51,7 +51,7 @@ if command -v jira &>/dev/null; then
     TASK_OUTPUT=$(jira issue create -tTask -s "Phase ${PHASE}: ${phase_name}" \
       -b "GSD Phase ${PHASE}: ${phase_name}" \
       -P "$EPIC_KEY" -l OSAC --no-input 2>&1)
-    TASK_KEY=$(echo "$TASK_OUTPUT" | grep -oE 'MGMT-[0-9]+' | head -1)
+    TASK_KEY=$(echo "$TASK_OUTPUT" | grep -oE 'OSAC-[0-9]+' | head -1)
 
     if [ -n "$TASK_KEY" ]; then
       node -e "
@@ -98,9 +98,9 @@ try {
 ```
 
 **If JIRA_KEY is set**, use Jira-prefixed format for all commits:
-- `MGMT-12346: create user registration endpoint`
-- `MGMT-12346: add failing test for password hashing`
-- `MGMT-12346: complete [plan-name] plan` (metadata commit)
+- `OSAC-12346: create user registration endpoint`
+- `OSAC-12346: add failing test for password hashing`
+- `OSAC-12346: complete [plan-name] plan` (metadata commit)
 
 **If JIRA_KEY is empty**, fall back to conventional commit format:
 - `feat({phase}-{plan}): description`

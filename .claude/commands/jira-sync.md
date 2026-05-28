@@ -1,7 +1,7 @@
 ---
 name: jira-sync
 description: Link GSD milestones and phases to Jira epics and tickets, or view current mapping
-argument-hint: "<link-epic MGMT-XXXXX | link-phase N MGMT-XXXXX | status | unlink>"
+argument-hint: "<link-epic OSAC-XXXXX | link-phase N OSAC-XXXXX | status | unlink>"
 allowed-tools:
   - Read
   - Write
@@ -13,8 +13,8 @@ allowed-tools:
 Manage the Jira mapping for the current GSD milestone. Link existing Jira epics and tickets to milestones and phases, view current mapping, or remove mappings.
 
 Subcommands:
-- `link-epic MGMT-XXXXX` — Link existing Jira epic to current milestone
-- `link-phase <phase-number> MGMT-XXXXX` — Link existing Jira ticket to a phase
+- `link-epic OSAC-XXXXX` — Link existing Jira epic to current milestone
+- `link-phase <phase-number> OSAC-XXXXX` — Link existing Jira ticket to a phase
 - `status` — Show current Jira mapping with live status from Jira
 - `unlink` — Remove all Jira mappings
 
@@ -28,6 +28,6 @@ Read and follow the workflow at .claude/workflows/jira-sync.md
 <context>
 Subcommand and arguments: $ARGUMENTS
 
-Jira CLI is pre-configured for Red Hat Jira (issues.redhat.com), MGMT project.
+Jira CLI is pre-configured for Red Hat Jira (redhat.atlassian.net), OSAC project.
 Mapping is stored in `.planning/config.json` under the `jira` key.
 </context>

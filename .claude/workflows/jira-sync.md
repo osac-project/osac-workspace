@@ -16,12 +16,12 @@ Extract subcommand and arguments from $ARGUMENTS:
 
 ## Subcommand: link-epic
 
-1. Validate the epic key format (MGMT-NNNNN):
+1. Validate the epic key format (OSAC-NNNNN):
 
 ```bash
 EPIC_KEY="$1"
-if [[ ! "$EPIC_KEY" =~ ^MGMT-[0-9]+$ ]]; then
-  echo "Error: Expected format MGMT-NNNNN, got: $EPIC_KEY"
+if [[ ! "$EPIC_KEY" =~ ^OSAC-[0-9]+$ ]]; then
+  echo "Error: Expected format OSAC-NNNNN, got: $EPIC_KEY"
   exit 1
 fi
 ```
@@ -65,7 +65,7 @@ ISSUE_KEY="$2"
 
 if [ -z "$PHASE_NUMBER" ] || [ -z "$ISSUE_KEY" ]; then
   echo "Usage: /jira-sync link-phase <phase-number> <ISSUE-KEY>"
-  echo "Example: /jira-sync link-phase 3 MGMT-12346"
+  echo "Example: /jira-sync link-phase 3 OSAC-12346"
   exit 1
 fi
 
@@ -74,8 +74,8 @@ if [[ ! "$PHASE_NUMBER" =~ ^[0-9]+$ ]]; then
   exit 1
 fi
 
-if [[ ! "$ISSUE_KEY" =~ ^MGMT-[0-9]+$ ]]; then
-  echo "Error: Expected format MGMT-NNNNN, got: $ISSUE_KEY"
+if [[ ! "$ISSUE_KEY" =~ ^OSAC-[0-9]+$ ]]; then
+  echo "Error: Expected format OSAC-NNNNN, got: $ISSUE_KEY"
   exit 1
 fi
 ```
@@ -125,7 +125,7 @@ try {
 ```text
 No Jira mapping configured.
 
-Use /jira-sync link-epic MGMT-XXXXX to link an epic to the current milestone.
+Use /jira-sync link-epic OSAC-XXXXX to link an epic to the current milestone.
 ```
 
 3. If jira section exists, display mapping table:

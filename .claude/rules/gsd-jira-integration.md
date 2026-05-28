@@ -1,16 +1,16 @@
 # GSD-Jira Integration
 
-This project integrates GSD workflow lifecycle with Jira (Red Hat Jira, MGMT project). The mapping is stored in `.planning/config.json` under the `jira` key. All Jira operations are optional — they silently skip if `jira` CLI is not installed or not configured.
+This project integrates GSD workflow lifecycle with Jira (Red Hat Jira, OSAC project). The mapping is stored in `.planning/config.json` under the `jira` key. All Jira operations are optional — they silently skip if `jira` CLI is not installed or not configured.
 
 ## Mapping Structure
 
 ```json
 {
   "jira": {
-    "epic": "MGMT-12345",
+    "epic": "OSAC-12345",
     "phases": {
-      "1": "MGMT-12346",
-      "2": "MGMT-12347"
+      "1": "OSAC-12346",
+      "2": "OSAC-12347"
     }
   }
 }
@@ -34,13 +34,13 @@ Use `/jira-sync` to manually link or unlink Jira items:
 
 ```text
 /jira-sync status                      # show current mapping
-/jira-sync link-epic MGMT-23853        # link epic to milestone
-/jira-sync link-phase 1 MGMT-24040     # link ticket to phase
+/jira-sync link-epic OSAC-23853        # link epic to milestone
+/jira-sync link-phase 1 OSAC-24040     # link ticket to phase
 /jira-sync unlink                      # remove all mappings
 ```
 
 ## Prerequisites
 
-- `jira` CLI installed and configured for Red Hat Jira (`issues.redhat.com`)
+- `jira` CLI installed and configured for Red Hat Jira (`redhat.atlassian.net`)
 - Bearer token in `~/.netrc` for authentication
-- Default project: `MGMT`, default label: `OSAC`
+- Default project: `OSAC`, default label: `OSAC`

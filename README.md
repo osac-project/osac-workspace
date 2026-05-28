@@ -122,7 +122,7 @@ This workspace includes skills for drafting and submitting OSAC Enhancement Prop
 /ep.create
 ```
 
-Provide rough requirements, meeting notes, or a Jira ticket (e.g., `MGMT-XXXXX`) and the skill will:
+Provide rough requirements, meeting notes, or a Jira ticket (e.g., `OSAC-XXXXX`) and the skill will:
 
 1. Explore the OSAC codebase and existing proposals for context
 2. Ask clarifying questions before drafting

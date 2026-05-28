@@ -39,7 +39,7 @@ When a feature spans repos (e.g., API + operator):
 
 ### Branching
 - **Always create a feature branch** for any work — never commit directly to `main`
-- Branch naming: `<type>/<ticket-or-description>` (e.g., `feat/MGMT-23607`, `fix/duplicate-aap-jobs`)
+- Branch naming: `<type>/<ticket-or-description>` (e.g., `feat/OSAC-23607`, `fix/duplicate-aap-jobs`)
 
 ### Remotes
 - `origin` — the upstream osac-project repo (read-only, never push here)
@@ -48,7 +48,7 @@ When a feature spans repos (e.g., API + operator):
 ### Pushing and PR Submission
 - **Always push to `fork`**, never to `origin`
 - PRs go from `fork/<branch>` to `origin/main`
-- Always include the Jira ticket key in the PR title (e.g., "OSAC-853: fix subnet race condition")
+- Always include the Jira ticket key in the PR title (e.g., "OSAC-12345: fix subnet race condition")
 - **Use the `create-pr` skill** (`/create-pr`) to run repo-specific validation, push, and create the PR
 
 ### Commit Conventions
