@@ -125,6 +125,7 @@ else
 fi
 echo "🔧 Installing ai-workflows skills..."
 "$AI_WORKFLOWS_DIR/install.sh" claude --project . --workflows bugfix,implement
+"$AI_WORKFLOWS_DIR/install.sh" cursor --project . --workflows bugfix,implement
 
 echo ""
 echo "✅ Workspace ready! All repos are on their latest main branch."
