@@ -54,11 +54,11 @@ Report: `Created $KEY: https://redhat.atlassian.net/browse/$KEY`
 In the affected submodule/repo:
 
 ```bash
-git checkout -b <KEY>-<short-kebab-slug>
+git checkout -b fix/<KEY>-<short-kebab-slug>
 ```
 
-Branch naming: `<JIRA-KEY>-<kebab-case-slug>` (max ~50 chars).
-Example: `OSAC-356-fix-vm-namespace-lookup`
+Branch naming: `fix/<JIRA-KEY>-<kebab-case-slug>` (max ~50 chars).
+Example: `fix/OSAC-356-vm-namespace-lookup`
 
 ## Step 3: Write the Fix
 
