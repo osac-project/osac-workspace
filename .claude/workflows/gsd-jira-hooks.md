@@ -48,10 +48,9 @@ if command -v jira &>/dev/null; then
   EXISTING=$(node -e "try { const c=JSON.parse(require('fs').readFileSync('.planning/config.json','utf8')); console.log(c.jira?.phases?.['${PHASE}'] || ''); } catch(e) { console.log(''); }")
 
   if [ -n "$EPIC_KEY" ] && [ -z "$EXISTING" ]; then
-    TASK_OUTPUT=$(jira issue create -tTask -s "Phase ${PHASE}: ${phase_name}" \
+    TASK_KEY=$(jira issue create -tTask -s "Phase ${PHASE}: ${phase_name}" \
       -b "GSD Phase ${PHASE}: ${phase_name}" \
-      -P "$EPIC_KEY" -l OSAC --no-input 2>&1)
-    TASK_KEY=$(echo "$TASK_OUTPUT" | grep -oE 'OSAC-[0-9]+' | head -1)
+      -P "$EPIC_KEY" -l OSAC --no-input --raw 2>/dev/null | jq -r '.key // empty')
 
     if [ -n "$TASK_KEY" ]; then
       node -e "
