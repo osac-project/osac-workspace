@@ -4,7 +4,7 @@
 
 All resources include tenant isolation metadata:
 - `metadata.annotations["osac.openshift.io/tenant"]` for tenant scoping
-- `metadata.annotations["osac.io/owner-reference"]` for resource hierarchy
+- `metadata.annotations["osac.openshift.io/owner-reference"]` for resource hierarchy
 - OPA policies enforce isolation at runtime
 - Never skip tenant isolation metadata in new resources
 - Use annotations for owner references, not separate fields
@@ -32,7 +32,7 @@ Tenant Resources:
   Tenant → namespace and resource isolation
 ```
 
-Parent-child relationships use owner reference annotations (`osac.io/owner-reference`).
+Parent-child relationships use owner reference annotations (`osac.openshift.io/owner-reference`).
 
 ## Service Stack (fulfillment-service)
 

@@ -78,7 +78,7 @@ Reviewers consistently flag these patterns:
 
 Check against OSAC patterns:
 
-- **Resource hierarchy** → Parent-child relationships use owner reference annotations (`osac.io/owner-reference`), not separate fields
+- **Resource hierarchy** → Parent-child relationships use owner reference annotations (`osac.openshift.io/owner-reference`), not separate fields
 - **Tenant isolation** → Resources include `osac.openshift.io/tenant` annotation
 - **API conventions** → gRPC with REST gateway, proto schemas with proper naming (PascalCase messages, snake_case fields, SCREAMING_SNAKE_CASE enums)
 - **Controller patterns** → Finalizer → status update → provisioning lifecycle

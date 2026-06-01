@@ -77,7 +77,7 @@
 **Custom Implementation:**
 - Guest authentication (no verification)
 - Service account authentication (Kubernetes ServiceAccount tokens)
-- Multi-tenancy enforcement via annotations: `osac.io/tenant-id` and `osac.io/owner-reference`
+- Multi-tenancy enforcement via annotations: `osac.openshift.io/tenant` and `osac.openshift.io/owner-reference`
 - Location: `fulfillment-service/internal/auth/auth_*.go`
 
 **Token Management:**

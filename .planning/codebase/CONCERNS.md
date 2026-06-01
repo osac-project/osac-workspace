@@ -320,7 +320,7 @@
 **Scaling Path:**
 - Move method allowlist to ConfigMap for runtime updates without redeploy
 - Implement service discovery of public methods via reflection API
-- Use annotation-based method classification (`osac.io/public="true"`)
+- Use annotation-based method classification (`osac.openshift.io/public="true"`)
 - Auto-generate allowlist from proto service definitions
 
 ---

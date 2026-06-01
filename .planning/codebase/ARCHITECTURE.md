@@ -216,7 +216,7 @@
 
 **Authentication:** JWT token extraction from gRPC metadata; OAuth2 token file reading for service-to-service auth; token verification delegated to Keycloak
 
-**Multi-tenancy:** Tenant ID stored in resource annotations (`osac.io/tenant-id`); all database queries filtered by tenant automatically; OPA policies enforce isolation at authorization layer
+**Multi-tenancy:** Tenant ID stored in resource annotations (`osac.openshift.io/tenant`); all database queries filtered by tenant automatically; OPA policies enforce isolation at authorization layer
 
 **Observability:**
 - Metrics: Prometheus instrumentation at gRPC interceptor level; controller reconciliation metrics tracked
