@@ -12,11 +12,12 @@ jobs:
   update-dashboard:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           token: ${{ secrets.OSAC_BOT_PAT }}
+          persist-credentials: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@0b93645e9fea7318ecaed2b359559ac225c90a20 # v5.3.0
         with:
           python-version: "3.13"
 
@@ -39,4 +40,4 @@ jobs:
           git config user.name "osac-dev-bot"
           git config user.email "osac-dev-bot@users.noreply.github.com"
           git commit -m "Update PR dashboard data"
-          git push
+          git push https://x-access-token:${{ secrets.OSAC_BOT_PAT }}@github.com/${{ github.repository }}.git
