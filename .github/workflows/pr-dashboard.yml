@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.OSAC_BOT_PAT }}
 
       - uses: actions/setup-python@v5
         with:
@@ -21,7 +23,7 @@ jobs:
       - name: Generate dashboard data
         working-directory: tools/pr-notify
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.OSAC_BOT_PAT }}
         run: |
           python generate.py \
             --config config.example.toml \
@@ -34,7 +36,7 @@ jobs:
             echo "No changes to data.json"
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "osac-dev-bot"
+          git config user.email "osac-dev-bot@users.noreply.github.com"
           git commit -m "Update PR dashboard data"
           git push
