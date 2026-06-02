@@ -17,7 +17,10 @@
       "Bash(git status:*)",
       "Bash(git log:*)",
       "Bash(git diff:*)",
-      "Bash(git tag:*)"
+      "Bash(git tag:*)",
+      "Bash(~/go/bin/jira issue list:*)",
+      "Bash(~/go/bin/jira issue view:*)",
+      "Bash(python3 -c:*)"
     ]
   },
   "hooks": {
