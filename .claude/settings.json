@@ -18,8 +18,8 @@
       "Bash(git log:*)",
       "Bash(git diff:*)",
       "Bash(git tag:*)",
-      "Bash(~/go/bin/jira issue list:*)",
-      "Bash(~/go/bin/jira issue view:*)"
+      "Bash(jira issue list:*)",
+      "Bash(jira issue view:*)"
     ]
   },
   "hooks": {
