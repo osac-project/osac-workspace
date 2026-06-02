@@ -7,7 +7,7 @@ description: "Generate a milestone report for an OSAC version — features group
 
 Generate a structured milestone report showing what use cases a specific OSAC version covers, which features and epics deliver them, and where gaps exist.
 
-**CRITICAL**: Use `~/go/bin/jira` as the jira binary. All commands use `--plain --no-headers` for clean output and `--no-input` to skip interactive prompts.
+**CRITICAL**: Use `~/go/bin/jira` as the jira binary. All commands use `--plain --no-headers --no-input` for clean output and `--no-input` to skip interactive prompts.
 
 ## Input
 
@@ -20,25 +20,25 @@ Accept a fix version as argument. Default to `0.1` if not specified.
 Fetch **open** features for the target version:
 
 ```bash
-~/go/bin/jira issue list --project OSAC -q "type = Feature AND fixVersion = '<VERSION>' AND status != Closed" --plain --no-headers
+~/go/bin/jira issue list --project OSAC -q "type = Feature AND fixVersion = '<VERSION>' AND status != Closed" --plain --no-headers --no-input
 ```
 
-Fetch **closed** features for the target version (completed work), excluding duplicates:
+Fetch **closed** features for the target version (completed work) — only include genuinely completed features:
 
 ```bash
-~/go/bin/jira issue list --project OSAC -q "type = Feature AND fixVersion = '<VERSION>' AND status = Closed AND resolution != Duplicate" --plain --no-headers
+~/go/bin/jira issue list --project OSAC -q "type = Feature AND fixVersion = '<VERSION>' AND status = Closed AND resolution = Done" --plain --no-headers --no-input
 ```
 
 For each feature returned from both queries, extract: key, summary, status. Keep the two lists separate — open features go in the main report, closed features go in the "Completed Work" section.
 
-**IMPORTANT**: Features with resolution "Duplicate" are retired consolidations — they were replaced by unified features and must NOT appear anywhere in the report.
+**IMPORTANT**: Only features with resolution "Done" appear in the completed work section. Features resolved as "Duplicate", "Won't Do", "Cannot Reproduce", or any other non-Done resolution are retired/consolidated and must NOT appear anywhere in the report.
 
 ### Step 2: Query Epics per Feature
 
 For each feature from Step 1, fetch its child epics:
 
 ```bash
-~/go/bin/jira issue list --project OSAC -q "type = Epic AND parent = <FEATURE-KEY>" --plain --no-headers
+~/go/bin/jira issue list --project OSAC -q "type = Epic AND parent = <FEATURE-KEY>" --plain --no-headers --no-input
 ```
 
 For each child epic, extract: key, summary, status.
@@ -113,7 +113,7 @@ Features: OSAC-ZZZZ
 ## Gaps & Observations
 
 <Analyze and list:>
-- **Features with multiple fix versions** — features should map to exactly one fix version. If a feature has more than one, it should be split or scoped to a single version. Check with: `~/go/bin/jira issue list --project OSAC -q "type = Feature AND fixVersion is not EMPTY" --plain --no-headers` then for each, check if it has more than one fix version via `--raw` and flag any with multiple.
+- **Features with multiple fix versions** — features should map to exactly one fix version. If a feature has more than one, it should be split or scoped to a single version. Check with: `~/go/bin/jira issue list --project OSAC -q "type = Feature AND fixVersion is not EMPTY" --plain --no-headers --no-input` then for each, check if it has more than one fix version via `--raw` and flag any with multiple.
 - Features with NO child epics (no work breakdown)
 - Features where all child epics are Closed but the feature is still open (should it be closed?)
 - Use case categories with no features (if any expected ones are missing)
