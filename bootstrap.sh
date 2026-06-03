@@ -88,16 +88,38 @@ REPOS=(
   "bare-metal-fulfillment-operator"
 )
 
+UPDATE_WARNINGS=0
+
+is_expected_clone() {
+  local dir="$1" repo="$2"
+  local expected_suffix="${GITHUB_ORG}/${repo}"
+  local origin_url
+  origin_url=$(git -C "$dir" remote get-url origin 2>/dev/null) || return 1
+  [[ "${origin_url%.git}" == *"$expected_suffix" ]]
+}
+
 for entry in "${REPOS[@]}"; do
   repo="${entry%%:*}"
   dir="${entry#*:}"
-  if [ -d "$dir" ]; then
+  if [ -d "$dir" ] && is_expected_clone "$dir" "$repo"; then
     echo "📦 Updating $dir..."
-    (cd "$dir" && git fetch origin && git rebase origin/main --autostash)
+    if ! (cd "$dir" && git fetch origin); then
+      echo "⚠️  Fetch failed for $dir. Skipping update."
+      UPDATE_WARNINGS=1
+    elif ! (cd "$dir" && git rebase origin/main --autostash); then
+      (cd "$dir" && git rebase --abort 2>/dev/null || true)
+      echo "⚠️  Rebase failed for $dir (likely local commits conflict with upstream)."
+      echo "   Skipping update — resolve manually with: cd $dir && git rebase origin/main"
+      UPDATE_WARNINGS=1
+    fi
     if [ "$NO_FORK" = false ] && ! git -C "$dir" remote get-url fork &>/dev/null; then
       echo "🍴 Adding fork remote for existing repo $dir..."
       ensure_fork_remote "$repo" "$dir" || true
     fi
+  elif [ -d "$dir" ]; then
+    echo "⚠️  Skipping $dir — directory exists but is not a clone of ${GITHUB_ORG}/${repo}."
+    echo "   Remove or rename the directory and re-run bootstrap.sh to clone it."
+    UPDATE_WARNINGS=1
   else
     echo "📥 Cloning $repo into $dir..."
     git clone "https://github.com/${GITHUB_ORG}/${repo}.git" "$dir"
@@ -116,11 +138,25 @@ AI_WORKFLOWS_DIR=""
 if [ -d "${HOME}/.ai-workflows" ]; then
   AI_WORKFLOWS_DIR="$(readlink -f "${HOME}/.ai-workflows")"
   echo "📦 Updating ai-workflows (${AI_WORKFLOWS_DIR})..."
-  (cd "$AI_WORKFLOWS_DIR" && git fetch origin && git rebase origin/main --autostash)
+  if ! (cd "$AI_WORKFLOWS_DIR" && git fetch origin); then
+    echo "⚠️  Fetch failed for ai-workflows. Skipping update."
+    UPDATE_WARNINGS=1
+  elif ! (cd "$AI_WORKFLOWS_DIR" && git rebase origin/main --autostash); then
+    (cd "$AI_WORKFLOWS_DIR" && git rebase --abort 2>/dev/null || true)
+    echo "⚠️  Rebase failed for ai-workflows. Resolve manually: cd $AI_WORKFLOWS_DIR && git rebase origin/main"
+    UPDATE_WARNINGS=1
+  fi
 elif [ -d ".ai-workflows" ]; then
   AI_WORKFLOWS_DIR="$(pwd)/.ai-workflows"
   echo "📦 Updating ai-workflows (.ai-workflows)..."
-  (cd "$AI_WORKFLOWS_DIR" && git fetch origin && git rebase origin/main --autostash)
+  if ! (cd "$AI_WORKFLOWS_DIR" && git fetch origin); then
+    echo "⚠️  Fetch failed for ai-workflows. Skipping update."
+    UPDATE_WARNINGS=1
+  elif ! (cd "$AI_WORKFLOWS_DIR" && git rebase origin/main --autostash); then
+    (cd "$AI_WORKFLOWS_DIR" && git rebase --abort 2>/dev/null || true)
+    echo "⚠️  Rebase failed for ai-workflows. Resolve manually: cd $AI_WORKFLOWS_DIR && git rebase origin/main"
+    UPDATE_WARNINGS=1
+  fi
 else
   AI_WORKFLOWS_DIR="$(pwd)/.ai-workflows"
   echo "📥 Cloning ai-workflows..."
@@ -165,7 +201,11 @@ else
 fi
 
 echo ""
-echo "✅ Workspace ready! All repos are on their latest main branch."
+if [ "$UPDATE_WARNINGS" -eq 0 ]; then
+  echo "✅ Workspace ready! All repos are on their latest main branch."
+else
+  echo "⚠️  Workspace ready with warnings. Some repos were not updated — see messages above."
+fi
 echo ""
 echo "📂 Available repos:"
 for entry in "${REPOS[@]}"; do
