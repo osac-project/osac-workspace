@@ -89,9 +89,31 @@ Group features into use-case categories. Use the **component** field (fetched in
 - Contains "Metering" or "Quota" or "Billing" → Metering & Quota
 - Otherwise → Uncategorized
 
+### Step 3.5: Analyze Service Offering Readiness
+
+For each of the three core service offerings (CaaS, VMaaS, BMaaS), analyze readiness across five dimensions using data already gathered in Steps 1–3. For each cell, determine a status and write a one-line summary.
+
+**Status indicators:**
+- **Done** — capability is delivered (feature/epic closed, DoD items checked)
+- **In Progress** — work underway, note what remains
+- **Gap** — no feature/epic covers this, or a dependency blocks it
+- **N/A** — not applicable for this service in this version
+
+**Dimensions to evaluate:**
+
+1. **API** — Does the service have a core API feature? Check its DoD items (which are checked vs unchecked). Is there CLI support?
+
+2. **Multi-Tenancy** — Does the service enforce tenant isolation? Check if the Core feature (tenant onboarding, RBAC, orgs) covers this service. Look for tenant-scoping annotations, namespace isolation, or RBAC references in the service's feature description.
+
+3. **Networking** — Look for a "{Service} Networking Integration" feature or epic. Check its DoD. Determine if networking is **API-driven** (service consumes the OSAC Networking API) or **backend-coupled** (networking handled by a specific backend without going through the generic API).
+
+4. **Storage** — Look for storage-related epics under or linked to the service feature (e.g., "VAST for CaaS", "StorageBackend CR"). Check their status.
+
+5. **UI** — Look for UI-tagged epics or features related to the service (labels OSAC-UI/OSAC-UX, component UI, or summary containing "UI"/"UX"/"console"/"wizard"). Check if any UI work has started.
+
 ### Step 4: Generate Report
 
-The report has **three parts**: an executive summary, a detailed breakdown, and completed work. This lets readers get the high-level picture quickly and drill into details only where needed.
+The report has **four parts**: a service offering matrix, an executive summary, a detailed breakdown, and completed work. The matrix leads so readers see cross-cutting readiness first, then drill into use-case details.
 
 Output the report in this format:
 
@@ -102,7 +124,39 @@ Generated: <current date>
 
 ---
 
-# Part 1: Executive Summary
+# Part 1: Service Offering Matrix
+
+## Offering Readiness
+
+| Dimension | CaaS — Cluster Provisioning | VMaaS — VM Management | BMaaS — Bare Metal Lifecycle |
+|-----------|----------------------------|----------------------|------------------------------|
+| **API** | <status> — <one-line> | <status> — <one-line> | <status> — <one-line> |
+| **Multi-Tenancy** | <status> — <one-line> | <status> — <one-line> | <status> — <one-line> |
+| **Networking** | <status> — <one-line> | <status> — <one-line> | <status> — <one-line> |
+| **Storage** | <status> — <one-line> | <status> — <one-line> | <status> — <one-line> |
+| **UI** | <status> — <one-line> | <status> — <one-line> | <status> — <one-line> |
+
+<Fill each cell using the analysis from Step 3.5. Use bold for the status indicator. Keep summaries to one line.>
+
+## Key Integrations & Dependencies
+
+<List cross-cutting dependencies that affect multiple services. Only list dependencies that actually exist in the data — don't invent them. Examples:>
+- Networking API (OSAC-XXXX) is a shared dependency for all three service networking integrations
+- Core multi-tenancy feature (OSAC-XXXX) provides RBAC/tenant onboarding used by all services
+
+## Conclusions
+
+<Synthesize the matrix into actionable observations. Cover:>
+1. **Maturity ranking** — which service is most/least complete and why
+2. **Critical path** — what blocks the most progress across services
+3. **Highest-risk gaps** — dimensions where multiple services show Gap status
+4. **Recommendations** — what should be prioritized, deferred, or decomposed
+
+<Write 4–6 bullet points. Be specific — reference feature keys.>
+
+---
+
+# Part 2: Executive Summary
 
 ## Metrics
 
@@ -135,7 +189,7 @@ Features: OSAC-ZZZZ
 
 ---
 
-# Part 2: Detailed Breakdown
+# Part 3: Detailed Breakdown
 
 ## <Use Case Category>
 
@@ -161,7 +215,7 @@ Features: OSAC-ZZZZ
 
 ---
 
-# Part 3: Completed Work
+# Part 4: Completed Work
 
 Features in this version that are already closed. Grouped by use case category using the same grouping rules.
 
@@ -188,4 +242,4 @@ After presenting the report, ask:
 - **Rate limiting**: If there are many features, batch the epic queries using `parent in (...)`. Don't fire more than 5 jira commands in parallel.
 - **Large features**: For features with 10+ epics (like Packaging), show all epics but note the count.
 - **Multiple versions**: The user can run this for different versions to compare scope (e.g., `/milestone-scope 0.1` vs `/milestone-scope 0.2`).
-- **Part 3 only shows resolution = Done**: If the user wants to see other closed features, they should check Jira directly.
+- **Part 4 only shows resolution = Done**: If the user wants to see other closed features, they should check Jira directly.
