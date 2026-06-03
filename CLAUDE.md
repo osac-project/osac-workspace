@@ -26,6 +26,8 @@ Meta-workspace — run `./bootstrap.sh` to clone/update all component repos to l
 | [`osac-test-infra`](https://github.com/osac-project/osac-test-infra) | Integration testing infrastructure | — |
 | [`enhancement-proposals`](https://github.com/osac-project/enhancement-proposals) | Design documents and RFCs | — |
 | [`docs`](https://github.com/osac-project/docs) | Architecture docs and guides (see `docs/architecture/`) | — |
+| [`host-management-openstack`](https://github.com/osac-project/host-management-openstack) | Bare metal host management via OpenStack | — |
+| [`bare-metal-fulfillment-operator`](https://github.com/osac-project/bare-metal-fulfillment-operator) | Kubernetes operator for bare metal fulfillment | — |
 
 Note: `fulfillment-api` and `fulfillment-common` were merged into `fulfillment-service`.
 
