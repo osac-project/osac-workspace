@@ -83,6 +83,8 @@ REPOS=(
   "osac-test-infra"
   "enhancement-proposals"
   "docs"
+  "host-management-openstack"
+  "bare-metal-fulfillment-operator"
 )
 
 for repo in "${REPOS[@]}"; do
