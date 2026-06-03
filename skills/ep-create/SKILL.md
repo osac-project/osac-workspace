@@ -51,8 +51,13 @@ Trigger this skill when:
 
 **Goal:** Understand existing patterns relevant to the proposed feature.
 
-**Step 1: Load OSAC conventions**
+**Step 1: Load OSAC conventions and personas**
 - Read `references/osac_conventions.md` for repo layout and existing EPs
+- Fetch the canonical OSAC personas from the docs repo:
+  ```bash
+  gh api repos/osac-project/docs/contents/personas.md --jq '.content' | base64 -d
+  ```
+  This defines the four OSAC personas: **Cloud Provider Admin**, **Cloud Infrastructure Admin**, **Tenant Admin**, and **Tenant User**. Use these exact names throughout the EP — never invent personas.
 
 **Step 2: Identify relevant repos**
 Based on the feature description, identify which OSAC repos are affected:
@@ -107,7 +112,7 @@ After codebase exploration, **STOP and present findings to the user.**
    - Be explicit about each gap: scope boundaries, user stories, technical constraints, dependencies
    - Example questions:
      - "Should this new StorageNetwork resource follow the same NetworkClass pattern, or is storage provisioning always CSI-based?"
-     - "Which personas are the primary users: tenants, providers, or both?"
+     - "Which personas are the primary users? (Cloud Provider Admin, Cloud Infrastructure Admin, Tenant Admin, Tenant User — as defined in [osac-project/docs/personas.md](https://github.com/osac-project/docs/blob/main/personas.md))"
      - "Is this proposal dependent on any in-progress work or other EPs?"
      - "Do you have a Jira tracking ticket for this? If so, what's the number?"
      - "Who are the stakeholders and subject matter experts I should list as reviewers?"
@@ -161,7 +166,7 @@ superseded-by:
 2. **Summary**: 1 paragraph summarizing what is being added and why
 3. **Terminology** (if applicable): Define key terms upfront
 4. **Motivation**:
-   - **User Stories**: At least 3-5 stories covering provider and tenant personas
+   - **User Stories**: At least 3-5 stories covering the relevant OSAC personas (Cloud Provider Admin, Cloud Infrastructure Admin, Tenant Admin, Tenant User — fetched from `osac-project/docs/personas.md` in Phase 2). Use the exact persona names from that document.
    - **Goals**: 3-7 bullet points describing success criteria from user perspective
    - **Non-Goals**: 2-5 bullet points explicitly stating what is out of scope
 5. **Proposal**: High-level overview of the design (1-2 paragraphs per key resource/component)
@@ -289,6 +294,7 @@ git push
 
 | Task | Command |
 |------|---------|
+| Fetch personas | `gh api repos/osac-project/docs/contents/personas.md --jq '.content' \| base64 -d` |
 | Explore codebase | `rg --type proto "<resource>" --files-with-matches` |
 | Fetch Jira ticket | `jira issue view OSAC-XXXXX --raw \| jq '.fields \| {summary, description, labels}'` |
 | Create branch | `git checkout -b enhancement/<feature-slug>` |
