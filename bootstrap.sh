@@ -134,7 +134,11 @@ if command -v rh-multi-pre-commit &>/dev/null; then
   echo "🔒 Installing rh-pre-commit hooks..."
   for repo in "${REPOS[@]}"; do
     if [ -d "$repo" ]; then
-      rh-multi-pre-commit install --path "$repo" && echo "   ✅ $repo" || echo "   ⚠️  $repo (rh-multi-pre-commit install failed)"
+      if rh-multi-pre-commit install --path "$repo" 2>&1; then
+        echo "   ✅ $repo"
+      else
+        echo "   ⚠️  $repo (failed to install hooks)"
+      fi
     fi
   done
 elif command -v pre-commit &>/dev/null; then
@@ -142,7 +146,11 @@ elif command -v pre-commit &>/dev/null; then
   echo "🔒 Installing pre-commit hooks..."
   for repo in "${REPOS[@]}"; do
     if [ -d "$repo" ] && [ -f "$repo/.pre-commit-config.yaml" ]; then
-      (cd "$repo" && pre-commit install) && echo "   ✅ $repo" || echo "   ⚠️  $repo (pre-commit install failed)"
+      if (cd "$repo" && pre-commit install 2>&1); then
+        echo "   ✅ $repo"
+      else
+        echo "   ⚠️  $repo (failed to install hooks)"
+      fi
     fi
   done
 else
@@ -150,6 +158,7 @@ else
   echo "⚠️  pre-commit not found — skipping hook installation."
   echo "   Install it with: pip install pre-commit"
   echo "   Red Hat employees: install rh-pre-commit for enhanced secret scanning"
+  echo "   Then re-run bootstrap.sh to install hooks in all repos."
 fi
 
 echo ""
