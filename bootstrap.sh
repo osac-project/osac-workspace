@@ -129,6 +129,29 @@ echo "🔧 Installing ai-workflows skills..."
 "$AI_WORKFLOWS_DIR/install.sh" claude --project . --workflows bugfix,implement
 "$AI_WORKFLOWS_DIR/install.sh" cursor --project . --workflows bugfix,implement
 
+if command -v rh-multi-pre-commit &>/dev/null; then
+  echo ""
+  echo "🔒 Installing rh-pre-commit hooks..."
+  for repo in "${REPOS[@]}"; do
+    if [ -d "$repo" ]; then
+      rh-multi-pre-commit install --path "$repo" && echo "   ✅ $repo" || echo "   ⚠️  $repo (rh-multi-pre-commit install failed)"
+    fi
+  done
+elif command -v pre-commit &>/dev/null; then
+  echo ""
+  echo "🔒 Installing pre-commit hooks..."
+  for repo in "${REPOS[@]}"; do
+    if [ -d "$repo" ] && [ -f "$repo/.pre-commit-config.yaml" ]; then
+      (cd "$repo" && pre-commit install) && echo "   ✅ $repo" || echo "   ⚠️  $repo (pre-commit install failed)"
+    fi
+  done
+else
+  echo ""
+  echo "⚠️  pre-commit not found — skipping hook installation."
+  echo "   Install it with: pip install pre-commit"
+  echo "   Red Hat employees: install rh-pre-commit for enhanced secret scanning"
+fi
+
 echo ""
 echo "✅ Workspace ready! All repos are on their latest main branch."
 echo ""
