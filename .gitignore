@@ -61,6 +61,7 @@ osac-test-infra/
 enhancement-proposals/
 docs/*
 !docs/pr-dashboard/
+docs/pr-dashboard/data.json
 .ai-workflows/
 
 # Workflow artifacts (bugfix, implement)
