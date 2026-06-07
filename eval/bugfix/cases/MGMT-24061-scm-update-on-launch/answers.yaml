@@ -1,0 +1,4 @@
+clarification_guidance: |
+  - For confirmation questions: answer "yes"
+  - For branch name: use "bugfix/MGMT-24061"
+  - For PR creation: answer "No"

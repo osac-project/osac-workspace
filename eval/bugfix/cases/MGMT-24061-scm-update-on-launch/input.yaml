@@ -1,0 +1,26 @@
+jira_key: MGMT-24061
+bug_date: "2026-04-21"
+primary_repo: osac-aap
+repos:
+  osac-aap: 762dbf9ea1410dcaeac87950dea36b778d127189
+  fulfillment-service: 3c742e64fe006e97ae6a50d5baf661f31183304b
+  osac-operator: 8a349f7d7e4a9f99fab327b91ebf5aa9ab6a7d90
+  osac-installer: 84fc4ee05e7c1769f852ef028f5dc2919d1e316e
+  docs: 8c016d3983f673ab4a6f11de72372e66177b7669
+  enhancement-proposals: 39cebc6437d6d19db59c56468591efcf237a5a7d
+  osac-test-infra: 0031d78bd60a166d2d1482ec7705e11315b4997b
+prompt: |
+  Fix bug MGMT-24061: Disable scm_update_on_launch in AAP job templates — slows down job processing
+
+  Description:
+  AAP job templates in the config-as-code have scm_update_on_launch: true, which triggers an SCM sync before every job execution. This significantly slows down job processing for all networking resources (VirtualNetwork, Subnet, SecurityGroup, ComputeInstance), adding unnecessary delay to every provisioning/deprovisioning operation.
+
+  How reproducible: Always — every AAP job launch triggers an SCM update.
+
+  Steps to reproduce:
+  1. Trigger any networking provisioning job (VirtualNetwork create, Subnet create, etc.)
+  2. Observe AAP job queue — SCM sync runs before the actual job
+  3. Job total time is significantly inflated by the sync step
+
+  Expected: scm_update_on_launch: false on all job templates. SCM updates should be managed separately, not triggered per-job.
+  Actual: scm_update_on_launch: true causes an SCM sync before every job execution, slowing down all provisioning operations.

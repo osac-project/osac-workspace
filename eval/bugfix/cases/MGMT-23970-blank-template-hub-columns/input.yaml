@@ -1,0 +1,33 @@
+jira_key: MGMT-23970
+bug_date: "2026-04-17"
+primary_repo: fulfillment-service
+repos:
+  fulfillment-service: f4e055aba8d1b97eb7c88b121aa5b1aaf51b9501
+  osac-operator: dc9e7d2cfe8aaa5b146a7c55d3018f517c0e7d9c
+  osac-aap: a5c2950108ca02131da8cd458e14c7d11475d57b
+  osac-installer: afd89ef8dc248a8d719c1fa595858a7f0cd84262
+  docs: a24950162e074963adc14f3f94c740f5e69d6987
+  enhancement-proposals: 39cebc6437d6d19db59c56468591efcf237a5a7d
+  osac-test-infra: 0031d78bd60a166d2d1482ec7705e11315b4997b
+prompt: |
+  Fix bug MGMT-23970: fulfillment-cli: TEMPLATE and HUB columns blank in ComputeInstance table output
+
+  Summary:
+  When running fulfillment-cli get osac.public.v1.ComputeInstance or fulfillment-cli get osac.private.v1.ComputeInstance, the TEMPLATE column (both APIs) and HUB column (private API) always show blank, even when the underlying data is present.
+
+  Steps to reproduce:
+  fulfillment-cli get osac.public.v1.ComputeInstance  # TEMPLATE column is empty
+  fulfillment-cli get osac.private.v1.ComputeInstance  # TEMPLATE and HUB columns are empty
+
+  Confirmed that the data IS present via -o yaml:
+  - spec.template: osac.templates.ocp_virt_vm
+  - status.hub: hypershift1
+
+  Root cause:
+  In internal/rendering/table_renderer.go, lookupName() performs a gRPC lookup to resolve a template/hub reference to its human-readable name. All error paths (helper not found, list call failed, no items returned) correctly fall back to returning the raw key. However, when the object IS found but its metadata.name is empty string, the function returns "" with no fallback.
+
+  // lookupName line ~481:
+  result = metadata.GetName()   // returns "" when name not set
+  // missing: if result == "" { result = key }
+
+  Fix: Add a fallback to key in lookupName when GetName() returns empty string. Consistent with all other fallback paths in the same function.

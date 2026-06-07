@@ -1,0 +1,10 @@
+expected_repos:
+  - osac-aap
+expected_files:
+  - roles/publish_templates/tasks/network_classes.yaml
+bug_category: ansible-conditional-error
+difficulty: easy
+multi_repo: false
+description: |
+  Ansible conditional uses .json.size which fails when API returns empty response
+  without a 'size' field. Fix: use .json.items | length or default filter.

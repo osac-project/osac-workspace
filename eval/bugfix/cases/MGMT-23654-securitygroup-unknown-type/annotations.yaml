@@ -1,0 +1,10 @@
+expected_repos:
+  - fulfillment-service
+expected_files:
+  - internal/servers/generic_server.go
+bug_category: missing-registration
+difficulty: easy
+multi_repo: false
+description: |
+  SecurityGroup type missing from the setPayload switch statement in generic_server.go.
+  Fix: add a case for *privatev1.SecurityGroup calling event.SetSecurityGroup(object).

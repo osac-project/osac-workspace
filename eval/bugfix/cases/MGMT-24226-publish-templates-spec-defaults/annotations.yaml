@@ -1,0 +1,13 @@
+expected_repos:
+  - osac-installer
+  - fulfillment-service
+  - osac-aap
+expected_files:
+  - setup.sh
+bug_category: version-mismatch
+difficulty: hard
+multi_repo: true
+description: |
+  AAP sends spec_defaults field before fulfillment-service proto supports it.
+  Multi-repo coordination issue: proto needs updating, AAP serialization needs
+  updating, and CI overlays need pinning.

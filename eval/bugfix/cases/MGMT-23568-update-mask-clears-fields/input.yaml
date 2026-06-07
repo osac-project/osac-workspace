@@ -1,0 +1,30 @@
+jira_key: MGMT-23568
+bug_date: "2026-03-19"
+primary_repo: fulfillment-service
+repos:
+  fulfillment-service: ab4299e4920ec0075d2d14f895a25dd2d854ac8b
+  osac-operator: 912735a859b1760bc9fcbcf2ec8072b7a8feadf0
+  osac-aap: a12a34b4ec1e602839be41def99fdeefe931930d
+  osac-installer: b8dcb0b6317d7dfe333efdf7ab265b4f3af4acbe
+  docs: f68aa26130bef6a4731cbbbe32c47d7424f659e6
+  enhancement-proposals: 39cebc6437d6d19db59c56468591efcf237a5a7d
+  osac-test-infra: 5de8ae46e40c5023f90be09dc214805505bed71d
+prompt: |
+  Fix bug MGMT-23568: Fulfillment API update mask clears unmasked spec fields
+
+  Description:
+  When updating a ComputeInstance via the fulfillment API with an update_mask targeting a single field (e.g., spec.restart_requested_at), all other explicit spec fields (cores, memory_gib, boot_disk, image, run_strategy) are cleared from the database.
+
+  Reproducibility: 100%
+
+  Steps to reproduce:
+  1. Create a ComputeInstance with all explicit spec fields
+  2. Update only restart_requested_at using update_mask: ["spec.restart_requested_at"]
+  3. Get the object — cores, memory_gib, boot_disk, image, run_strategy are gone
+
+  Expected: Only the masked field should change. Other fields preserved.
+  Actual: All unmasked spec fields are cleared.
+
+  Root cause: The masks.Path.Set() implementation likely replaces the entire spec message rather than setting only the leaf field when processing a nested path like spec.restart_requested_at. This causes unset fields in the input to overwrite populated fields in the existing object.
+
+  Impact: Blocks VM restart (MGMT-23329) from working end-to-end via the API. Affects any update-mask operation on ComputeInstance explicit spec fields.

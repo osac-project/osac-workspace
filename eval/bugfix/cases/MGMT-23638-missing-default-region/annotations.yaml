@@ -1,0 +1,11 @@
+expected_repos:
+  - fulfillment-service
+expected_files:
+  - internal/servers/virtual_networks_server.go
+  - internal/servers/virtual_networks_server_test.go
+bug_category: missing-default
+difficulty: easy
+multi_repo: false
+description: |
+  Public VirtualNetwork server doesn't set a default region before delegating to
+  the private server which requires it. Simple fix: set spec.region to a default value.

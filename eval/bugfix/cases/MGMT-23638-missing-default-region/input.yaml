@@ -1,0 +1,18 @@
+jira_key: MGMT-23638
+bug_date: "2026-03-24"
+primary_repo: fulfillment-service
+repos:
+  fulfillment-service: d021c85d89c9b0b9123d1705da58fc66bb9537e6
+  osac-operator: 988c4503defa4eb58ec714854943eaf141d11875
+  osac-aap: c8dee7a45ee201ef65fd2a92dc00a2ebb97e2f80
+  osac-installer: 9077314efcb3f45b67d5fa8d093d4dc48e3550e0
+  docs: 8bd48e247ec66fb0d1621a4c7c81d5bbab31386a
+  enhancement-proposals: 39cebc6437d6d19db59c56468591efcf237a5a7d
+  osac-test-infra: 2af08818ca6c58382b265dff57d73aba799883fb
+prompt: |
+  Fix bug MGMT-23638: Public VirtualNetwork API rejects creation due to missing region field
+
+  Description:
+  Public VN API delegates to private server without setting default region, causing all Create calls to fail with: field spec.region is required.
+
+  Fix: set region to default in the public server Create method before delegating.
