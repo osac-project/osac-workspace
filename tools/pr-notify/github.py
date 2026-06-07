@@ -29,6 +29,7 @@ def _build_graphql_query(repos: list[str]) -> str:
           author {{ login }}
           createdAt
           isDraft
+          mergeable
           labels(first: 20) {{ nodes {{ name }} }}
           reviews(last: 20) {{
             nodes {{
@@ -147,6 +148,7 @@ def _parse_pr_nodes(repo_name: str, pr_nodes: list[dict]) -> list[PRData]:
                 review_requests=review_requests,
                 last_commit_date=last_commit_date,
                 ci_status=ci_status,
+                mergeable=pr.get("mergeable"),
                 check_runs=check_runs,
             )
         )

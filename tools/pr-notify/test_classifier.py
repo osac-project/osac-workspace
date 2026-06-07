@@ -97,8 +97,33 @@ class TestClassifier(unittest.TestCase):
         result = classify_prs([pr])
         self.assertEqual(result[0].status, PRStatus.DRAFT)
 
+    def test_conflicts_overrides_ci_and_review(self):
+        """7. PR with merge conflicts -> CONFLICTS (overrides CI and reviews)."""
+        pr = _make_pr(
+            mergeable="CONFLICTING",
+            ci_status="FAILURE",
+            reviews=[
+                _make_review("bob", "APPROVED", "2026-04-21T10:00:00Z"),
+            ],
+            last_commit_date="2026-04-20T08:00:00Z",
+        )
+        result = classify_prs([pr])
+        self.assertEqual(result[0].status, PRStatus.CONFLICTS)
+
+    def test_conflicts_without_ci_failure(self):
+        """7b. PR with merge conflicts but passing CI -> CONFLICTS."""
+        pr = _make_pr(mergeable="CONFLICTING", ci_status="SUCCESS")
+        result = classify_prs([pr])
+        self.assertEqual(result[0].status, PRStatus.CONFLICTS)
+
+    def test_mergeable_pr_not_classified_as_conflicts(self):
+        """7c. Mergeable PR with CI failure -> CI_FAILING (not conflicts)."""
+        pr = _make_pr(mergeable="MERGEABLE", ci_status="FAILURE")
+        result = classify_prs([pr])
+        self.assertEqual(result[0].status, PRStatus.CI_FAILING)
+
     def test_ci_failure_overrides_approval(self):
-        """7. Approved PR with CI failure -> CI_FAILING."""
+        """8. Approved PR with CI failure -> CI_FAILING."""
         pr = _make_pr(
             ci_status="FAILURE",
             reviews=[

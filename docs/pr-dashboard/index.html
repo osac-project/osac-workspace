@@ -55,6 +55,7 @@ const STATUS_COLORS = {
   needs_re_review: "#f0ab00",
   changes_requested: "#c9190b",
   ci_failing: "#c9190b",
+  conflicts: "#8a6d3b",
   approved: "#3e8635",
   draft: "#6a6e73"
 };
@@ -63,6 +64,7 @@ const STATUS_LABELS = {
   needs_re_review: "needs re-review",
   changes_requested: "changes requested",
   ci_failing: "CI failing",
+  conflicts: "conflicts",
   approved: "approved",
   draft: "draft"
 };
@@ -106,6 +108,7 @@ function renderCards(summary) {
   const cards = [
     ["Needs Review", summary.needs_review, "#f0ab00"],
     ["CI Failing", summary.ci_failing, "#c9190b"],
+    ["Conflicts", summary.conflicts || 0, "#8a6d3b"],
     ["Stale (7+ days)", summary.stale, "#6a6e73"],
     ["Approved", summary.approved, "#3e8635"],
     ["Draft", summary.draft, "#6a6e73"]

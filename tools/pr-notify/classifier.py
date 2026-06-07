@@ -1,7 +1,7 @@
 """PR classification engine.
 
-Assigns one of 6 status states to each PR based on review history,
-CI status, and draft flag.
+Assigns one of 7 status states to each PR based on review history,
+CI status, merge conflicts, and draft flag.
 """
 
 from datetime import datetime, timezone
@@ -68,13 +68,17 @@ def _classify_single(pr: PRData) -> ClassifiedPR:
     if pr.is_draft:
         return ClassifiedPR(pr=pr, status=PRStatus.DRAFT, age_days=age_days)
 
-    # Priority 2: CI failing overrides review state.
+    # Priority 2: Merge conflicts override CI and review state.
+    if pr.mergeable == "CONFLICTING":
+        return ClassifiedPR(pr=pr, status=PRStatus.CONFLICTS, age_days=age_days)
+
+    # Priority 3: CI failing overrides review state.
     if pr.ci_status in ("FAILURE", "ERROR"):
         return ClassifiedPR(pr=pr, status=PRStatus.CI_FAILING, age_days=age_days)
 
     latest_reviews = _latest_review_per_author(pr.reviews)
 
-    # Priority 3: Any reviewer with CHANGES_REQUESTED blocks.
+    # Priority 4: Any reviewer with CHANGES_REQUESTED blocks.
     for author, review in latest_reviews.items():
         if review.get("state") == "CHANGES_REQUESTED":
             return ClassifiedPR(
@@ -90,7 +94,7 @@ def _classify_single(pr: PRData) -> ClassifiedPR:
     ]
 
     if approvals:
-        # Priority 4: Needs re-review if new commits after latest approval.
+        # Priority 5: Needs re-review if new commits after latest approval.
         latest_approval_date = max(rev["submitted_at"] for rev in approvals)
         last_commit = _parse_iso_date(pr.last_commit_date)
         latest_approval = _parse_iso_date(latest_approval_date)
@@ -101,10 +105,10 @@ def _classify_single(pr: PRData) -> ClassifiedPR:
                 age_days=age_days,
             )
 
-        # Priority 5: Approved -- all latest reviews are approvals.
+        # Priority 6: Approved -- all latest reviews are approvals.
         return ClassifiedPR(pr=pr, status=PRStatus.APPROVED, age_days=age_days)
 
-    # Priority 6: No meaningful reviews (none, or only COMMENTED).
+    # Priority 7: No meaningful reviews (none, or only COMMENTED).
     return ClassifiedPR(pr=pr, status=PRStatus.NEEDS_REVIEW, age_days=age_days)
 
 
@@ -113,10 +117,11 @@ def classify_prs(prs: list[PRData]) -> list[ClassifiedPR]:
 
     Classification priority (highest wins):
       1. Draft
-      2. CI Failing
-      3. Changes Requested
-      4. Needs Re-review
-      5. Approved
-      6. Needs Review
+      2. Conflicts
+      3. CI Failing
+      4. Changes Requested
+      5. Needs Re-review
+      6. Approved
+      7. Needs Review
     """
     return [_classify_single(pr) for pr in prs]

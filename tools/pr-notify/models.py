@@ -8,6 +8,7 @@ class PRStatus(Enum):
     CHANGES_REQUESTED = "changes_requested"
     APPROVED = "approved"
     CI_FAILING = "ci_failing"
+    CONFLICTS = "conflicts"
     DRAFT = "draft"
 
 
@@ -47,6 +48,7 @@ class PRData:
     review_requests: list[str]
     last_commit_date: str
     ci_status: str | None
+    mergeable: str | None = None
     check_runs: list[CheckRun] = field(default_factory=list)
 
 

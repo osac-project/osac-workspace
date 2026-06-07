@@ -36,6 +36,9 @@ def format_dashboard_data(
         "ci_failing": sum(
             1 for cpr in classified_prs if cpr.status == PRStatus.CI_FAILING
         ),
+        "conflicts": sum(
+            1 for cpr in classified_prs if cpr.status == PRStatus.CONFLICTS
+        ),
         "stale": sum(1 for cpr in reviewable if cpr.age_days >= 7),
         "approved": sum(
             1 for cpr in classified_prs if cpr.status == PRStatus.APPROVED
