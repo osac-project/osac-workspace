@@ -2,7 +2,7 @@ name: PR Dashboard
 
 on:
   schedule:
-    - cron: "*/30 9-17 * * 1-5"
+    - cron: "*/30 6-19 * * 0-5"
   workflow_dispatch:
 
 permissions:
