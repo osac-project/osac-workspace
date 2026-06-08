@@ -146,10 +146,11 @@ def format_summary_from_data(data: dict, dashboard_url: str) -> str:
     summary = data.get("summary", {})
     needs_review = summary.get("needs_review", 0)
     ci_failing = summary.get("ci_failing", 0)
+    conflicts = summary.get("conflicts", 0)
     stale = summary.get("stale", 0)
     repo_count = len(data.get("repos", []))
 
-    if not needs_review and not ci_failing:
+    if not needs_review and not ci_failing and not conflicts:
         return (
             f"All clear - no actionable PRs across {repo_count} repos :tada:\n"
             f":chart_with_upwards_trend: <{dashboard_url}|Full PR Dashboard>"
@@ -160,6 +161,8 @@ def format_summary_from_data(data: dict, dashboard_url: str) -> str:
         parts.append(f"{needs_review} need review")
     if ci_failing:
         parts.append(f"{ci_failing} CI failing")
+    if conflicts:
+        parts.append(f"{conflicts} with conflicts")
     if stale:
         parts.append(f"{stale} stale (7+ days)")
 

@@ -122,6 +122,12 @@ class TestClassifier(unittest.TestCase):
         result = classify_prs([pr])
         self.assertEqual(result[0].status, PRStatus.CI_FAILING)
 
+    def test_mergeable_unknown_not_classified_as_conflicts(self):
+        """7d. PR with mergeable UNKNOWN -> falls through to CI/review priority."""
+        pr = _make_pr(mergeable="UNKNOWN", ci_status="SUCCESS")
+        result = classify_prs([pr])
+        self.assertEqual(result[0].status, PRStatus.NEEDS_REVIEW)
+
     def test_ci_failure_overrides_approval(self):
         """8. Approved PR with CI failure -> CI_FAILING."""
         pr = _make_pr(
