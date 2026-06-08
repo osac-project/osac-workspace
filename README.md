@@ -164,21 +164,46 @@ GSD manages all state under `.planning/` — milestones, phases, plans, and veri
 
 ## Enhancement Proposals
 
-This workspace includes skills for drafting and submitting OSAC Enhancement Proposals with Claude Code.
+This workspace includes two approaches for creating OSAC Enhancement Proposals with Claude Code.
 
-**Create an EP from requirements or meeting notes:**
+### Two-Stage Flow (PRD + Design) — Recommended
 
+Follows the same pattern as flightctl: create a PRD first, merge it, then create the design document (EP). The design template is a lightly modified version of the standard EP format — requirements-heavy sections (Summary, Motivation, User Stories) are shortened with PRD references, and four new subsections are added (Security Considerations, Failure Handling, RBAC/Tenancy, Observability).
+
+**Stage 1 — PRD:**
+
+```text
+/prd:ingest OSAC-XXXXX      # Fetch requirements from Jira
+/prd:clarify                 # Iterative Q&A to resolve ambiguities
+/prd:draft                   # Generate PRD
+/prd:publish                 # Submit PR to enhancement-proposals repo
+/prd:respond                 # Address reviewer comments
 ```
+
+**Stage 2 — Design (EP):**
+
+```text
+/design:ingest OSAC-XXXXX   # Read PRD, explore codebase, capture context
+/design:draft                # Generate EP using OSAC design template
+/design:publish              # Submit PR to enhancement-proposals repo
+/design:respond              # Address reviewer comments
+/design:decompose            # Break into Jira-ready epics and stories
+/design:sync                 # Sync epics/stories to Jira
+```
+
+Both stages publish to the `enhancement-proposals` repo under `enhancements/<feature-slug>/` — the PRD as `prd.md` and the design document as `README.md`.
+
+### Single-Step Flow (Legacy)
+
+For simpler proposals that don't need a separate PRD:
+
+```text
 /ep.create
 ```
 
-Provide rough requirements, meeting notes, or a Jira ticket (e.g., `OSAC-XXXXX`) and the skill will:
+Provide rough requirements, meeting notes, or a Jira ticket (e.g., `OSAC-XXXXX`) and the skill will explore the codebase, ask clarifying questions, generate a full EP, and submit a PR.
 
-1. Explore the OSAC codebase and existing proposals for context
-2. Ask clarifying questions before drafting
-3. Generate a template-compliant EP under `enhancement-proposals/enhancements/<feature-slug>/README.md`
-4. Submit a PR to [osac-project/enhancement-proposals](https://github.com/osac-project/enhancement-proposals) on approval
-5. Iterate on reviewer feedback
+### Post-Approval
 
 **Convert an approved EP into Jira work items:**
 

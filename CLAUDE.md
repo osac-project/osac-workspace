@@ -11,6 +11,7 @@ OSAC (Open Sovereign AI Cloud) is a fulfillment system for provisioning Kubernet
 - **Never skip tenant isolation metadata** (`osac.openshift.io/tenant`, `osac.openshift.io/owner-reference` annotations) in new resources
 - **Always `buf lint` before committing** proto changes; regenerate with `buf generate`
 - **Fork-based workflow**: always push to `fork` remote, never to `origin`. PRs go from `fork/<branch>` to `origin/main`
+- **AI attribution**: use `Assisted-by: Claude Code <noreply@anthropic.com>` trailer on commits — never use `Co-Authored-By` for AI tools (Red Hat attribution standard)
 - When debugging Kubernetes operators, check for stale vendor directories and cached images before rebuilding
 
 ## Repository Structure
@@ -50,6 +51,35 @@ Use this table to go directly to the right file for common bug patterns instead 
 | `unknown object type` or unhandled type in switch | `internal/servers/generic_server.go` — `setPayload()` switch statement |
 | Public API missing field (Create/Update not persisting a field) | `internal/servers/*_server.go` — `Create()` and `Update()` methods |
 | Table rendering missing or incorrect column | `internal/rendering/tables/*.yaml` — table definition files |
+
+## PRD and Design Workflows
+
+OSAC uses the flightctl ai-workflows PRD and design skills with project-level template overrides in `.design/templates/`. The two-stage flow replaces the single-step `/ep-create` for new enhancement proposals.
+
+### Docs Repo
+
+- Both PRD and design workflows publish to the `enhancement-proposals` repo
+- Local path: `./enhancement-proposals/`
+- When the publish phase asks for the docs repo, provide this path
+
+### File Path Conventions
+
+When publishing PRDs and design documents to the enhancement-proposals repo:
+- Skip the "release" question — use `enhancements` as the fixed directory prefix
+- Feature directory: `enhancements/<feature-slug>/` (e.g., `enhancements/storage-network/`)
+- PRD filename: `prd.md`
+- Design (EP) filename: `README.md` (not `design.md` — this is the main EP file)
+- Both files live in the same directory: `enhancements/<slug>/prd.md` and `enhancements/<slug>/README.md`
+
+### Fork-Based Workflow
+
+Push to the `fork` remote in the enhancement-proposals repo, not `origin`. PRs go from `fork/<branch>` to `origin/main`.
+
+### Template Overrides
+
+- Design template: `.design/templates/design.md` (EP format with PRD-aware modifications)
+- Design section guidance: `.design/templates/section-guidance.md`
+- PRD template: uses the flightctl default (no override)
 
 ## Quick Reference Commands
 
