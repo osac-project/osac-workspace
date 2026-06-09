@@ -21,6 +21,7 @@ _BOT_AUTHORS = frozenset(
         "codecov",
         "codecov[bot]",
         "sonarcloud[bot]",
+        "coderabbitai[bot]",
     }
 )
 

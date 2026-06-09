@@ -196,6 +196,29 @@ class TestClassifier(unittest.TestCase):
         # Bot approvals don't count -> NEEDS_REVIEW
         self.assertEqual(result[0].status, PRStatus.NEEDS_REVIEW)
 
+    def test_coderabbit_approval_alone_needs_review(self):
+        """Bonus: CodeRabbit-only approval still needs human review."""
+        pr = _make_pr(
+            reviews=[
+                _make_review("coderabbitai[bot]", "APPROVED", "2026-04-21T10:00:00Z"),
+            ],
+            last_commit_date="2026-04-20T08:00:00Z",
+        )
+        result = classify_prs([pr])
+        self.assertEqual(result[0].status, PRStatus.NEEDS_REVIEW)
+
+    def test_coderabbit_plus_human_approval_is_approved(self):
+        """Bonus: CodeRabbit + human approval -> APPROVED."""
+        pr = _make_pr(
+            reviews=[
+                _make_review("coderabbitai[bot]", "APPROVED", "2026-04-21T10:00:00Z"),
+                _make_review("bob", "APPROVED", "2026-04-21T11:00:00Z"),
+            ],
+            last_commit_date="2026-04-20T08:00:00Z",
+        )
+        result = classify_prs([pr])
+        self.assertEqual(result[0].status, PRStatus.APPROVED)
+
     def test_latest_review_per_author_deduplication(self):
         """Bonus: _latest_review_per_author returns only the latest per author."""
         reviews = [
