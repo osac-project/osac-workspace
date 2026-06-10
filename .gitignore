@@ -60,6 +60,12 @@ osac-test-infra/
 enhancement-proposals/
 docs/
 
+# Workflow artifacts (bugfix, implement) — keep shared config
+.artifacts/*
+!.artifacts/prd/
+.artifacts/prd/*
+!.artifacts/prd/config.json
+
 # AI Tooling
 .cursor/
 .gemini/
