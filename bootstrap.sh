@@ -62,6 +62,7 @@ get_fork_url() {
 
 ensure_fork_remote() {
   local repo="$1"
+  local dir="$2"
   # Ensure fork exists on GitHub, then verify it
   if ! gh repo fork "${GITHUB_ORG}/${repo}" --clone=false 2>/dev/null; then
     if ! gh repo view "${GH_USER}/${repo}" &>/dev/null; then
@@ -71,8 +72,8 @@ ensure_fork_remote() {
   fi
   local url
   url=$(get_fork_url "$repo")
-  git -C "$repo" remote add fork "$url"
-  git -C "$repo" fetch fork
+  git -C "$dir" remote add fork "$url"
+  git -C "$dir" fetch fork
 }
 
 REPOS=(
@@ -82,28 +83,28 @@ REPOS=(
   "osac-installer"
   "osac-test-infra"
   "enhancement-proposals"
-  "docs"
+  "docs:osac-docs"
   "host-management-openstack"
   "bare-metal-fulfillment-operator"
 )
 
-for repo in "${REPOS[@]}"; do
-  if [ -d "$repo" ]; then
-    echo "📦 Updating $repo..."
-    (cd "$repo" && git fetch origin && git rebase origin/main --autostash)
-    # Add fork remote to existing repos that don't have one yet
-    # (e.g., previously cloned with --no-fork)
-    if [ "$NO_FORK" = false ] && ! git -C "$repo" remote get-url fork &>/dev/null; then
-      echo "🍴 Adding fork remote for existing repo $repo..."
-      ensure_fork_remote "$repo" || true
+for entry in "${REPOS[@]}"; do
+  repo="${entry%%:*}"
+  dir="${entry#*:}"
+  if [ -d "$dir" ]; then
+    echo "📦 Updating $dir..."
+    (cd "$dir" && git fetch origin && git rebase origin/main --autostash)
+    if [ "$NO_FORK" = false ] && ! git -C "$dir" remote get-url fork &>/dev/null; then
+      echo "🍴 Adding fork remote for existing repo $dir..."
+      ensure_fork_remote "$repo" "$dir" || true
     fi
   else
-    echo "📥 Cloning $repo..."
-    git clone "https://github.com/${GITHUB_ORG}/${repo}.git"
+    echo "📥 Cloning $repo into $dir..."
+    git clone "https://github.com/${GITHUB_ORG}/${repo}.git" "$dir"
 
     if [ "$NO_FORK" = false ]; then
       echo "🍴 Adding fork remote for $repo..."
-      ensure_fork_remote "$repo" || true
+      ensure_fork_remote "$repo" "$dir" || true
     fi
   fi
 done
@@ -132,24 +133,26 @@ echo "🔧 Installing ai-workflows skills..."
 if command -v rh-multi-pre-commit &>/dev/null; then
   echo ""
   echo "🔒 Installing rh-pre-commit hooks..."
-  for repo in "${REPOS[@]}"; do
-    if [ -d "$repo" ]; then
-      if rh-multi-pre-commit install --path "$repo" 2>&1; then
-        echo "   ✅ $repo"
+  for entry in "${REPOS[@]}"; do
+    dir="${entry#*:}"
+    if [ -d "$dir" ]; then
+      if rh-multi-pre-commit install --path "$dir" 2>&1; then
+        echo "   ✅ $dir"
       else
-        echo "   ⚠️  $repo (failed to install hooks)"
+        echo "   ⚠️  $dir (failed to install hooks)"
       fi
     fi
   done
 elif command -v pre-commit &>/dev/null; then
   echo ""
   echo "🔒 Installing pre-commit hooks..."
-  for repo in "${REPOS[@]}"; do
-    if [ -d "$repo" ] && [ -f "$repo/.pre-commit-config.yaml" ]; then
-      if (cd "$repo" && pre-commit install 2>&1); then
-        echo "   ✅ $repo"
+  for entry in "${REPOS[@]}"; do
+    dir="${entry#*:}"
+    if [ -d "$dir" ] && [ -f "$dir/.pre-commit-config.yaml" ]; then
+      if (cd "$dir" && pre-commit install 2>&1); then
+        echo "   ✅ $dir"
       else
-        echo "   ⚠️  $repo (failed to install hooks)"
+        echo "   ⚠️  $dir (failed to install hooks)"
       fi
     fi
   done
@@ -165,12 +168,13 @@ echo ""
 echo "✅ Workspace ready! All repos are on their latest main branch."
 echo ""
 echo "📂 Available repos:"
-for repo in "${REPOS[@]}"; do
-  if [ -d "$repo" ]; then
-    branch=$(git -C "$repo" branch --show-current 2>/dev/null || echo "unknown")
-    origin_url=$(git -C "$repo" remote get-url origin 2>/dev/null || echo "not set")
-    fork_url=$(git -C "$repo" remote get-url fork 2>/dev/null || echo "not set")
-    echo "   $repo (branch: $branch)"
+for entry in "${REPOS[@]}"; do
+  dir="${entry#*:}"
+  if [ -d "$dir" ]; then
+    branch=$(git -C "$dir" branch --show-current 2>/dev/null || echo "unknown")
+    origin_url=$(git -C "$dir" remote get-url origin 2>/dev/null || echo "not set")
+    fork_url=$(git -C "$dir" remote get-url fork 2>/dev/null || echo "not set")
+    echo "   $dir (branch: $branch)"
     echo "     origin: $origin_url"
     if [ "$fork_url" != "not set" ]; then
       echo "     fork:   $fork_url"
