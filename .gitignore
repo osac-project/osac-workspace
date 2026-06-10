@@ -70,8 +70,11 @@ docs/pr-dashboard/data.json
 # ai-workflows installer creates top-level skills/ symlinks
 skills/
 
-# Workflow artifacts (bugfix, implement)
-.artifacts/
+# Workflow artifacts (bugfix, implement) — keep shared config
+.artifacts/*
+!.artifacts/prd/
+.artifacts/prd/*
+!.artifacts/prd/config.json
 
 # AI Tooling
 .cursor/
