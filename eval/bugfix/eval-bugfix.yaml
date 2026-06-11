@@ -103,24 +103,29 @@ traces:
   metrics: true
 
 judges:
+  # Note: each check: block runs in isolation — the harness does not support
+  # shared helpers, so _extract_edited_paths is defined in each judge.
+
   - name: correct_repo
     description: Agent modified files in the expected repository/repositories
     check: |
-      import json, re
+      import json
+      def _extract_edited_paths(stdout):
+          paths = set()
+          for line in stdout.split("\n"):
+              try:
+                  e = json.loads(line)
+                  if e.get("type") != "assistant": continue
+                  for block in (e.get("message", {}).get("content") or []):
+                      if block.get("type") == "tool_use" and block.get("name") in ("Edit", "Write"):
+                          fp = block.get("input", {}).get("file_path", "")
+                          if fp: paths.add(fp)
+              except (json.JSONDecodeError, TypeError): pass
+          return paths
       expected = set(outputs.get("annotations", {}).get("expected_repos", []))
       if not expected:
           return (False, "No expected_repos in annotations")
-      edited_paths = set()
-      stdout = outputs.get("stdout", "")
-      for line in stdout.split("\n"):
-          try:
-              e = json.loads(line)
-              if e.get("type") != "assistant": continue
-              for block in (e.get("message", {}).get("content") or []):
-                  if block.get("type") == "tool_use" and block.get("name") in ("Edit", "Write"):
-                      fp = block.get("input", {}).get("file_path", "")
-                      if fp: edited_paths.add(fp)
-          except (json.JSONDecodeError, TypeError): pass
+      edited_paths = _extract_edited_paths(outputs.get("stdout", ""))
       modified_repos = set()
       for fp in edited_paths:
           for repo in expected:
@@ -137,20 +142,22 @@ judges:
     description: Agent modified the expected files (or semantically equivalent ones)
     check: |
       import json
+      def _extract_edited_paths(stdout):
+          paths = set()
+          for line in stdout.split("\n"):
+              try:
+                  e = json.loads(line)
+                  if e.get("type") != "assistant": continue
+                  for block in (e.get("message", {}).get("content") or []):
+                      if block.get("type") == "tool_use" and block.get("name") in ("Edit", "Write"):
+                          fp = block.get("input", {}).get("file_path", "")
+                          if fp: paths.add(fp)
+              except (json.JSONDecodeError, TypeError): pass
+          return paths
       expected_files = outputs.get("annotations", {}).get("expected_files", [])
       if not expected_files:
           return (True, "No expected_files specified — skipping")
-      edited_paths = []
-      stdout = outputs.get("stdout", "")
-      for line in stdout.split("\n"):
-          try:
-              e = json.loads(line)
-              if e.get("type") != "assistant": continue
-              for block in (e.get("message", {}).get("content") or []):
-                  if block.get("type") == "tool_use" and block.get("name") in ("Edit", "Write"):
-                      fp = block.get("input", {}).get("file_path", "")
-                      if fp: edited_paths.append(fp)
-          except (json.JSONDecodeError, TypeError): pass
+      edited_paths = _extract_edited_paths(outputs.get("stdout", ""))
       matched = 0
       for ef in expected_files:
           for fp in edited_paths:
@@ -159,24 +166,26 @@ judges:
                   break
       ratio = matched / len(expected_files) if expected_files else 0
       if ratio < 0.5:
-          return (False, f"Only {matched}/{len(expected_files)} expected files. Edited: {edited_paths[:10]}")
+          return (False, f"Only {matched}/{len(expected_files)} expected files. Edited: {sorted(edited_paths)[:10]}")
       return (True, f"{matched}/{len(expected_files)} expected files modified")
 
   - name: tests_added
     description: Agent added or modified at least one test file
     check: |
       import json
-      edited_paths = []
-      stdout = outputs.get("stdout", "")
-      for line in stdout.split("\n"):
-          try:
-              e = json.loads(line)
-              if e.get("type") != "assistant": continue
-              for block in (e.get("message", {}).get("content") or []):
-                  if block.get("type") == "tool_use" and block.get("name") in ("Edit", "Write"):
-                      fp = block.get("input", {}).get("file_path", "")
-                      if fp: edited_paths.append(fp)
-          except (json.JSONDecodeError, TypeError): pass
+      def _extract_edited_paths(stdout):
+          paths = set()
+          for line in stdout.split("\n"):
+              try:
+                  e = json.loads(line)
+                  if e.get("type") != "assistant": continue
+                  for block in (e.get("message", {}).get("content") or []):
+                      if block.get("type") == "tool_use" and block.get("name") in ("Edit", "Write"):
+                          fp = block.get("input", {}).get("file_path", "")
+                          if fp: paths.add(fp)
+              except (json.JSONDecodeError, TypeError): pass
+          return paths
+      edited_paths = _extract_edited_paths(outputs.get("stdout", ""))
       test_files = [f for f in edited_paths if "_test." in f or "test_" in f or ".spec." in f or "/tests/" in f]
       if not test_files:
           return (False, "No test files added or modified")
@@ -208,13 +217,10 @@ judges:
       You are evaluating a bugfix produced by an AI agent against the real
       fix that was merged by human developers.
 
-      ## Real Fix (Reference)
-      The following is the actual PR diff that fixed this bug:
-
-      {{ outputs.files.get(".eval-ref/reference.md", "Reference not available") }}
-
-      ## Agent's Fix
-      The agent produced these changes and artifacts:
+      Below are all collected outputs. The file `.eval-ref/reference.md`
+      contains the real PR diff that fixed this bug. Files under `.ai-bot/`
+      are the agent's artifacts (root-cause analysis, implementation notes,
+      etc.). Compare the agent's approach against the reference fix.
 
       {{ outputs }}
 

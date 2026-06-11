@@ -132,7 +132,7 @@ fi
 
 # --- Step 5: Score ---
 
-if [ "$SKIP_SCORE" = false ] && [ "$SKIP_EXECUTE" = false ]; then
+if [ "$SKIP_SCORE" = false ]; then
     echo "--- Step 5: Scoring ---"
 
     AGENT_EVAL_RUNS_DIR="$SCRIPT_DIR/runs" \

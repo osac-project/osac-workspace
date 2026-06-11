@@ -4,7 +4,6 @@
 MGMT-23402: add SecurityGroup to notification event type switch
 
 ## Summary
-## Summary
 - Adds `SecurityGroup` case to the `setPayload` type switch in `generic_server.go`
 - Without this, creating a SecurityGroup via the API returns HTTP 500 (`unknown object type '*privatev1.SecurityGroup'`)
 

@@ -47,10 +47,11 @@ done
 while IFS=' ' read -r repo sha; do
     [ -z "$repo" ] && continue
     echo "Setting up $repo at ${sha:0:8}..."
-    rm -rf "$WORKSPACE_ROOT/$repo"
+    rm -rf "${WORKSPACE_ROOT:?}/$repo"
     cp -a "$CACHE_DIR/$repo" "$WORKSPACE_ROOT/$repo"
-    git -C "$WORKSPACE_ROOT/$repo" checkout "$sha" --quiet 2>/dev/null || {
-        echo "  WARNING: Could not checkout $sha in $repo"
+    git -C "$WORKSPACE_ROOT/$repo" checkout "$sha" --quiet || {
+        echo "ERROR: Could not checkout $sha in $repo"
+        exit 1
     }
 done <<< "$REPOS"
 
