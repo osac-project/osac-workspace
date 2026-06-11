@@ -57,6 +57,7 @@ __pycache__/
 fulfillment-service/
 osac-operator/
 osac-aap/
+osac-docs/
 osac-installer/
 osac-test-infra/
 enhancement-proposals/

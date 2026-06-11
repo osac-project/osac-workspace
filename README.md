@@ -54,7 +54,9 @@ Use `--no-fork` if you only need read-only access or are running in CI.
 | [osac-installer](https://github.com/osac-project/osac-installer) | Installation manifests, prerequisites, and demo scripts |
 | [osac-test-infra](https://github.com/osac-project/osac-test-infra) | Integration testing infrastructure |
 | [enhancement-proposals](https://github.com/osac-project/enhancement-proposals) | Design documents and enhancement proposals |
-| [docs](https://github.com/osac-project/docs) | Architecture documentation, diagrams, and design guides |
+| [docs](https://github.com/osac-project/docs)[^1] | Architecture documentation, diagrams, and design guides |
+
+[^1]: Cloned into a subdirectory as `osac-docs`
 
 ## What's Included
 
