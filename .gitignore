@@ -60,6 +60,7 @@ osac-aap/
 osac-docs/
 osac-installer/
 osac-test-infra/
+osac-ui/
 enhancement-proposals/
 bare-metal-fulfillment-operator/
 host-management-openstack/
