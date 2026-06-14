@@ -39,7 +39,7 @@ if [ "$NO_FORK" = false ]; then
     echo "Install it (https://cli.github.com/) or use --no-fork for read-only clone."
     exit 1
   fi
-  if ! gh auth status &>/dev/null; then
+  if ! gh auth status; then
     echo "❌ Error: gh CLI is not authenticated."
     echo "Run 'gh auth login' or use --no-fork for read-only clone."
     exit 1
@@ -60,12 +60,22 @@ get_fork_url() {
   fi
 }
 
+confirm_continue() {
+  local prompt="$1"
+   if ! [ -t 0 ]; then
+    echo "❌ $prompt Non-interactive session, cannot prompt for confirmation. Aborting." >&2
+    exit 1
+  fi
+  read -r -p "$prompt Continue? [y/N] " reply </dev/tty
+  [[ "$reply" =~ ^[Yy]$ ]]
+}
+
 ensure_fork_remote() {
   local repo="$1"
   local dir="$2"
   # Ensure fork exists on GitHub, then verify it
-  if ! gh repo fork "${GITHUB_ORG}/${repo}" --clone=false 2>/dev/null; then
-    if ! gh repo view "${GH_USER}/${repo}" &>/dev/null; then
+  if ! gh repo fork "${GITHUB_ORG}/${repo}" --clone=false --default-branch-only; then
+    if ! gh repo view "${GH_USER}/${repo}"; then
       echo "❌ Failed to fork ${GITHUB_ORG}/${repo}. Skipping fork remote."
       return 1
     fi
@@ -97,7 +107,7 @@ for entry in "${REPOS[@]}"; do
     (cd "$dir" && git fetch origin && git rebase origin/main --autostash)
     if [ "$NO_FORK" = false ] && ! git -C "$dir" remote get-url fork &>/dev/null; then
       echo "🍴 Adding fork remote for existing repo $dir..."
-      ensure_fork_remote "$repo" "$dir" || true
+      ensure_fork_remote "$repo" "$dir" || confirm_continue "Fork remote for $repo failed."
     fi
   else
     echo "📥 Cloning $repo into $dir..."
@@ -105,7 +115,7 @@ for entry in "${REPOS[@]}"; do
 
     if [ "$NO_FORK" = false ]; then
       echo "🍴 Adding fork remote for $repo..."
-      ensure_fork_remote "$repo" "$dir" || true
+      ensure_fork_remote "$repo" "$dir" || confirm_continue "Fork remote for $repo failed."
     fi
   fi
 done
