@@ -7,7 +7,7 @@ Common review feedback patterns from past OSAC EP PRs. Both `/prd:draft` and
 
 ### Completeness
 - All template sections must be present, even if marked "TBD" or "N/A"
-- User stories should cover all four OSAC personas (see `osac-dimensions.md`)
+- User stories should cover all four OSAC personas where applicable (see `osac-dimensions.md`)
 - Implementation details should be thorough — successful EPs are 400-800 lines
 - Test plans should describe strategy, not just "tests will be added"
 
@@ -17,7 +17,7 @@ Common review feedback patterns from past OSAC EP PRs. Both `/prd:draft` and
 - Workflows should enumerate steps with actor roles clearly defined
 
 ### Consistency with OSAC Patterns
-- New APIs should follow existing fulfillment-service patterns (gRPC + REST, proto schemas)
+- New APIs should be declarative, following [Kubernetes API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md) where possible
 - Resources should include tenant isolation metadata (annotations for tenant-id, owner-reference)
 - Controller patterns should align with osac-operator conventions
 - Integration with osac-aap should be described for provisioning workflows
@@ -49,21 +49,11 @@ Existing EPs as quality benchmarks:
 | `computeinstance-phase-condition-expansion` | ComputeInstance status and lifecycle updates | ~200 | API evolution pattern for existing resources |
 
 Key takeaways:
-- Networking EP (818 lines) sets the bar for technical depth
 - All EPs follow the template structure exactly (no skipped sections)
 - Successful EPs define terminology upfront and use it consistently
 
-## Key Reviewers by Domain
-
-| Domain | Reviewers |
-|--------|-----------|
-| Networking | adriengentil, eranco74, larsks, AlonaKaplan |
-| Bare Metal | tzumainn, eranco74 |
-| VMaaS | adriengentil, akshaynadkarni, hpdempsey |
-
 ## Review Process
 
-- At least 2 approvals required for merge
 - Address each comment explicitly (update the proposal or explain why not)
 - Don't resolve comments yourself — let the reviewer resolve after confirming
 - Update `last-updated` frontmatter field when making changes

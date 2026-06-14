@@ -5,8 +5,6 @@ document must address. Both the PRD (`/prd`) and design (`/design`) workflows
 should consult this file during their ingest phases to ensure comprehensive
 coverage.
 
-Source: [Delivery Overview](https://docs.google.com/spreadsheets/d/1Gw4zbnim9oCjHkvqREvoNyViHgLd4JBZcBmtaFrO0xE)
-
 ## Services
 
 Every feature applies to one or more OSAC services. The PRD must declare
@@ -16,9 +14,9 @@ implementation differences.
 | Service | Description |
 |---------|-------------|
 | **BMaaS** | Bare Metal as a Service — provisioning and lifecycle of physical machines |
-| **CaaS** | Containers as a Service — Kubernetes cluster provisioning via Hosted Control Planes |
+| **CaaS** | Cluster as a Service — Kubernetes cluster provisioning via Hosted Control Planes |
 | **VMaaS** | Virtual Machines as a Service — KubeVirt-based compute instances |
-| **MaaS** | Management as a Service — platform management layer |
+| **MaaS** | Model as a Service — AI model serving and inference platform |
 | **Enclave** | Day 1/Day 2 operations, installation monitoring, wizard UI |
 
 ## Personas
@@ -53,41 +51,24 @@ How does the feature interact with tenant provisioning?
 
 Which inventory backend(s) does the feature use or affect?
 
-| Backend | Used By |
-|---------|---------|
-| OpenStack ESI | BMaaS |
-| File-based | CaaS, BMaaS (0.2) |
-| BCM | CaaS, BMaaS (0.2) |
-
 - Is the inventory accessed through the Fulfillment API or directly?
 - Does the feature add new inventory backends or extend existing ones?
+- Which services consume the inventory data?
 
 ### Provisioning
 
 What provisioning mechanism does the feature use?
 
-| Mechanism | Used By |
-|-----------|---------|
-| OpenStack ESI | BMaaS (0.1) |
-| Metal3 | CaaS, BMaaS (0.2) |
-| KubeVirt | VMaaS |
-
+- Which provisioning backend(s) are involved?
 - Lifecycle stages affected (create, start, stop, restart, delete)
 - Power management considerations (BMaaS)
 - Cluster vs. instance provisioning differences
 
 ### Networking
 
-Which networking backend(s) are involved, and is the integration through the
-OSAC networking API or a side-channel?
+Which networking backend(s) are involved?
 
-| Backend | Used By | API-Integrated? |
-|---------|---------|-----------------|
-| CUDN + MetalLB L2 + NetworkPolicy | VMaaS | Yes (VirtualNetwork, Subnet, SecurityGroup, PublicIP) |
-| Netris | CaaS, BMaaS (0.2) | Not in 0.1, generic API in 0.2 |
-| Ansible VLANs | CaaS, BMaaS (0.2) | Not in 0.1, generic API in 0.2 |
-| OpenStack | BMaaS (0.1) | No (no integration with networking API) |
-
+- Is the integration through the OSAC networking API or a side-channel?
 - Does the feature add or modify networking API resources?
 - NetworkClass configuration requirements (Cloud Infrastructure Admin)
 - PublicIP pool management
@@ -113,14 +94,11 @@ How does the feature affect deployment and installation?
 
 ## User-Facing API
 
-For each service in scope, list the API resources the feature exposes or
-modifies:
+For each service in scope, identify which API surfaces the feature touches:
 
-| Service | API Resources |
-|---------|--------------|
-| BMaaS | BareMetalPool, BareMetalInstance (lifecycle, power management), Catalog Items |
-| CaaS | ClusterOrder, Catalog Items |
-| VMaaS | ComputeInstance, VirtualNetwork, Subnet, SecurityGroup, PublicIP, Catalog Items |
+- **Fulfillment API** (gRPC/REST) — which resources are created or modified?
+- **OSAC CRDs** (Kubernetes) — which custom resources are created or modified?
+- **Catalog Items** — does the feature introduce or change catalog entries?
 
 ## Milestone Scoping
 

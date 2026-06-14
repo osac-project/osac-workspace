@@ -3,8 +3,8 @@ name: ep-review
 description: |
   Review an OSAC enhancement proposal against template requirements, architectural patterns,
   and historical reviewer expectations. Use when reviewing an EP PR, preparing an EP for
-  submission, or self-reviewing a draft before requesting feedback. Produces structured
-  findings with severity levels and actionable suggestions.
+  submission, or self-reviewing a draft before requesting feedback. Produces rubric scores
+  and structured findings with severity levels and actionable suggestions.
 
   Also trigger when user says "review this EP", "check this enhancement proposal",
   "is this EP ready", "review PR on enhancement-proposals", or references a PR
@@ -15,7 +15,7 @@ description: |
 
 ## Overview
 
-This skill reviews an enhancement proposal against the [OSAC EP template](https://github.com/osac-project/enhancement-proposals/blob/main/guidelines/enhancement_template.md), architectural conventions, and patterns learned from past reviewer feedback across merged and open EPs. It acts as a first-pass reviewer catching issues before human reviewers spend time on them.
+This skill reviews an enhancement proposal against the [OSAC EP template](https://github.com/osac-project/enhancement-proposals/blob/main/guidelines/enhancement_template.md), architectural conventions, and patterns learned from past reviewer feedback. It scores the EP across four dimensions and produces structured findings that help the author fix issues before human reviewers spend time on them.
 
 ## When to Use
 
@@ -23,6 +23,7 @@ This skill reviews an enhancement proposal against the [OSAC EP template](https:
 - Self-reviewing a draft EP before submitting
 - Preparing a revision in response to reviewer feedback
 - Checking if an EP is ready for merge
+- After `/design:revise` to verify improvements
 
 ## Input Detection
 
@@ -35,133 +36,193 @@ Detect what's being reviewed:
 ### Fetching from PR
 
 ```bash
-# Get the EP file from a PR
 gh pr diff <N> --repo osac-project/enhancement-proposals
-# Get PR metadata
 gh pr view <N> --repo osac-project/enhancement-proposals --json title,body,author
 ```
 
-### Reading from disk
+## Load Context
 
-```bash
-cat enhancement-proposals/enhancements/<feature-slug>/README.md
-```
+Before reviewing, read these files if they exist:
+
+1. `.design/context/osac-dimensions.md` — services, personas, cross-cutting dimensions
+2. `.design/context/review-patterns.md` — reviewer feedback themes, anti-patterns, EP reference library
+3. `.planning/codebase/ARCHITECTURE.md` — system architecture for technical grounding
+4. `docs/personas.md` — canonical OSAC persona definitions
 
 ## Review Dimensions
 
-Evaluate the EP across these dimensions, ordered by importance:
+Evaluate the EP across four dimensions. Each dimension is scored 1-5:
 
-### 1. Template Compliance (Required)
+| Score | Meaning |
+|-------|---------|
+| 5 | Excellent — exceeds expectations, no issues |
+| 4 | Good — minor suggestions only |
+| 3 | Adequate — meets minimum bar, some gaps to address |
+| 2 | Needs work — significant gaps that will cause review friction |
+| 1 | Insufficient — fundamental problems, not ready for review |
 
-All sections from the [template](https://github.com/osac-project/enhancement-proposals/blob/main/guidelines/enhancement_template.md) must be present. If a section doesn't apply, it must explain why — not be removed.
+### Dimension 1: Architecture (weight: 30%)
+
+Are the technical decisions sound and consistent with OSAC patterns?
 
 Check:
+- [ ] Resource hierarchy uses owner reference annotations (`osac.openshift.io/owner-reference`), not separate fields
+- [ ] Tenant isolation includes `osac.openshift.io/tenant` annotation on all new resources
+- [ ] API conventions followed: gRPC + REST gateway, proto naming (PascalCase messages, snake_case fields, SCREAMING_SNAKE_CASE enums)
+- [ ] Controller patterns follow: finalizer → status update → provisioning lifecycle
+- [ ] State enums use Pending/Ready/Failed pattern (not terminal "Rejected" states)
+- [ ] Maps avoided in CRDs — prefer lists of named subobjects
+- [ ] Write-only fields (secrets/credentials) are redacted in GET responses
+- [ ] Dependencies between components are identified and ordering is clear
+- [ ] Integration with existing services (fulfillment-service, osac-operator, osac-aap) is described
+- [ ] Pluggable architectures preferred over hardcoded implementations (e.g., NetworkClass pattern)
+- [ ] Cross-repo impacts enumerated (which components need changes?)
+- [ ] Breaking changes called out with migration strategies
+
+**Scoring guide:**
+- 5: All OSAC patterns followed, dependencies clear, integration well-described
+- 3: Core patterns followed, some integration gaps, minor convention misses
+- 1: Fundamental architectural misalignment, missing tenant isolation, no dependency analysis
+
+### Dimension 2: Feasibility (weight: 25%)
+
+Is the implementation realistic and proportional to the scope?
+
+Check:
+- [ ] Implementation details are specific — names data structures, specifies error codes, defines validation rules
+- [ ] Proto schemas included for new resources (at least key fields, types, constraints)
+- [ ] No hand-waving on hard parts ("handle edge cases appropriately", "implement as needed")
+- [ ] Effort is proportional to scope — a "small" EP shouldn't require changes in 5 repos
+- [ ] Workflow covers all lifecycle operations (create, get, list, update, delete), not just happy path
+- [ ] Error handling and failure modes described
+- [ ] Risks are specific technical risks with concrete mitigations, not generic statements
+- [ ] Drawbacks section steel-mans the argument against the proposal
+
+**Scoring guide:**
+- 5: Deep technical detail, proto schemas present, risks with concrete mitigations
+- 3: Reasonable detail, some sections thin, risks somewhat generic
+- 1: Vague implementation, no proto schemas, risks are platitudes
+
+### Dimension 3: Scope (weight: 20%)
+
+Is the EP right-sized with clear boundaries?
+
+Check:
+- [ ] Summary is 3-5 sentences answering: what's added, why it's valuable, key capabilities
+- [ ] Goals are 3-7 bullet points describing user-visible outcomes, not implementation tasks
+- [ ] Non-goals are specific about what's explicitly out of scope and why
+- [ ] No scope creep signals ("and related functionality", "all necessary changes", "full support for")
+- [ ] Target milestone declared (from `osac-dimensions.md` milestone scoping)
+- [ ] Alternatives section includes at least one real alternative with explanation of why it was rejected
+- [ ] Related EPs referenced in see-also frontmatter field
+- [ ] User stories cover all relevant OSAC personas (Cloud Provider Admin, Cloud Infrastructure Admin, Tenant Admin, Tenant User)
+- [ ] User stories follow the formula: "As a [role], I want to [action] so that I can [goal]"
+- [ ] User stories describe user goals, not implementation details
+
+**Scoring guide:**
+- 5: Clear boundaries, all personas covered, specific non-goals, real alternatives
+- 3: Boundaries mostly clear, some personas missing, non-goals could be more specific
+- 1: Scope unbounded, only one persona, vague non-goals, no alternatives
+
+### Dimension 4: Completeness (weight: 25%)
+
+Are all template sections present and substantive?
+
+Check against the [EP template](https://github.com/osac-project/enhancement-proposals/blob/main/guidelines/enhancement_template.md):
+
 - [ ] YAML frontmatter complete (title, authors, creation-date, last-updated, tracking-link, see-also)
-- [ ] All required sections present: Summary, Motivation (User Stories, Goals, Non-Goals), Proposal (Workflow Description, API Extensions, Implementation Details, Risks and Mitigations, Drawbacks), Alternatives, Test Plan, Graduation Criteria, Upgrade/Downgrade Strategy, Version Skew Strategy, Support Procedures, Infrastructure Needed
-- [ ] No placeholder-only sections (every section has substantive content or explains N/A)
-- [ ] Date format is YYYY-MM-DD
 - [ ] Tracking link is a full URL (https://redhat.atlassian.net/browse/OSAC-XXXXX)
+- [ ] Date format is YYYY-MM-DD
+- [ ] All required sections present: Summary, Motivation (User Stories, Goals, Non-Goals), Proposal (Workflow Description, API Extensions, Implementation Details, Risks and Mitigations, Drawbacks), Alternatives, Test Plan, Graduation Criteria, Upgrade/Downgrade Strategy, Version Skew Strategy, Support Procedures, Infrastructure Needed
+- [ ] No sections removed — sections that don't apply explain why
+- [ ] No placeholder-only sections — every section has substantive content or explains N/A
+- [ ] Terminology defined upfront and used consistently throughout
+- [ ] Test plan describes strategy (unit, integration, e2e) even if details are TBD
+- [ ] OSAC dimensions addressed for in-scope services (from `.design/context/osac-dimensions.md`)
+- [ ] Length is in the 300-800 line range (under 200 suggests insufficient depth)
 
-### 2. Clarity and Structure
-
-Reviewers consistently flag these patterns:
-
-- **Summary too long or contains implementation details** → Should be 3-5 sentences answering: what's added, why it's valuable, key capabilities
-- **User Stories missing the formula** → Must use "As a [role], I want to [action] so that I can [goal]"
-- **User Stories focused on implementation, not user goals** → "As a tenant, I want the system to create a CRD" is wrong; "As a tenant, I want to provision a VM so I can run my workload" is right
-- **Goals describe implementation, not outcomes** → Goals should be measurable outcomes, not task lists
-- **Non-Goals are vague** → Must be specific about what's explicitly out of scope and why
-- **Terminology undefined or inconsistent** → Key terms should be defined upfront and used consistently throughout
-- **Proposal section unclear** → Should have 1-2 paragraphs per resource explaining relationships
-
-### 3. Architectural Alignment
-
-Check against OSAC patterns:
-
-- **Resource hierarchy** → Parent-child relationships use owner reference annotations (`osac.openshift.io/owner-reference`), not separate fields
-- **Tenant isolation** → Resources include `osac.openshift.io/tenant` annotation
-- **API conventions** → gRPC with REST gateway, proto schemas with proper naming (PascalCase messages, snake_case fields, SCREAMING_SNAKE_CASE enums)
-- **Controller patterns** → Finalizer → status update → provisioning lifecycle
-- **Maps as anti-pattern** → In Kubernetes CRDs, prefer lists of named subobjects over maps
-- **State enums** → Use Pending/Ready/Failed pattern, avoid terminal "Rejected" states (use Conditions instead)
-- **Write-only fields** → Secrets/credentials should be write-only, redacted in GET responses
-
-### 4. Cross-Cutting Concerns
-
-Reviewers frequently ask about these — flag if missing:
-
-- **Breaking changes** → Are there any? If so, are migration strategies documented?
-- **Backward compatibility** → Protobuf wire compatibility for enum renames, field additions
-- **Multi-tenancy** → Does every new resource have proper tenant scoping?
-- **Related EPs** → Are related proposals referenced in see-also?
-- **Overlapping functionality** → Does this duplicate or conflict with existing capabilities?
-
-### 5. Completeness Signals
-
-Based on patterns from merged EPs:
-
-- **Length** → Successful EPs range from 300-800 lines. Under 200 suggests insufficient depth.
-- **Proto schemas** → Implementation Details should include proto message definitions for new resources
-- **Workflow** → All lifecycle operations covered (create, get, list, update, delete), not just happy path
-- **Risks** → Specific technical risks with concrete mitigations, not generic statements
-- **Alternatives** → At least one alternative approach with explanation of why it was rejected
-- **Test Plan** → Describes strategy (unit, integration, e2e) even if details are TBD
-
-### 6. Common Reviewer Feedback Patterns
-
-Flag these if detected — they come up repeatedly in EP reviews:
-
-| Pattern | What reviewers say |
-|---------|-------------------|
-| Scope creep | "I think we will benefit from staying focused on creating a working solution at a smaller scale first" |
-| Missing personas | EP only covers one persona (e.g., tenant) but the feature affects providers/admins too |
-| Framing as implementation | Proposal reads as a design doc, not a user-facing enhancement |
-| Unclear motivation | "I'm finding this a bit hard to follow" — motivation should argue for the feature, not against status quo |
-| TBD overuse | Some TBD is fine (matching existing EPs), but core sections need substance |
-| Inconsistent naming | Field names or resource names differ between sections |
-| Missing security model | No discussion of authentication, authorization, or credential handling |
-| Hardcoded assumptions | Design assumes specific deployment topology or infrastructure |
+**Scoring guide:**
+- 5: All sections substantive, terminology consistent, dimensions addressed, 400+ lines
+- 3: All sections present, some thin, terminology mostly consistent
+- 1: Missing required sections, placeholder text, under 200 lines
 
 ## Output Format
 
 Present findings as a structured review:
 
-```text
-## EP Review: <title>
+```markdown
+## EP Review: {title}
 
-### Summary
-<1-2 sentence assessment: ready for review / needs work / significant gaps>
+### Rubric Scores
+
+| Dimension | Score | Weight | Weighted |
+|-----------|-------|--------|----------|
+| Architecture | X/5 | 30% | X.X |
+| Feasibility | X/5 | 25% | X.X |
+| Scope | X/5 | 20% | X.X |
+| Completeness | X/5 | 25% | X.X |
+| **Overall** | | | **X.X/5** |
+
+### Verdict: {PASS / NEEDS WORK / SIGNIFICANT GAPS}
+
+{1-2 sentence assessment}
 
 ### Findings
 
 #### Critical (must fix before merge)
-1. <finding with specific location and suggestion>
+1. {finding with specific section reference and suggestion}
 
 #### Important (should fix)
-1. <finding with specific location and suggestion>
+1. {finding with specific section reference and suggestion}
 
 #### Suggestions (nice to have)
-1. <finding>
+1. {finding}
 
-### Checklist
-- [x] Template sections complete
-- [ ] User stories follow formula
-- [ ] Proto schemas included
-...
+### Dimension Details
+
+#### Architecture
+{What's good, what needs improvement, specific pattern violations}
+
+#### Feasibility
+{Implementation depth assessment, missing details, risk quality}
+
+#### Scope
+{Boundary clarity, persona coverage, alternatives quality}
+
+#### Completeness
+{Section coverage, dimension coverage, length assessment}
 
 ### Comparison with Similar EPs
-<reference 1-2 merged EPs that cover similar scope, note what this EP does well or could learn from them>
+{Reference 1-2 merged EPs from the EP reference library in review-patterns.md
+that cover similar scope. Note what this EP does well or could learn from them.}
+
+### Checklist Summary
+- [x] Template sections complete
+- [ ] All personas covered
+- [x] Proto schemas included
+...
 ```
+
+## Verdict Thresholds
+
+| Overall Score | Verdict |
+|---------------|---------|
+| 4.0+ | **PASS** — Ready for merge (pending human review) |
+| 3.0-3.9 | **NEEDS WORK** — Address Important findings before requesting review |
+| Below 3.0 | **SIGNIFICANT GAPS** — Address Critical findings, consider returning to `/design:draft` |
 
 ## Severity Classification
 
-- **Critical**: Missing required sections, fundamental architectural misalignment, breaking changes without migration path, security gaps
-- **Important**: Incomplete sections, terminology inconsistencies, missing personas, unclear workflow, vague non-goals
-- **Suggestion**: Style improvements, additional user stories, deeper alternatives discussion, documentation polish
+- **Critical**: Missing required sections, fundamental architectural misalignment, breaking changes without migration path, security gaps, no tenant isolation on new resources
+- **Important**: Incomplete sections, terminology inconsistencies, missing personas, unclear workflow, vague non-goals, generic risks, thin implementation details
+- **Suggestion**: Style improvements, additional user stories, deeper alternatives discussion, more specific test plan, documentation polish
 
 ## Notes
 
-- Review against the template at https://github.com/osac-project/enhancement-proposals/blob/main/guidelines/enhancement_template.md
+- Score based on what's in the EP, not what you think should be there
+- The coverage checks use `osac-dimensions.md` as a relevance guide — features that don't touch networking shouldn't be penalized for not addressing networking
 - Reference merged EPs in `enhancement-proposals/enhancements/` for calibration on depth and style
-- The review process requires consensus from all stakeholders — flag any sections that would likely trigger stakeholder questions
 - Push for specificity: "handle errors" is not a mitigation; "retry with exponential backoff, circuit-break after 3 failures" is
+- The review process requires consensus from all stakeholders — flag sections that would likely trigger stakeholder questions
+
+$ARGUMENTS
