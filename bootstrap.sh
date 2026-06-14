@@ -82,6 +82,7 @@ REPOS=(
   "osac-aap"
   "osac-installer"
   "osac-test-infra"
+  "osac-ui"
   "enhancement-proposals"
   "docs:osac-docs"
   "host-management-openstack"
