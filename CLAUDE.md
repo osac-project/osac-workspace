@@ -25,6 +25,7 @@ Meta-workspace — run `./bootstrap.sh` to clone/update all component repos to l
 | [`osac-aap`](https://github.com/osac-project/osac-aap) | Ansible Automation Platform roles for network provisioning | Yes |
 | [`osac-installer`](https://github.com/osac-project/osac-installer) | Installation manifests and prerequisites | — |
 | [`osac-test-infra`](https://github.com/osac-project/osac-test-infra) | Integration testing infrastructure | — |
+| [`osac-ui`](https://github.com/osac-project/osac-ui) | OSAC UI web console | — |
 | [`enhancement-proposals`](https://github.com/osac-project/enhancement-proposals) | Design documents and RFCs | — |
 | [`docs`](https://github.com/osac-project/docs) | Architecture docs and guides (see `docs/architecture/`) | — |
 | [`host-management-openstack`](https://github.com/osac-project/host-management-openstack) | Bare metal host management via OpenStack | — |
