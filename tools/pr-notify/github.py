@@ -265,7 +265,10 @@ def fetch_open_prs(repos: list[str]) -> list[PRData]:
     for idx, repo in enumerate(repos):
         if idx > 0:
             time.sleep(DELAY_BETWEEN_QUERIES_SECONDS)
-        prs = _fetch_repo_prs(repo)
-        all_prs.extend(prs)
+        try:
+            prs = _fetch_repo_prs(repo)
+            all_prs.extend(prs)
+        except SystemExit as e:
+            logger.error("Failed to fetch PRs for '%s': %s (continuing with remaining repos)", repo, e)
 
     return all_prs
