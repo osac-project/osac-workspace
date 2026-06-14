@@ -55,18 +55,39 @@ Use this table to go directly to the right file for common bug patterns instead 
 
 ## PRD and Design Configuration
 
-- Both `/prd` and `/design` publish to the `enhancement-proposals` repo (local path: `./enhancement-proposals/`)
-- Push to `fork` remote in enhancement-proposals, not `origin`
-- File path conventions:
-  - Feature directory: `enhancements/<feature-slug>/` (e.g., `enhancements/storage-network/`)
-  - PRD filename: `prd.md`
-  - Design (EP) filename: `README.md` (not `design.md`)
-  - Skip the "release" question — use `enhancements` as the fixed directory prefix
-- Template overrides in `.design/templates/`:
-  - Design template: `.design/templates/design.md` (EP format with PRD-aware modifications)
-  - Design section guidance: `.design/templates/section-guidance.md`
-  - PRD template: uses the flightctl default (no override)
-- `/prd:ingest` and `/design:ingest` must read all files in `.design/context/` during ingest
+OSAC uses the flightctl ai-workflows PRD and design skills with project-level template overrides in `.design/templates/`. The two-stage flow replaces the single-step `/ep-create` for new enhancement proposals.
+
+### Docs Repo
+
+- Both PRD and design workflows publish to the `enhancement-proposals` repo
+- Local path: `./enhancement-proposals/`
+- When the publish phase asks for the docs repo, provide this path
+
+### File Path Conventions
+
+When publishing PRDs and design documents to the enhancement-proposals repo:
+- Skip the "release" question — use `enhancements` as the fixed directory prefix
+- Feature directory: `enhancements/<feature-slug>/` (e.g., `enhancements/storage-network/`)
+- PRD filename: `prd.md`
+- Design (EP) filename: `README.md` (not `design.md` — this is the main EP file)
+- Both files live in the same directory: `enhancements/<slug>/prd.md` and `enhancements/<slug>/README.md`
+
+### Fork-Based Workflow
+
+Push to the `fork` remote in the enhancement-proposals repo, not `origin`. PRs go from `fork/<branch>` to `origin/main`.
+
+### Feature Dimensions Context
+
+Both `/prd:ingest` and `/design:ingest` must read all files in `.design/context/` during their ingest phase:
+
+- **`osac-dimensions.md`** — Cross-cutting dimensions (services, personas, tenant onboarding, inventory, provisioning, networking, storage, installation) that every OSAC feature must address. Use it to guide clarifying questions during `/prd:clarify` and to ensure the design covers all relevant dimensions.
+- **`review-patterns.md`** — Common EP reviewer feedback themes, anti-patterns, and the EP reference library. Use during `/prd:draft` and `/design:draft` to anticipate reviewer expectations.
+
+### Template Overrides
+
+- Design template: `.design/templates/design.md` (EP format with PRD-aware modifications)
+- Design section guidance: `.design/templates/section-guidance.md`
+- PRD template: uses the flightctl default (no override)
 
 ## Quick Reference Commands
 
