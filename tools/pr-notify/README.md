@@ -75,6 +75,7 @@ repos = [
     "osac-project/fulfillment-service",
     "osac-project/osac-operator",
     "osac-project/osac-aap",
+    "osac-project/osac-ui",
     "osac-project/enhancement-proposals",
 ]
 
