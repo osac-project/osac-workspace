@@ -53,34 +53,20 @@ Use this table to go directly to the right file for common bug patterns instead 
 | Public API missing field (Create/Update not persisting a field) | `internal/servers/*_server.go` — `Create()` and `Update()` methods |
 | Table rendering missing or incorrect column | `internal/rendering/tables/*.yaml` — table definition files |
 
-## PRD and Design Workflows
+## PRD and Design Configuration
 
-OSAC uses the flightctl ai-workflows PRD and design skills with project-level template overrides in `.design/templates/`. The two-stage flow replaces the single-step `/ep-create` for new enhancement proposals.
-
-### Docs Repo
-
-- Both PRD and design workflows publish to the `enhancement-proposals` repo
-- Local path: `./enhancement-proposals/`
-- When the publish phase asks for the docs repo, provide this path
-
-### File Path Conventions
-
-When publishing PRDs and design documents to the enhancement-proposals repo:
-- Skip the "release" question — use `enhancements` as the fixed directory prefix
-- Feature directory: `enhancements/<feature-slug>/` (e.g., `enhancements/storage-network/`)
-- PRD filename: `prd.md`
-- Design (EP) filename: `README.md` (not `design.md` — this is the main EP file)
-- Both files live in the same directory: `enhancements/<slug>/prd.md` and `enhancements/<slug>/README.md`
-
-### Fork-Based Workflow
-
-Push to the `fork` remote in the enhancement-proposals repo, not `origin`. PRs go from `fork/<branch>` to `origin/main`.
-
-### Template Overrides
-
-- Design template: `.design/templates/design.md` (EP format with PRD-aware modifications)
-- Design section guidance: `.design/templates/section-guidance.md`
-- PRD template: uses the flightctl default (no override)
+- Both `/prd` and `/design` publish to the `enhancement-proposals` repo (local path: `./enhancement-proposals/`)
+- Push to `fork` remote in enhancement-proposals, not `origin`
+- File path conventions:
+  - Feature directory: `enhancements/<feature-slug>/` (e.g., `enhancements/storage-network/`)
+  - PRD filename: `prd.md`
+  - Design (EP) filename: `README.md` (not `design.md`)
+  - Skip the "release" question — use `enhancements` as the fixed directory prefix
+- Template overrides in `.design/templates/`:
+  - Design template: `.design/templates/design.md` (EP format with PRD-aware modifications)
+  - Design section guidance: `.design/templates/section-guidance.md`
+  - PRD template: uses the flightctl default (no override)
+- `/prd:ingest` and `/design:ingest` must read all files in `.design/context/` during ingest
 
 ## Quick Reference Commands
 
@@ -118,8 +104,6 @@ When fixing bugs or adding features, **check all controllers** that follow the s
 - **`protobuf-conventions.md`** — Proto naming, API structure, field guidelines, type/service patterns
 - **`cross-repo-workflow.md`** — Git worktrees, cross-component changes, PR rules
 - **`architecture-patterns.md`** — Multi-tenancy, resource hierarchy, service stack, integration testing
-- **`gsd-jira-integration.md`** — GSD lifecycle hooks for automatic Jira epic/task creation, status transitions, and commit prefixing
-
 ## Reference Documentation
 
 | Location | Content |
@@ -132,14 +116,9 @@ When fixing bugs or adding features, **check all controllers** that follow the s
 | [`docs/architecture/`](https://github.com/osac-project/docs/tree/main/architecture) | High-level diagrams and design documents |
 | [`enhancement-proposals/`](https://github.com/osac-project/enhancement-proposals) | RFCs and design proposals |
 
-## GSD Workflow
+## AI-Assisted Development Workflow
 
-This project uses the GSD workflow system. Planning artifacts live in `.planning/`.
-
-- Use `/gsd:progress` to check project status
-- Use `/gsd:plan-phase` for planning, `/gsd:execute-phase` for implementation
-- Use `/jira-sync status` to check Jira mapping, `/jira-sync link-epic OSAC-XXXXX` to link
-- GSD operates at workspace level and coordinates across component repos
+See [`AI-assisted-development-workflow.md`](AI-assisted-development-workflow.md) for the full workflow: Feature → PRD → Design → Jira sync → Implement.
 
 ## E2E Test Skills (from osac-test-infra)
 
@@ -148,14 +127,11 @@ The `osac-test-infra` repo provides skills for writing and debugging E2E tests. 
 - `/e2e` — Write a pytest E2E test from a description or Jira ticket
 - `/debug-e2e` — Debug a failing Prow CI job using build logs and gathered OSAC artifacts
 
-## Development Workflows
+## Development Notes
 
-- `/bugfix` — Systematic bug fix: assess → reproduce → diagnose → fix → test → review → document → pr
-- `/implement` — Task-to-code: ingest Jira task → plan → code (TDD) → validate → publish PR
 - OSAC uses Jira **Tasks** (not Stories) — the implement workflow's "story" references mean Tasks in this project
 - Use `jira` CLI for Jira access (e.g., `jira issue view OSAC-1234 --plain`), not Jira MCP
-
-Both workflows are phase-based — you can jump to any phase directly (e.g., `/bugfix:fix`, `/implement:code`). Installed via `bootstrap.sh` from [flightctl/ai-workflows](https://github.com/flightctl/ai-workflows).
+- AI workflow skills are installed via `bootstrap.sh` from [flightctl/ai-workflows](https://github.com/flightctl/ai-workflows)
 
 ## OpenShift Deployment
 
