@@ -218,14 +218,4 @@ This creates a Jira epic with ordered sub-tasks (proto, backend, controller, tes
 
 **Prerequisites:** `gh` (authenticated), `jira` CLI, `rg`
 
-## Architecture
-
-```
-NetworkClass (platform-defined)
-  └── VirtualNetwork (tenant L2 network with CIDR)
-        ├── Subnet (CIDR range within VirtualNetwork)
-        └── SecurityGroup (firewall rules)
-              └── ComputeInstance (KubeVirt VM, attached to Subnet + SecurityGroups)
-```
-
 See `CLAUDE.md` for detailed development instructions and conventions.
