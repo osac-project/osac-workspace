@@ -270,9 +270,9 @@ def fetch_open_prs(repos: list[str]) -> list[PRData]:
         try:
             prs = _fetch_repo_prs(repo)
             all_prs.extend(prs)
-        except SystemExit as e:
-            logger.error("Failed to fetch PRs for '%s': %s (continuing with remaining repos)", repo, e)
+        except SystemExit:
+            logger.error("Failed to fetch PRs for '%s' (continuing with remaining repos)", repo)
         except Exception:
-            logger.exception("Unexpected failure while fetching PRs for '%s' (continuing with remaining repos)", repo)
+            logger.error("Unexpected failure while fetching PRs for '%s' (continuing with remaining repos)", repo)
 
     return all_prs
