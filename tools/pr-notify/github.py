@@ -94,14 +94,14 @@ def _parse_pr_nodes(repo_name: str, pr_nodes: list[dict]) -> list[PRData]:
         ci_status = rollup.get("state") if rollup else None
 
         # Individual check runs
-        check_suites_data = last_commit.get("checkSuites", {})
+        check_suites_data = last_commit.get("checkSuites") or {}
         if check_suites_data.get("pageInfo", {}).get("hasNextPage"):
             logger.warning(
                 "PR '%s' has more than 10 check suites; results truncated",
                 pr.get("title", ""),
             )
         check_runs = []
-        for suite in check_suites_data.get("nodes", []):
+        for suite in check_suites_data.get("nodes") or []:
             if suite is None:
                 continue
             check_runs_data = suite.get("checkRuns")
@@ -112,7 +112,9 @@ def _parse_pr_nodes(repo_name: str, pr_nodes: list[dict]) -> list[PRData]:
                     "PR '%s' has more than 20 check runs in a suite; results truncated",
                     pr.get("title", ""),
                 )
-            for run in check_runs_data.get("nodes", []):
+            for run in check_runs_data.get("nodes") or []:
+                if run is None:
+                    continue
                 check_runs.append(CheckRun(
                     name=run.get("name", ""),
                     conclusion=run.get("conclusion"),
