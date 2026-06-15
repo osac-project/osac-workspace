@@ -1,6 +1,6 @@
 # OSAC Project
 
-Development workspace for the Open Sovereign AI Cloud (OSAC) project. This repo provides a meta-workspace that bootstraps all OSAC components for cross-component development and testing, with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and [GSD workflow](https://github.com/cyanheads/gsd) integration pre-configured.
+Development workspace for the Open Sovereign AI Cloud (OSAC) project. This repo provides a meta-workspace that bootstraps all OSAC components for cross-component development and testing, with [Claude Code](https://docs.anthropic.com/en/docs/claude-code) integration pre-configured.
 
 ## Prerequisites
 
@@ -68,7 +68,7 @@ This workspace provides a pre-configured AI-assisted development environment:
 | `bootstrap.sh` | Clones or updates all component repos to latest `main` — re-run anytime to sync |
 | `CLAUDE.md` | Project instructions Claude Code reads automatically — build commands, architecture patterns, conventions |
 | `.claude/settings.json` | Pre-approved shell commands (git, ls, cat, etc.) so Claude doesn't prompt for routine operations |
-| `.planning/config.json` | GSD workflow configuration (parallelization, verification, auto-advance) |
+| `AI-assisted-development-workflow.md` | AI-assisted development workflow: Feature → PRD → Design → Jira sync → Implement |
 | `skills/` | AI skills for Claude Code — EP generation, Jira management, bug fix workflows, demo recording |
 | `.gitignore` | Ignores cloned repos, `.planning/`, `.claude/`, credentials, editor files, and build artifacts |
 
@@ -112,9 +112,6 @@ After running `./bootstrap.sh` to clone all repos:
 1. **kubeconfig**: Place your cluster kubeconfig at `./kubeconfig` (gitignored)
 2. **Tools**: `buf`, `grpcurl`, `kubectl`, `jq`, [`rg`](https://github.com/BurntSushi/ripgrep)
 3. **Jira CLI**: `go install github.com/ankitpokhrel/jira-cli/cmd/jira@latest` (or `brew install ankitpokhrel/jira-cli/jira-cli`)
-4. **GSD workflow**: `npx get-shit-done-cc@latest` (run from workspace root)
-   - GSD hooks in `.claude/settings.json` are already configured and will no-op if GSD is not installed
-
 To update all repos to latest `main` at any time, simply re-run:
 ```bash
 ./bootstrap.sh
@@ -143,78 +140,9 @@ curl -sk -H "Authorization: Bearer $TOKEN" "https://$ROUTE/api/fulfillment/v1/co
 grpcurl -insecure -H "Authorization: Bearer $TOKEN" $ROUTE:443 osac.public.v1.VirtualNetworks/List
 ```
 
-## GSD Workflow
+## AI-Assisted Development Workflow
 
-Once you have Claude Code running in this workspace, use GSD commands to plan and execute work:
-
-```
-/gsd:new-project     # Initialize project with requirements gathering
-/gsd:plan-phase      # Plan the next phase of work
-/gsd:execute-phase   # Execute a planned phase
-/gsd:progress        # Check current project status
-/gsd:next            # Advance to the next logical step
-```
-
-| Task Type | GSD Command | When to Use |
-|-----------|-------------|-------------|
-| Epic / new feature | `/gsd:new-project` | Starting a multi-phase initiative |
-| Jira ticket | `/gsd:quick` | Single-ticket work with commit tracking |
-| Tiny fix | `/gsd:fast` | One-file fixes, no planning overhead |
-| Check status | `/gsd:progress` | See where you are in the project |
-| Next step | `/gsd:next` | Auto-advance to the next logical action |
-
-GSD manages all state under `.planning/` — milestones, phases, plans, and verification are created as you work.
-
-## Enhancement Proposals
-
-This workspace includes two approaches for creating OSAC Enhancement Proposals with Claude Code.
-
-### Two-Stage Flow (PRD + Design) — Recommended
-
-Follows the same pattern as flightctl: create a PRD first, merge it, then create the design document (EP). The design template is a lightly modified version of the standard EP format — requirements-heavy sections (Summary, Motivation, User Stories) are shortened with PRD references, and four new subsections are added (Security Considerations, Failure Handling, RBAC/Tenancy, Observability).
-
-**Stage 1 — PRD:**
-
-```text
-/prd:ingest OSAC-XXXXX      # Fetch requirements from Jira
-/prd:clarify                 # Iterative Q&A to resolve ambiguities
-/prd:draft                   # Generate PRD
-/prd:publish                 # Submit PR to enhancement-proposals repo
-/prd:respond                 # Address reviewer comments
-```
-
-**Stage 2 — Design (EP):**
-
-```text
-/design:ingest OSAC-XXXXX   # Read PRD, explore codebase, capture context
-/design:draft                # Generate EP using OSAC design template
-/design:publish              # Submit PR to enhancement-proposals repo
-/design:respond              # Address reviewer comments
-/design:decompose            # Break into Jira-ready epics and stories
-/design:sync                 # Sync epics/stories to Jira
-```
-
-Both stages publish to the `enhancement-proposals` repo under `enhancements/<feature-slug>/` — the PRD as `prd.md` and the design document as `README.md`.
-
-### Single-Step Flow (Legacy)
-
-For simpler proposals that don't need a separate PRD:
-
-```text
-/ep.create
-```
-
-Provide rough requirements, meeting notes, or a Jira ticket (e.g., `OSAC-XXXXX`) and the skill will explore the codebase, ask clarifying questions, generate a full EP, and submit a PR.
-
-### Post-Approval
-
-**Convert an approved EP into Jira work items:**
-
-```
-/ep.to-jira
-```
-
-This creates a Jira epic with ordered sub-tasks (proto, backend, controller, tests, docs) and a complexity assessment.
+See [`AI-assisted-development-workflow.md`](AI-assisted-development-workflow.md) for the full workflow: Feature → PRD → Design → Jira sync → Implement.
 
 **Prerequisites:** `gh` (authenticated), `jira` CLI, `rg`
 
