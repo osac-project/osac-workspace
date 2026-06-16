@@ -35,8 +35,8 @@ in user stories and workflow descriptions.
 ## Cross-Cutting Dimensions
 
 For each dimension below, the PRD should state what's in scope vs. explicitly
-out of scope. The design document should detail the implementation approach
-for each in-scope dimension.
+out of scope. The PRD should focus on "what" and "why" — detailed
+implementation approaches belong in the design document.
 
 ### Tenant Onboarding
 
@@ -51,7 +51,6 @@ How does the feature interact with tenant provisioning?
 
 Which inventory backend(s) does the feature use or affect?
 
-- Is the inventory accessed through the Fulfillment API or directly?
 - Does the feature add new inventory backends or extend existing ones?
 - Which services consume the inventory data?
 
@@ -62,7 +61,7 @@ What provisioning mechanism does the feature use?
 - Which provisioning backend(s) are involved?
 - Lifecycle stages affected (create, start, stop, restart, delete)
 - Power management considerations (BMaaS)
-- Cluster vs. instance provisioning differences
+- Cluster vs. ComputeInstance vs. bare metal provisioning differences
 
 ### Networking
 
@@ -94,10 +93,12 @@ How does the feature affect deployment and installation?
 
 ## User-Facing API
 
-For each service in scope, identify which API surfaces the feature touches:
+For each service in scope, identify which API surfaces the feature affects.
+Detailed API design (field names, resource schemas, new states) belongs in the
+design document — the PRD should focus on which surfaces are touched and why.
 
-- **Fulfillment API** (gRPC/REST) — which resources are created or modified?
-- **OSAC CRDs** (Kubernetes) — which custom resources are created or modified?
+- **Fulfillment API** (gRPC/REST) — which resources are affected?
+- **OSAC CRDs** (Kubernetes) — which custom resources are affected?
 - **Catalog Items** — does the feature introduce or change catalog entries?
 
 ## Milestone Scoping
@@ -107,3 +108,4 @@ When writing a PRD or design, explicitly declare:
 - **Target milestone** (e.g., 0.1, 0.2)
 - **What's NOT covered** — dimensions or capabilities deferred to a later milestone (e.g., "No Networking API integration in 0.1", "No Storage API in 0.1")
 - **Known risks and gaps** — dependencies, DNS requirements, third-party onboarding, etc.
+- **Upgrades** — OSAC does not currently support upgrades, so data migration and backward compatibility are not concerns at this stage. State this explicitly if applicable.
