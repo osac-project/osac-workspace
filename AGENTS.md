@@ -183,10 +183,6 @@ Two complementary skills for E2E tests, available from the `osac-workspace/` roo
 
 The `/e2e` workflow writes tests in `osac-test-infra/tests/` following the conventions in `osac-test-infra/.claude/skills/e2e.md` (gRPC client patterns, K8s client patterns, wait helpers, pytest fixtures). The `/debug-e2e` skill reads Prow logs and OSAC gathered artifacts to diagnose failures.
 
-### GSD Workflow
-
-This project uses the GSD workflow system for planning and execution. Planning artifacts live in `.planning/`. GSD operates at workspace level and coordinates across component repos.
-
 ## Architecture
 
 ```text
@@ -267,9 +263,9 @@ Containerfile              # Dev container image (Fedora 42 + all tools)
 CLAUDE.md                  # Claude Code project instructions
 .claude/settings.json      # Pre-approved shell commands
 .claude/rules/             # Architecture, protobuf, cross-repo conventions
-.claude/hooks/             # GSD workflow hooks
-.claude/workflows/         # GSD Jira integration hooks
+.claude/hooks/             # Workflow hooks
 .design/templates/         # PRD and design template overrides
+.design/context/           # Feature dimensions and review patterns
 skills/                    # AI skills (EP generation, Jira, bug fix, demo recording)
 tools/pr-notify/           # PR dashboard generator
 docs/pr-dashboard/         # Static site for PR dashboard (GitHub Pages)
