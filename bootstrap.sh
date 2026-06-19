@@ -41,6 +41,11 @@ for arg in "$@"; do
   esac
 done
 
+if [ -z "$UPSTREAM_REMOTE" ] || [ -z "$FORK_REMOTE" ]; then
+  echo "❌ Error: Remote names cannot be empty."
+  exit 1
+fi
+
 if [ "$UPSTREAM_REMOTE" = "$FORK_REMOTE" ]; then
   echo "❌ Error: --upstream-remote-name and --fork-remote-name cannot be the same ('$UPSTREAM_REMOTE')."
   exit 1
