@@ -28,7 +28,7 @@ osac-project/                          # Monorepo root
 ├── osac-test-infra/                   # Integration test utilities
 ├── enhancement-proposals/             # Design documents
 ├── CLAUDE.md                          # Project development guide
-└── .planning/                         # GSD workflow state (gitignored)
+└── .planning/                         # Planning and working notes (gitignored)
     └── codebase/                      # Generated architecture docs
 ```
 

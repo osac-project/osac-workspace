@@ -10,7 +10,7 @@ kubeconfig
 # Go local workspace
 .local/
 
-# GSD planning artifacts (but keep codebase docs)
+# Planning artifacts (but keep codebase docs)
 .planning/*
 !.planning/codebase/
 
