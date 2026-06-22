@@ -69,9 +69,6 @@ docs/*
 docs/pr-dashboard/data.json
 .ai-workflows/
 
-# ai-workflows installer creates top-level skills/ symlinks
-skills/
-
 # Workflow artifacts (bugfix, implement)
 .artifacts/
 
