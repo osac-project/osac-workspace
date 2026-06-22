@@ -30,6 +30,9 @@ skills/prd
 skills/design
 skills/_shared
 
+# OSAC managed skills
+!skills/pr
+
 # Editor files
 *.swp
 *.swo
