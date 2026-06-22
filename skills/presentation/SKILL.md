@@ -77,13 +77,13 @@ Run from the **repo root**. Always pass `--theme-set` to load the Red Hat theme 
 
 ```sh
 # HTML — for previewing and for presenting live (preserves clickable links)
-npx @marp-team/marp-cli@latest --html --allow-local-files \
+npx @marp-team/marp-cli@4.4.0 --html --allow-local-files \
   --theme-set presentations/themes/redhat.css \
   presentations/<slug>.md -o presentations/<slug>.html
 open presentations/<slug>.html
 
 # PPTX — for Google Slides import / archival
-npx @marp-team/marp-cli@latest --allow-local-files --pptx \
+npx @marp-team/marp-cli@4.4.0 --allow-local-files --pptx \
   --theme-set presentations/themes/redhat.css \
   presentations/<slug>.md -o presentations/<slug>.pptx
 ```
