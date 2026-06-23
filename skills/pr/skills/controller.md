@@ -42,8 +42,10 @@ Before dispatching any phase, resolve the target component:
    TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null)
    COMPONENT=$(basename "$TOPLEVEL")
    ```
-   If the current directory is already inside a component repo (i.e.,
-   `$TOPLEVEL` is not the workspace root), use that component.
+   To distinguish a component repo from the workspace root, check
+   whether `$TOPLEVEL` contains `bootstrap.sh`. If it does, the user
+   is at the workspace root — not inside a component. Otherwise,
+   `$COMPONENT` is the target.
 4. If auto-detection fails (e.g., user is at the workspace root and not
    inside any component), list the available component directories and
    ask which one to use.
@@ -94,13 +96,13 @@ within the **workspace root** (not inside the component repo):
 
 ## How to Execute a Phase
 
-1. **Announce** the phase to the user: *"Starting /create for osac-operator."*
+1. **Announce** the phase to the user: *"Starting /pr:create for osac-operator."*
 2. **Resolve** the component directory (see "Component Resolution" above)
 3. **Read** the skill file at `skills/pr/skills/{phase}.md`
 4. **Execute** the skill's steps
-6. When the skill is done, present results and use "Recommending Next Steps"
+5. When the skill is done, present results and use "Recommending Next Steps"
    below to offer options.
-7. **Stop and wait** for the user to tell you what to do next.
+6. **Stop and wait** for the user to tell you what to do next.
 
 ## Recommending Next Steps
 

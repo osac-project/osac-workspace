@@ -6,7 +6,7 @@ description: >-
   respond to review comments, and fix review findings across component
   repositories. Use when creating, reviewing, responding to, or fixing
   pull requests in any component repo (e.g., osac-operator, fulfillment-service).
-  Activated by commands: /create, /review, /respond, /fix.
+  Activated by commands: /pr:create, /pr:review, /pr:respond, /pr:fix.
 ---
 # PR Lifecycle Workflow
 

@@ -40,7 +40,7 @@ graph TD
 | Tool | Required | Purpose |
 |------|----------|---------|
 | GitHub CLI (`gh`) | Yes | PR creation, fetching comments, posting replies |
-| `gh pr-review` extension | For `/respond` | Fetch inline code review comments |
+| `gh pr-review` extension | Optional | Fetch inline code review comments (`gh extension install eranco74/gh-pr-review`). Falls back to `gh api` when not installed. |
 | Git | Yes | Branch management, worktrees |
 | `fork` remote | For `/create` | Fork-based push target |
 

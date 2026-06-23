@@ -197,6 +197,9 @@ gh pr review {pr-number} --repo {owner}/{repo} --comment --body "review summary"
 
 ### Step 8: Clean Up Worktree
 
+The worktree is read-only (no modifications should have been made), so
+force-remove is safe:
+
 ```bash
 cd {component-dir}
 git worktree remove "$WORKTREE_DIR" --force
