@@ -28,16 +28,26 @@ workflow by executing phases and handling transitions between them.
 
 Before dispatching any phase, resolve the target component:
 
-1. Parse `$ARGUMENTS` — the first non-numeric argument is the component
-   directory name (e.g., `osac-operator`, `fulfillment-service`). The
-   first numeric argument (if any) is the PR number.
-2. Verify the directory exists and is a git repository:
+1. Parse `$ARGUMENTS` — the first non-numeric argument (if any) is the
+   component directory name (e.g., `osac-operator`, `fulfillment-service`).
+   The first numeric argument (if any) is the PR number.
+2. If a component was provided explicitly, verify it exists and is a git
+   repository:
    ```bash
    git -C {component-dir} rev-parse --show-toplevel
    ```
-3. If no component was provided, ask the user which component to use.
-   List the available subdirectories that are git repos.
-4. Pass the resolved component directory and PR number to the phase skill.
+3. If no component was provided, **auto-detect** from the current
+   working directory:
+   ```bash
+   TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null)
+   COMPONENT=$(basename "$TOPLEVEL")
+   ```
+   If the current directory is already inside a component repo (i.e.,
+   `$TOPLEVEL` is not the workspace root), use that component.
+4. If auto-detection fails (e.g., user is at the workspace root and not
+   inside any component), list the available component directories and
+   ask which one to use.
+5. Pass the resolved component directory and PR number to the phase skill.
 
 ## Related Context Discovery
 
@@ -86,11 +96,8 @@ within the **workspace root** (not inside the component repo):
 
 1. **Announce** the phase to the user: *"Starting /create for osac-operator."*
 2. **Resolve** the component directory (see "Component Resolution" above)
-3. **Locate** the skill file — read and follow
-   `../../_shared/recipes/phase-override-resolution.md` with
-   WORKFLOW=`pr`, PHASE_FILE=`{phase}.md`.
-4. **Read** the resolved skill file
-5. **Execute** the skill's steps
+3. **Read** the skill file at `skills/pr/skills/{phase}.md`
+4. **Execute** the skill's steps
 6. When the skill is done, present results and use "Recommending Next Steps"
    below to offer options.
 7. **Stop and wait** for the user to tell you what to do next.

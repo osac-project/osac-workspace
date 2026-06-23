@@ -2,7 +2,7 @@
 
 ## Principles
 
-- **Component-first.** Every phase starts by resolving the target component directory. If the user didn't specify one, ask — never guess.
+- **Component-first.** Every phase starts by resolving the target component directory. Auto-detect from the current working directory when not specified — only ask when detection fails.
 - Capture reviewer comments verbatim. Do not paraphrase or soften feedback.
 - Respect reviewer intent. When a comment is ambiguous, present both interpretations.
 - Separate code changes from clarifications. Make this distinction explicit for each comment.

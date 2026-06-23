@@ -17,9 +17,9 @@ fork-based workflow for multi-repo workspaces.
 ## Critical Rules
 
 - **Never push to `origin`.** Always push to the `fork` remote.
-- **Never skip validation.** All repo-specific checks must pass before pushing.
-- **Never force-push** without explicit user confirmation.
-- **Never create a PR from `main`.** The user must be on a feature branch.
+- **All validation must pass** before pushing — repo-specific checks are non-skippable.
+- **Force-push requires** explicit user confirmation.
+- **Feature branch required** — PRs cannot be created from `main`.
 
 ## Process
 
@@ -51,6 +51,7 @@ Run the repo-specific checks. Read the component's `CLAUDE.md` to determine
 which commands apply. Common patterns:
 
 **fulfillment-service:**
+
 ```bash
 gofmt -s -w . && git diff --exit-code
 buf generate && git diff --exit-code
@@ -59,6 +60,7 @@ ginkgo run -r internal
 ```
 
 **osac-operator:**
+
 ```bash
 make fmt && git diff --exit-code
 make lint
@@ -68,14 +70,26 @@ make manifests generate && git diff --exit-code
 ```
 
 **osac-aap:**
+
 ```bash
 ansible-lint
 ```
 
 **osac-installer:**
+
 ```bash
 bash scripts/kustomize-build-all.sh
 ```
+
+If submodules changed (`git diff main --submodule | grep -q Submodule`), also run:
+
+```bash
+git submodule update --init --recursive
+bash scripts/sync-image-tags.sh
+python3 scripts/sync-authconfig-rego.py
+```
+
+The sync scripts support `--fix` to auto-correct drift.
 
 For other repos, read the component's `CLAUDE.md` or `Makefile`.
 
@@ -105,15 +119,20 @@ use a descriptive title without a prefix.
 
 ### Step 6: Check for Existing PR
 
+Extract the fork owner from the remote URL (works for both SSH and HTTPS):
+
 ```bash
-FORK_OWNER=$(gh repo view $(git remote get-url fork) --json owner -q .owner.login)
-UPSTREAM=$(gh repo view $(git remote get-url origin) --json nameWithOwner -q .nameWithOwner)
+FORK_URL=$(git remote get-url fork)
+FORK_OWNER=$(echo "$FORK_URL" | sed -E 's|.*[:/]([^/]+)/[^/]+(\.git)?$|\1|')
+UPSTREAM=$(gh repo view --json nameWithOwner -q .nameWithOwner)
 gh pr list --repo "$UPSTREAM" --head "$FORK_OWNER:$(git branch --show-current)" --json number,url
 ```
 
 If a PR already exists, show its URL instead of creating a duplicate.
 
 ### Step 7: Create PR
+
+Use the `FORK_OWNER` and `UPSTREAM` values from Step 6:
 
 ```bash
 gh pr create \
@@ -148,6 +167,36 @@ PR created: [#<number>](<url>)
 
 If cross-repo PRs exist, remind: "Link related PRs in the description
 (e.g., 'Depends on fulfillment-service#123')."
+
+## Common Issues
+
+### No `fork` remote
+
+```bash
+git remote add fork git@github.com:<your-username>/<repo>.git
+```
+
+### `gh pr create` fails with "not authenticated"
+
+```bash
+gh auth status
+gh auth login
+```
+
+### Push rejected (branch exists on fork)
+
+Do not force-push automatically. Show the push error and ask the user
+how to proceed.
+
+### PR already exists
+
+Check before creating:
+
+```bash
+gh pr list --repo "$UPSTREAM" --head "$FORK_OWNER:$(git branch --show-current)" --json number,url
+```
+
+If a PR already exists, show its URL instead of creating a duplicate.
 
 ## Output
 

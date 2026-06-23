@@ -110,7 +110,7 @@ the intent behind the changes.
 Work from the temporary worktree. Read the changed files in full (not just
 the diff hunks) to understand context.
 
-Evaluate using these criteria (adapted from `_shared/review-protocol.md`):
+Evaluate using these criteria:
 
 **Correctness:**
 - Does the solution solve the stated problem?
@@ -177,29 +177,23 @@ to fix), `nit` (style only).
 
 ### Step 7: Offer to Post Review
 
-Present the findings summary to the user. When any finding references or
-aligns with an existing reviewer comment, include the reviewer's name
-alongside it (e.g., "**@jhernand** raised:" or "Also flagged by
-**@coderabbitai**").
+Present the findings summary to the user.
 
 Use `AskUserQuestion` to present the next-action choice so the user can
 select with the keyboard:
 
 - **Fix findings** — continue to `/fix` to apply code changes for the
   actionable findings (recommended when reviewing your own PR)
-- **Post as PR review** — submit the findings as a GitHub review with
-  inline comments
+- **Post as PR review** — submit the findings as a general GitHub review
+  comment
 - **Keep local** — just use the artifact file for reference
 - **Refine** — adjust findings before posting
 
-If the user approves posting, use:
+If the user approves posting, submit a review summary:
 
 ```bash
 gh pr review {pr-number} --repo {owner}/{repo} --comment --body "review summary"
 ```
-
-For inline comments, use the GitHub API to post review comments on
-specific lines.
 
 ### Step 8: Clean Up Worktree
 

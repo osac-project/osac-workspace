@@ -12,11 +12,12 @@ description: >-
 
 ## Invocation
 
-Every phase accepts a component directory and optional PR number:
+```
+/pr:<phase> [component-dir] [pr-number]
+```
 
-```
-/pr:<phase> <component-dir> [pr-number]
-```
+The component directory is auto-detected from the current working
+directory when not specified.
 
 ## Quick Start
 

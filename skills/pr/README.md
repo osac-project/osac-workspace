@@ -4,18 +4,21 @@ A PR lifecycle workflow for multi-repo workspaces — create PRs, review PRs, an
 
 ## Invocation
 
-Every phase accepts a component directory and optional PR number:
+```
+/pr:<phase> [component-dir] [pr-number]
+```
 
-```
-/pr:<phase> <component-dir> [pr-number]
-```
+The component directory is auto-detected from your current working
+directory. You only need to specify it when running from the workspace
+root or targeting a different component.
 
 Examples:
-- `/pr:create osac-operator` — validate and create a PR from osac-operator
-- `/pr:review osac-operator` — review the PR on osac-operator's current branch
+- `/pr:create` — validate and create a PR from the current repo
+- `/pr:create osac-operator` — explicitly target osac-operator
+- `/pr:review` — review the PR on the current branch
 - `/pr:review osac-operator 56` — review PR #56 in osac-operator
-- `/pr:respond fulfillment-service` — respond to comments on your PR
-- `/pr:fix fulfillment-service` — apply fixes for review findings
+- `/pr:respond` — respond to comments on your PR
+- `/pr:fix` — apply fixes for review findings
 
 ## Phase Flow
 
@@ -117,5 +120,5 @@ pr/
 ./install.sh all
 ```
 
-Then from the workspace root, run `/pr:create <component>` to create a PR
-or `/pr:review <component> [pr-number]` to review one.
+Then from a component directory, run `/pr:create` to create a PR
+or `/pr:review [pr-number]` to review one.

@@ -92,20 +92,35 @@ For the selected finding:
    - **Skip** — move to the next finding
    - **Stop** — end the fix session
 5. **Apply the change** if approved — edit the file directly.
-6. **Verify** — run the relevant build/test command if one exists in the
-   component's CLAUDE.md (e.g., `go build ./...`, `ginkgo run --focus=...`).
-   Report the result.
+6. **Verify** — check the component's CLAUDE.md "Quick Reference" section
+   for available build/test commands. Show the user which commands are
+   available and let them pick, or skip validation.
 
 ### Step 5: Update Findings Artifact
 
 After each fix is applied, update
-`.artifacts/pr/{component}#{pr-number}/03-review-findings.md`:
+`.artifacts/pr/{component}#{pr-number}/03-review-findings.md`.
 
-- Add `[FIXED]` prefix to the finding title
-- Append a note: `**Fixed in:** {brief description of change}`
+Before:
 
-This makes it easy to see which findings have been addressed when
-re-reading the artifact.
+```markdown
+### Finding 1 — major: Credential leak via event notifications
+- **File:** internal/servers/tenant_server.go:142-158
+- **Category:** quality
+- **Description:** ...
+- **Suggestion:** ...
+```
+
+After:
+
+```markdown
+### Finding 1 — [FIXED] major: Credential leak via event notifications
+- **File:** internal/servers/tenant_server.go:142-158
+- **Category:** quality
+- **Description:** ...
+- **Suggestion:** ...
+- **Fixed in:** Redacted credentials from event payload in tenant_server.go
+```
 
 ### Step 6: Next Finding
 
