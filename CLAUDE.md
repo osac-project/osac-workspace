@@ -87,7 +87,8 @@ Both `/prd:ingest` and `/design:ingest` must read all files in `.design/context/
 
 - Design template: `.design/templates/design.md` (EP format with PRD-aware modifications)
 - Design section guidance: `.design/templates/section-guidance.md`
-- PRD template: uses the flightctl default (no override)
+- PRD template: `.prd/templates/prd.md` (user-focused, capabilities instead of FR-N)
+- PRD section guidance: `.prd/templates/section-guidance.md` (includes design leakage anti-patterns)
 
 ## Quick Reference Commands
 
