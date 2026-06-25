@@ -47,7 +47,7 @@ Before reviewing, read these files if they exist:
 1. `.design/context/osac-dimensions.md` — services, personas, cross-cutting dimensions
 2. `.design/context/review-patterns.md` — reviewer feedback themes, anti-patterns, EP reference library
 3. `.planning/codebase/ARCHITECTURE.md` — system architecture for technical grounding
-4. `docs/personas.md` — canonical OSAC persona definitions
+4. `osac-docs/personas.md` — canonical OSAC persona definitions (bootstrapped from `osac-project/docs`)
 
 Before scoring Completeness, read every `###` section under **Cross-Cutting Dimensions**
 in the loaded `osac-dimensions.md`. For each section **relevant** to this EP, the EP must
