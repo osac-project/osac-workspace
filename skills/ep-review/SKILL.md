@@ -202,7 +202,7 @@ Present findings as a structured review:
 
 | Dimension | Relevant? | EP status |
 |-----------|-----------|-----------|
-| {name} | Yes / No / N/A | Addressed / Deferred / **Gap** |
+| {name} | Yes / No / N/A | Addressed / Deferred / Gap / N/A |
 
 ### Comparison with Similar EPs
 {Reference 1-2 merged EPs from the EP reference library in review-patterns.md
