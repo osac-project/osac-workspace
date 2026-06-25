@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 
 from config import load_config
 from formatter import format_summary_from_data
-from slack import post_message
+from slack import already_posted_today, post_message
 
 
 def setup_logging() -> None:
@@ -43,6 +43,11 @@ def main() -> int:
         action="store_true",
         help="Print formatted message to stdout instead of posting to Slack",
     )
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Post even if already posted today",
+    )
     args = parser.parse_args()
 
     setup_logging()
@@ -71,6 +76,9 @@ def main() -> int:
         if args.dry_run:
             print(message)
         else:
+            if not args.force and already_posted_today(config.slack_channel, config.slack_creds_dir):
+                logger.info("Already posted today - skipping (use --force to override)")
+                return 0
             post_message(config.slack_channel, message, config.slack_creds_dir)
             logger.info("Posted to Slack")
 
