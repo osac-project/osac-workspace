@@ -35,8 +35,14 @@ in user stories and workflow descriptions.
 ## Cross-Cutting Dimensions
 
 For each dimension below, the PRD should state what's in scope vs. explicitly
-out of scope. The PRD should focus on "what" and "why" — detailed
-implementation approaches belong in the design document.
+out of scope. The PRD should focus on "what" and "why" from the user's
+perspective. Detailed implementation approaches (API fields, controller logic,
+playbook names, Helm chart changes) belong in the design document.
+
+**PRD vs Design:** For each dimension, the PRD states which user-facing
+behaviors are affected and why. The design document specifies how those
+behaviors are implemented (CRD fields, conditions, reconcile logic, AAP
+templates, installer changes).
 
 ### Tenant Onboarding
 
@@ -74,32 +80,36 @@ Which networking backend(s) are involved?
 
 ### Storage
 
-What storage integration does the feature require?
+Does the feature involve persistent storage for tenant workloads?
 
-- Prerequisites (e.g., VAST storage accessible from hub cluster)
-- StorageTier API resources
-- Automated provisioning during tenant onboarding (credentials, CSIDriver, StorageClass)
-- Per-cluster / per-tenant VAST view creation
-- Disk attachment to compute instances
+- Does the feature require storage to be available on provisioned clusters?
+- Does the feature affect how storage is provisioned or configured for tenants?
+- Are there storage prerequisites that must be in place?
+
+*Design document specifies: storage provider details, API fields, driver
+installation, credential management.*
 
 ### Installation
 
-How does the feature affect deployment and installation?
+Does the feature require new deployment prerequisites or configuration?
 
-- Changes to Helm charts or kustomize manifests
+- New infrastructure prerequisites
+- New configuration options for operators or admins
 - CI pipeline implications
-- New prerequisites or dependencies
-- `osac-installer/setup.sh` updates needed
 
-## User-Facing API
+*Design document specifies: Helm chart values, kustomize overlays,
+osac-installer script changes.*
 
-For each service in scope, identify which API surfaces the feature affects.
-Detailed API design (field names, resource schemas, new states) belongs in the
-design document — the PRD should focus on which surfaces are touched and why.
+## User-Facing Behavior
 
-- **Fulfillment API** (gRPC/REST) — which resources are affected?
-- **OSAC CRDs** (Kubernetes) — which custom resources are affected?
-- **Catalog Items** — does the feature introduce or change catalog entries?
+For each service in scope, identify which user-observable behaviors the feature
+affects. The PRD states what users can do or see; the design document specifies
+the API surfaces, field names, and resource schemas that implement those
+behaviors.
+
+- What new capabilities do users gain?
+- What existing behaviors change?
+- Which personas are affected and how?
 
 ## Milestone Scoping
 

@@ -80,6 +80,7 @@ Check:
 - [ ] Non-goals are specific, not vague ("Auto-scaling is out of scope" not "Advanced features")
 - [ ] No vague language ("appropriate", "efficient", "standard" without specifics)
 - [ ] No scope reduction language ("v2", "simplified", "placeholder", "future enhancement")
+- [ ] No design leakage: no API field names, controller names, env vars, playbook names, or behaviors only observable by reading code
 - [ ] Terminology is consistent throughout — same concept never called by different names
 - [ ] Each section has substantive content or is explicitly omitted per template rules
 
@@ -96,7 +97,7 @@ Check:
 - [ ] Target milestone is declared (e.g., 0.1, 0.2)
 - [ ] What's NOT covered is explicit — deferred capabilities listed as non-goals
 - [ ] No scope creep signals ("and related functionality", "all necessary changes", "full support for")
-- [ ] Functional requirements are enumerable (each has a stable FR-N ID)
+- [ ] Capabilities are enumerable and distinct (grouped by persona or workflow)
 - [ ] 3-5 goals (more suggests scope is too broad)
 - [ ] Non-goals prevent reasonable misinterpretations of scope
 - [ ] Dependencies are identified with ordering constraints
@@ -121,7 +122,7 @@ Using `.design/context/osac-dimensions.md`, check:
 - [ ] **Networking**: Backend(s) identified, API-integrated vs. side-channel clarified
 - [ ] **Storage**: Prerequisites, automation, per-tenant provisioning addressed
 - [ ] **Installation**: Helm/kustomize changes, CI implications, osac-installer updates
-- [ ] **API resources**: For each in-scope service, affected API resources listed
+- [ ] **User-facing behaviors**: For each in-scope service, affected user-observable behaviors listed (API details belong in the design doc)
 
 Not every dimension applies to every feature. Score based on whether the PRD
 *addresses* each relevant dimension (even if just to say "not affected"), not
@@ -137,10 +138,10 @@ whether every dimension is in scope.
 Can the requirements be verified?
 
 Check:
-- [ ] Each functional requirement (FR-N) is testable — you can describe how to verify it
-- [ ] Acceptance criteria are concrete, verifiable conditions (checkboxes)
-- [ ] Acceptance criteria cover the primary use cases (edge cases belong in test plan)
-- [ ] Non-functional requirements are measurable ("API response under 200ms at p95" not "fast")
+- [ ] Each capability is verifiable by a user or PM using the product
+- [ ] Acceptance criteria are user-observable outcomes, not implementation checklists
+- [ ] Acceptance criteria cover primary use cases without repeating capabilities verbatim (edge cases belong in test plan)
+- [ ] Operational expectations are user-observable ("storage available within 5 minutes" not "controller polls every 30s")
 - [ ] Success metrics have targets and baselines (when included)
 
 **Scoring guide:**
@@ -219,7 +220,8 @@ Present findings as a structured review:
 
 - Score based on what's in the PRD, not what you think should be there — if information is genuinely unavailable, "TBD" markers are acceptable
 - The coverage dimension uses `osac-dimensions.md` as a checklist, not a requirement — features that don't touch networking shouldn't be penalized for not addressing networking
-- Compare against the PRD template at `.ai-workflows/prd/templates/prd.md` for structural compliance (this path is available after `bootstrap.sh` installs [ai-workflows](https://github.com/flightctl/ai-workflows))
+- Compare against the PRD template at `.prd/templates/prd.md` (project-level override) for structural compliance. If no project override exists, fall back to `.ai-workflows/prd/templates/prd.md`
+- A PRD that names specific API fields, controllers, playbooks, or env vars has design leakage. Flag it under Clarity.
 - If the PRD was produced by `/prd:draft`, check that clarification locked decisions are reflected
 
 $ARGUMENTS

@@ -1,22 +1,41 @@
-# OSAC Enhancement Proposal Review Patterns
+# OSAC Review Patterns
 
-Common review feedback patterns from past OSAC EP PRs. Both `/prd:draft` and
-`/design:draft` should anticipate these expectations when producing documents.
+Common review feedback patterns from past OSAC PRD and EP submissions. Both
+`/prd:draft` and `/design:draft` should anticipate these expectations when
+producing documents.
+
+## PRD vs Design: What Goes Where
+
+| PRD (`prd.md`) | Design EP (`design.md`) |
+|----------------|------------------------|
+| User stories per persona | CRD fields, conditions, finalizers |
+| Observable outcomes | Controller reconcile logic |
+| Non-goals, assumptions, risks | Playbook names, API schemas |
+| High-level affected surfaces | Helm/installer implementation |
+
+**Litmus test:** could a persona observe or experience this directly? If yes,
+it belongs in the PRD. If no, it belongs in the design.
 
 ## Reviewer Expectations
 
-### Completeness
+### PRD Expectations
+- User stories should cover all relevant OSAC personas (see `osac-dimensions.md`)
+- Requirements describe user-observable outcomes, not implementation
+- No API fields, controller names, playbook names, or env vars
+- Acceptance criteria are PM-verifiable scenarios, not engineering checklists
+- Optional sections are omitted (not filled with placeholders)
+
+### Design EP Expectations
 - All template sections must be present, even if marked "TBD" or "N/A"
-- User stories should cover all four OSAC personas where applicable (see `osac-dimensions.md`)
-- Implementation details should be thorough — successful EPs are 400-800 lines
+- Implementation details should be thorough (successful EPs are 400-800 lines)
 - Test plans should describe strategy, not just "tests will be added"
 
-### Clarity
+### Clarity (both documents)
 - Technical terms should be defined upfront (see Networking EP's Terminology section)
 - Relationships between resources should be explicit (parent-child, ownership, scope)
 - Workflows should enumerate steps with actor roles clearly defined
 
-### Consistency with OSAC Patterns
+### Consistency with OSAC Patterns (design EPs)
 - New APIs should be declarative, following [Kubernetes API conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md) where possible
 - Resources should include tenant isolation metadata (annotations for tenant-id, owner-reference)
 - Controller patterns should align with osac-operator conventions
@@ -30,6 +49,8 @@ Common review feedback patterns from past OSAC EP PRs. Both `/prd:draft` and
 | Missing alternatives | No "Alternatives" section or only strawman options | Explain other approaches considered and why they were rejected |
 | Vague non-goals | "Advanced features are out of scope" | "Auto-scaling and multi-region placement are out of scope — addressed in a separate proposal" |
 | Implementation-focused user stories | "As a tenant, I want the VirtualNetwork CRD to have a CIDR field" | "As a tenant, I want to define an isolated network with my own IP address space so I can control my network topology" |
+| Design leakage in PRD | PRD names controllers, CRD fields, playbooks, env vars, or finalizers | PRD states user-observable outcomes; design doc specifies implementation |
+| Acceptance criteria repeat requirements | AC checkboxes restate each FR as "FR-N is implemented" | AC describes end-to-end scenarios a PM can verify by using the product |
 | Placeholder test plans | "Unit and integration tests will be added" | "Unit tests for proto validation and CIDR parsing; integration tests for VirtualNetwork creation and Subnet attachment; e2e tests for full networking stack" |
 | Generic risks | "Risk: Implementation might have bugs" | "Risk: IPv6 dual-stack adds testing complexity. Mitigation: Make IPv6 optional, support IPv4-only mode" |
 | Inconsistent terminology | "Floating IP" / "PublicIP" / "External IP" used interchangeably | Define terms in a Terminology section and use consistently |
