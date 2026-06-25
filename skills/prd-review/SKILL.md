@@ -121,6 +121,7 @@ Using `.design/context/osac-dimensions.md`, check:
 - [ ] **Networking**: Backend(s) identified, API-integrated vs. side-channel clarified
 - [ ] **Storage**: Prerequisites, automation, per-tenant provisioning addressed
 - [ ] **Installation**: Helm/kustomize changes, CI implications, osac-installer updates
+- [ ] **Documentation**: User-observable doc needs identified; milestone scope (in scope vs deferred); impact on existing documented workflows — detailed doc plan belongs in the EP
 - [ ] **API resources**: For each in-scope service, affected API resources listed
 
 Not every dimension applies to every feature. Score based on whether the PRD

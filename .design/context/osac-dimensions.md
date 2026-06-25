@@ -91,6 +91,16 @@ How does the feature affect deployment and installation?
 - New prerequisites or dependencies
 - `osac-installer/setup.sh` updates needed
 
+### Documentation
+
+What user-facing documentation does the feature require?
+
+- What user-facing documentation is needed (user guides, API reference, architecture docs)?
+- Which persona workflows need documented?
+- Are there docs repo updates needed (`docs/`, `enhancement-proposals/`)?
+- Is documentation in scope for this milestone or explicitly deferred?
+- Does the feature change existing documented workflows that need updating?
+
 ## User-Facing API
 
 For each service in scope, identify which API surfaces the feature affects.
