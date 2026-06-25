@@ -87,7 +87,50 @@ Read the component's CLAUDE.md or Makefile for the correct validation sequence.
 
 **If all checks pass:** Continue to Step 3.
 
-## Step 3: Push to Fork
+## Step 3: Check Test Coverage
+
+Analyze the diff to detect production code changes that lack corresponding test changes. This is **advisory only** — it warns but does not block PR creation.
+
+Run:
+
+```bash
+git diff main..HEAD --name-only --diff-filter=AMR
+```
+
+Classify each changed file using the repo-specific rules below:
+
+### File Classification
+
+| Repo | Production files | Test files | Excluded (skip) |
+|------|-----------------|------------|-----------------|
+| **fulfillment-service** | `*.go` not `_test.go` | `*_test.go` | `internal/api/`, `*.pb.go`, `migrations/` |
+| **osac-operator** | `*.go` not `_test.go` | `*_test.go` | `api/v1alpha1/zz_generated*`, `config/` |
+| **osac-aap** | `roles/*/tasks/*.yml`, `plugins/**/*.py` | `molecule/*/`, `tests/`, `test_*.py` | `meta/`, `docs/` |
+| **osac-installer** | Skip this check entirely | — | — |
+
+For each production file in the diff, check if a corresponding test file also appears in the diff. Matching rules:
+
+- **Go:** `foo.go` → `foo_test.go` in the same directory
+- **Ansible:** `roles/<role>/tasks/*.yml` → `molecule/<role>/` or `tests/` directory has changes
+
+**If gaps exist**, print a warning and continue:
+
+```
+⚠️  Test coverage gaps detected:
+
+| Production file changed | Expected test file |
+|------------------------|--------------------|
+| internal/servers/foo_server.go | internal/servers/foo_server_test.go |
+
+These files were added or modified without corresponding test changes.
+This is a warning — proceeding with PR creation.
+```
+
+**If no gaps**, print: "✅ Test coverage looks good — all changed production files have corresponding test changes."
+
+**Always continue to Step 4** regardless of the result.
+
+## Step 4: Push to Fork
 
 Always push to `fork`, never to `origin`.
 
@@ -97,7 +140,7 @@ git push -u fork "$BRANCH"
 
 If push fails due to diverged history, do not force-push automatically. Show the push error to the user and ask them for explicit instructions on how to proceed.
 
-## Step 4: Determine PR Title
+## Step 5: Determine PR Title
 
 The PR title must include the Jira ticket key if one exists.
 
@@ -117,7 +160,7 @@ If no ticket key is found, ask: "Is there a Jira ticket for this work? (e.g., OS
 
 If none, omit the prefix — just use a descriptive title.
 
-## Step 5: Create PR
+## Step 6: Create PR
 
 Determine the upstream repo from the `origin` remote:
 
@@ -157,7 +200,7 @@ EOF
 )"
 ```
 
-## Step 6: Report Result
+## Step 7: Report Result
 
 Display the PR URL as a clickable markdown link:
 
@@ -173,10 +216,11 @@ If cross-repo PRs exist, remind: "Link related PRs in the description (e.g., 'De
 |------|------|------|
 | 1 | Detect context | Not on main, fork exists, commits ahead |
 | 2 | Run validation | All checks pass |
-| 3 | Push to fork | Push succeeds |
-| 4 | Determine title | Jira key included if available |
-| 5 | Create PR | PR created against origin/main |
-| 6 | Report | Show PR URL |
+| 3 | Check test coverage | Advisory warning (does not block) |
+| 4 | Push to fork | Push succeeds |
+| 5 | Determine title | Jira key included if available |
+| 6 | Create PR | PR created against origin/main |
+| 7 | Report | Show PR URL |
 
 ## Common Issues
 
