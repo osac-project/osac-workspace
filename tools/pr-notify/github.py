@@ -56,16 +56,18 @@ def _build_graphql_query(repos: list[str]) -> str:
                 committedDate
                 statusCheckRollup {{
                   state
-                }}
-                checkSuites(first: 10) {{
-                  pageInfo {{ hasNextPage }}
-                  nodes {{
-                    checkRuns(first: 20) {{
-                      pageInfo {{ hasNextPage }}
-                      nodes {{
+                  contexts(first: 100) {{
+                    nodes {{
+                      __typename
+                      ... on CheckRun {{
                         name
                         conclusion
                         detailsUrl
+                      }}
+                      ... on StatusContext {{
+                        context
+                        state
+                        targetUrl
                       }}
                     }}
                   }}
@@ -89,37 +91,36 @@ def _parse_pr_nodes(repo_name: str, pr_nodes: list[dict]) -> list[PRData]:
         last_commit = commit_nodes[0]["commit"] if commit_nodes else {}
         last_commit_date = last_commit.get("committedDate", "")
 
-        # CI status from statusCheckRollup
+        # CI status and individual checks from statusCheckRollup
         rollup = last_commit.get("statusCheckRollup")
         ci_status = rollup.get("state") if rollup else None
 
-        # Individual check runs
-        check_suites_data = last_commit.get("checkSuites") or {}
-        if check_suites_data.get("pageInfo", {}).get("hasNextPage"):
-            logger.warning(
-                "PR '%s' has more than 10 check suites; results truncated",
-                pr.get("title", ""),
-            )
+        _STATUS_CONTEXT_STATE_MAP = {
+            "SUCCESS": "SUCCESS",
+            "FAILURE": "FAILURE",
+            "ERROR": "FAILURE",
+            "EXPECTED": "SUCCESS",
+            "PENDING": None,
+        }
+
         check_runs = []
-        for suite in check_suites_data.get("nodes") or []:
-            if suite is None:
-                continue
-            check_runs_data = suite.get("checkRuns")
-            if check_runs_data is None:
-                continue
-            if check_runs_data.get("pageInfo", {}).get("hasNextPage"):
-                logger.warning(
-                    "PR '%s' has more than 20 check runs in a suite; results truncated",
-                    pr.get("title", ""),
-                )
-            for run in check_runs_data.get("nodes") or []:
-                if run is None:
-                    continue
-                check_runs.append(CheckRun(
-                    name=run.get("name", ""),
-                    conclusion=run.get("conclusion"),
-                    details_url=run.get("detailsUrl", ""),
-                ))
+        if rollup:
+            for node in rollup.get("contexts", {}).get("nodes", []):
+                typename = node.get("__typename")
+                if typename == "CheckRun":
+                    check_runs.append(CheckRun(
+                        name=node.get("name", ""),
+                        conclusion=node.get("conclusion"),
+                        details_url=node.get("detailsUrl", ""),
+                    ))
+                elif typename == "StatusContext":
+                    check_runs.append(CheckRun(
+                        name=node.get("context", ""),
+                        conclusion=_STATUS_CONTEXT_STATE_MAP.get(
+                            node.get("state", ""), None
+                        ),
+                        details_url=node.get("targetUrl") or "",
+                    ))
 
         # Reviews
         review_nodes = pr.get("reviews", {}).get("nodes", [])
