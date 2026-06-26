@@ -91,6 +91,15 @@ How does the feature affect deployment and installation?
 - New prerequisites or dependencies
 - `osac-installer/setup.sh` updates needed
 
+### E2E Testing
+
+What E2E test coverage does the feature require in osac-test-infra (bootstrapped at `osac-test-infra/`)?
+
+- Which user-visible flows must work for this milestone (happy path, error paths, edge cases)?
+- Which API surfaces need E2E coverage via pytest (Fulfillment API, CRDs, catalog/templates)?
+- Are there cross-service test scenarios (e.g., provisioning + networking)?
+- What test infrastructure is required (pytest fixtures, env/config, test tenants/organizations)?
+
 ## User-Facing API
 
 For each service in scope, identify which API surfaces the feature affects.

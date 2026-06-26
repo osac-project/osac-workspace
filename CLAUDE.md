@@ -80,7 +80,7 @@ Push to the `fork` remote in the enhancement-proposals repo, not `origin`. PRs g
 
 Both `/prd:ingest` and `/design:ingest` must read all files in `.design/context/` during their ingest phase:
 
-- **`osac-dimensions.md`** — Cross-cutting dimensions (services, personas, tenant onboarding, inventory, provisioning, networking, storage, installation) that every OSAC feature must address. Use it to guide clarifying questions during `/prd:clarify` and to ensure the design covers all relevant dimensions.
+- **`osac-dimensions.md`** — Cross-cutting dimensions (services, personas, tenant onboarding, inventory, provisioning, networking, storage, installation, E2E testing) that every OSAC feature must address. Use it to guide clarifying questions during `/prd:clarify` and to ensure the design covers all relevant dimensions.
 - **`review-patterns.md`** — Common EP reviewer feedback themes, anti-patterns, and the EP reference library. Use during `/prd:draft` and `/design:draft` to anticipate reviewer expectations.
 
 ### Template Overrides
