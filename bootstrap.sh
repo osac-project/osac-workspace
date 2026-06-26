@@ -174,8 +174,10 @@ else
   git clone "https://github.com/${AI_WORKFLOWS_REPO}.git" ".ai-workflows"
 fi
 echo "🔧 Installing ai-workflows skills..."
-"$AI_WORKFLOWS_DIR/install.sh" claude --project . --workflows bugfix,implement,prd,design
-"$AI_WORKFLOWS_DIR/install.sh" cursor --project . --workflows bugfix,implement,prd,design
+AI_WORKFLOWS="bugfix,implement,prd,design"
+"$AI_WORKFLOWS_DIR/install.sh" all --project . --workflows "$AI_WORKFLOWS"
+echo "🔗 Linking agent skill directories to skills/..."
+tools/link-agent-skills.sh --all
 
 if command -v rh-multi-pre-commit &>/dev/null; then
   echo ""
