@@ -96,6 +96,7 @@ How does the feature affect deployment and installation?
 What user-facing documentation does the feature require?
 
 - What user-facing documentation is needed (user guides, API reference, architecture docs)?
+- API reference may live in component repos (e.g. `fulfillment-service/`) rather than `osac-docs/` alone.
 - Which persona workflows need documented?
 - Are there docs repo updates needed (`osac-docs/`, `enhancement-proposals/`)?
 - Is documentation in scope for this milestone or explicitly deferred?
