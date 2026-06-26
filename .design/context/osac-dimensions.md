@@ -91,6 +91,16 @@ How does the feature affect deployment and installation?
 - New prerequisites or dependencies
 - `osac-installer/setup.sh` updates needed
 
+### UI
+
+What UI support does the feature require in the osac-ui web console (bootstrapped at `osac-ui/`)?
+
+- Which persona workflows need UI support? (osac-ui maps Keycloak roles to provider/tenant admin/user — Cloud Infrastructure Admin may have no console today)
+- Which UI views/pages are affected (list, detail, create, edit / lifecycle actions)?
+- Is UI in scope for this milestone or explicitly deferred (API/CLI-only acceptable)?
+- Does the feature require new UI components or extend existing ones in osac-ui?
+- Which Fulfillment API resources and catalog entries need console representation? (osac-ui uses the Fulfillment Public API via proxy — not direct CRD access)
+
 ## User-Facing API
 
 For each service in scope, identify which API surfaces the feature affects.
