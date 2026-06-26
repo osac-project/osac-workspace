@@ -8,7 +8,7 @@
 #   .cursor/skills -> ../skills
 #   .gemini/skills -> ../skills
 #
-# Run after ai-workflows install.sh (claude, cursor, gemini) in bootstrap.sh.
+# Run after ai-workflows install.sh all in bootstrap.sh.
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
@@ -58,6 +58,35 @@ link_agent_skills() {
   echo "  Linked ${agent_dir}/skills -> ../skills  (${label})"
 }
 
+resolve_ai_workflows_dir() {
+  if [[ -d "${HOME}/.ai-workflows" ]]; then
+    readlink -f "${HOME}/.ai-workflows"
+  elif [[ -d "${PROJECT_ROOT}/.ai-workflows" ]]; then
+    readlink -f "${PROJECT_ROOT}/.ai-workflows"
+  fi
+}
+
+link_canonical_ai_workflows() {
+  local ai_dir
+  ai_dir="$(resolve_ai_workflows_dir || true)"
+  if [[ -z "${ai_dir}" ]]; then
+    echo "WARN: ai-workflows not found; skipping skills/ workflow symlinks" >&2
+    return 0
+  fi
+
+  mkdir -p "${PROJECT_ROOT}/skills"
+  if [[ -d "${ai_dir}/_shared" ]]; then
+    ln -sfn "${ai_dir}/_shared" "${PROJECT_ROOT}/skills/_shared"
+    echo "  Linked skills/_shared -> ${ai_dir}/_shared"
+  fi
+  for wf in "${AI_WORKFLOW_SKILLS[@]}"; do
+    if [[ -d "${ai_dir}/${wf}" ]]; then
+      ln -sfn "${ai_dir}/${wf}" "${PROJECT_ROOT}/skills/${wf}"
+      echo "  Linked skills/${wf} -> ${ai_dir}/${wf}"
+    fi
+  done
+}
+
 verify_symlink() {
   local agent_dir="$1"
   local label="$2"
@@ -90,11 +119,11 @@ verify_ai_workflow_skills() {
   local missing=0
   for skill in "${AI_WORKFLOW_SKILLS[@]}"; do
     if [[ ! -r "${PROJECT_ROOT}/skills/${skill}/SKILL.md" ]]; then
-      echo "WARN: missing skills/${skill}/SKILL.md (run ai-workflows install first)" >&2
+      echo "ERROR: missing skills/${skill}/SKILL.md (run ai-workflows install first)" >&2
       missing=1
     fi
   done
-  return 0
+  return "${missing}"
 }
 
 run_verify() {
@@ -113,7 +142,7 @@ run_verify() {
 
   echo "Verifying canonical skills/ content..."
   verify_osac_skills || errors=1
-  verify_ai_workflow_skills
+  verify_ai_workflow_skills || errors=1
 
   if [[ "${LINK_CURSOR}" == true ]] && [[ ! -f "${PROJECT_ROOT}/.cursor/commands/implement-ingest.md" ]]; then
     echo "WARN: missing .cursor/commands/implement-ingest.md (run ai-workflows cursor install?)" >&2
@@ -168,6 +197,7 @@ if [[ "${VERIFY_ONLY}" == true ]]; then
 fi
 
 echo "Linking agent skill directories to skills/..."
+link_canonical_ai_workflows
 if [[ "${LINK_CLAUDE}" == true ]]; then
   link_agent_skills "${PROJECT_ROOT}/.claude" "Claude"
 fi
