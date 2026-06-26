@@ -176,6 +176,9 @@ fi
 echo "🔧 Installing ai-workflows skills..."
 "$AI_WORKFLOWS_DIR/install.sh" claude --project . --workflows bugfix,implement,prd,design
 "$AI_WORKFLOWS_DIR/install.sh" cursor --project . --workflows bugfix,implement,prd,design
+"$AI_WORKFLOWS_DIR/install.sh" gemini --project . --workflows bugfix,implement,prd,design
+echo "🔗 Linking agent skill directories to skills/..."
+tools/link-agent-skills.sh --all
 
 if command -v rh-multi-pre-commit &>/dev/null; then
   echo ""
