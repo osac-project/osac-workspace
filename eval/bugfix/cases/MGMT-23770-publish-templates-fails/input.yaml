@@ -1,0 +1,27 @@
+jira_key: MGMT-23770
+bug_date: "2026-04-03"
+primary_repo: osac-aap
+repos:
+  osac-aap: ddd2d22330c3e7d1123e4f0fa177bcace9dfc336
+  fulfillment-service: 393b43629e81401859fa88066a3992d5d05ea0f1
+  osac-operator: d965fe49175b4b75c4bdc299f03b48d3f89fb7a6
+  osac-installer: 68a1c88b7181f10f8dfc5a101dfc3d50108c067a
+  docs: 8bd48e247ec66fb0d1621a4c7c81d5bbab31386a
+  enhancement-proposals: 39cebc6437d6d19db59c56468591efcf237a5a7d
+  osac-test-infra: a5330d860f06371454a6792fe838d1785f0c5004
+prompt: |
+  Fix bug MGMT-23770: Network class publication from AAP fails
+
+  Description:
+  Publication of network classes fails from AAP with the following error:
+
+  TASK [osac.service.publish_templates : Create list of existing NetworkClass IDs]
+  fatal: [localhost]: FAILED! => {"msg": "The conditional check 'network_class_check is success and network_class_check.json.size > 0' failed. The error was: error while evaluating conditional (network_class_check is success and network_class_check.json.size > 0): 'dict object' has no attribute 'size'"}
+
+  The error appears in /runner/project/collections/ansible_collections/osac/service/roles/publish_templates/tasks/network_classes.yaml line 9.
+
+  This happens because there are no existing network classes in the fulfillment-service, and the API response dict doesn't have a 'size' attribute.
+
+  Component versions:
+  - fulfillment-cli: 0.0.50
+  - fulfillment-service/controller/rest-gateway: ghcr.io/osac-project/fulfillment-service@sha256:1e2f47d6...

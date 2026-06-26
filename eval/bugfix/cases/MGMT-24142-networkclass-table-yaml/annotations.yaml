@@ -1,0 +1,11 @@
+expected_repos:
+  - fulfillment-service
+expected_files:
+  - internal/rendering/tables/osac.public.v1.NetworkClass.yaml
+  - internal/rendering/tables/osac.private.v1.NetworkClass.yaml
+bug_category: missing-file
+difficulty: easy
+multi_repo: false
+description: |
+  Table rendering YAML files for NetworkClass resource are missing.
+  Fix: create the YAML files modelled on existing sibling resources.

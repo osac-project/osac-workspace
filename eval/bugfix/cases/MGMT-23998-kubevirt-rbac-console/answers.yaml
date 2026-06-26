@@ -1,0 +1,5 @@
+clarification_guidance: |
+  - For confirmation questions: answer "yes"
+  - For branch name: use "bugfix/MGMT-23998"
+  - For PR creation: answer "No"
+  - This is a multi-repo bug: fix RBAC in osac-installer AND logging in fulfillment-service

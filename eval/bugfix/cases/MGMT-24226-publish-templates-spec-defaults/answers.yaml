@@ -1,0 +1,5 @@
+clarification_guidance: |
+  - For confirmation questions: answer "yes"
+  - For branch name: use "bugfix/MGMT-24226"
+  - For PR creation: answer "No"
+  - This is a multi-repo bug requiring changes in osac-installer, fulfillment-service, and osac-aap

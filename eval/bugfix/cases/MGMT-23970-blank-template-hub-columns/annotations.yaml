@@ -1,0 +1,11 @@
+expected_repos:
+  - fulfillment-service
+expected_files:
+  - internal/rendering/table_renderer.go
+  - internal/rendering/table_renderer_test.go
+bug_category: missing-fallback
+difficulty: easy
+multi_repo: false
+description: |
+  lookupName() returns empty string instead of falling back to the raw key
+  when the resolved object has no metadata.name. One-line fix with fallback.

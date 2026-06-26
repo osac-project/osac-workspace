@@ -1,0 +1,37 @@
+jira_key: MGMT-23654
+bug_date: "2026-03-25"
+primary_repo: fulfillment-service
+repos:
+  fulfillment-service: f84661823769f67efe4f6b71e356d6510bfe0d3d
+  osac-operator: 959a85873f8998c6f4d9f2ec11eb07ebf056a97b
+  osac-aap: c8dee7a45ee201ef65fd2a92dc00a2ebb97e2f80
+  osac-installer: 9077314efcb3f45b67d5fa8d093d4dc48e3550e0
+  docs: 8bd48e247ec66fb0d1621a4c7c81d5bbab31386a
+  enhancement-proposals: 39cebc6437d6d19db59c56468591efcf237a5a7d
+  osac-test-infra: 2af08818ca6c58382b265dff57d73aba799883fb
+prompt: |
+  Fix bug MGMT-23654: Public SecurityGroup Create returns 500: unknown object type
+
+  Description:
+  The public SecurityGroup Create endpoint returns HTTP 500 with error: unknown object type '*privatev1.SecurityGroup'
+
+  The error originates from GenericServer.Create in generic_server.go, called via PrivateSecurityGroupsServer.Create -> SecurityGroupsServer.Create.
+
+  Steps to reproduce:
+  curl -s -X POST $API/api/fulfillment/v1/security_groups -d '{
+    "metadata": {"name": "test-sg"},
+    "spec": {
+      "virtual_network": "",
+      "ingress": [{"protocol": "PROTOCOL_TCP", "port_from": 22, "port_to": 22, "ipv4_cidr": "0.0.0.0/0"}],
+      "egress": [{"protocol": "PROTOCOL_ALL", "ipv4_cidr": "0.0.0.0/0"}]
+    }
+  }'
+
+  Returns: {"code":13,"message":"failed to create object"}
+  Server log: unknown object type '*privatev1.SecurityGroup'
+
+  Expected: SecurityGroup should be created and returned with a generated ID.
+  Actual: HTTP 500 / gRPC INTERNAL error. The SecurityGroup CRUD is not functional.
+
+  Affected components:
+  - fulfillment-service/internal/servers/generic_server.go (type registry / setPayload switch)

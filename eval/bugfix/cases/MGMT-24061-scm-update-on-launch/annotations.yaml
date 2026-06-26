@@ -1,0 +1,10 @@
+expected_repos:
+  - osac-aap
+expected_files:
+  - collections/ansible_collections/osac/config_as_code/roles/aap/vars/controller.yml
+bug_category: config-change
+difficulty: easy
+multi_repo: false
+description: |
+  All AAP job templates have scm_update_on_launch: true. Fix: set to false on all templates.
+  Simple YAML value change across job template definitions.

@@ -1,0 +1,80 @@
+# Task: {jira_key}
+
+## Summary
+{summary}
+
+The full ticket description is in `issue.md`.
+
+## Instructions
+Before diagnosing the bug, read `.planning/codebase/CONVENTIONS.md` for codebase patterns and naming conventions.
+
+Implement this task. Validate your changes compile and pass tests using
+whatever build tools this project provides. Fix any issues you find.
+Do not push to git -- the system handles that.
+
+## Workflow
+Read and execute .claude/skills/bugfix/skills/unattended.md
+with these settings:
+  branch: stay on the current branch (already created by the orchestration system)
+All artifact paths (.artifacts/bugfix/{jira_key}/) should use
+.ai-bot/ instead. Write the PR description to .ai-bot/pr.md.
+
+## Repository: fulfillment-service
+
+## Project Instructions
+IMPORTANT: You will not commit changes -- the orchestration
+system commits after your session ends. Treat the end of
+your session as the "before committing" checkpoint described
+in AGENTS.md.
+
+Before your session ends, run `golangci-lint run --fix`
+and fix all reported issues. Lint failures block the PR. This is
+non-negotiable -- do not skip this step.
+
+## Repository: osac-operator
+
+## Project Instructions
+IMPORTANT: You will not commit changes -- the orchestration
+system commits after your session ends. Treat the end of
+your session as the "before committing" checkpoint described
+in AGENTS.md.
+
+Before your session ends, run `golangci-lint run --fix`
+and fix all reported issues. Lint failures block the PR. This is
+non-negotiable -- do not skip this step.
+
+## Repository: osac-aap
+
+## Project Instructions
+IMPORTANT: You will not commit changes -- the orchestration
+system commits after your session ends. Treat the end of
+your session as the "before committing" checkpoint described
+in AGENTS.md.
+
+Before your session ends, run `ansible-lint` and fix all
+reported issues. Lint failures block the PR. This is
+non-negotiable -- do not skip this step.
+
+## Repository: osac-installer
+
+## Project Instructions
+IMPORTANT: You will not commit changes -- the orchestration
+system commits after your session ends.
+
+## Repository: osac-test-infra
+
+## Project Instructions
+IMPORTANT: You will not commit changes -- the orchestration
+system commits after your session ends.
+
+## Repository: enhancement-proposals
+
+## Project Instructions
+IMPORTANT: You will not commit changes -- the orchestration
+system commits after your session ends.
+
+## Repository: docs
+
+## Project Instructions
+IMPORTANT: You will not commit changes -- the orchestration
+system commits after your session ends.

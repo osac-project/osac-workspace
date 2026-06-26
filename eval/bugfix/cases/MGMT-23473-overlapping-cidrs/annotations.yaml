@@ -1,0 +1,11 @@
+expected_repos:
+  - fulfillment-service
+expected_files:
+  - internal/servers/private_subnets_server.go
+  - internal/servers/private_subnets_server_test.go
+bug_category: missing-validation
+difficulty: medium
+multi_repo: false
+description: |
+  Missing CIDR overlap validation when creating subnets under the same VirtualNetwork.
+  Fix requires adding IP range overlap checking in the Create path of private_subnets_server.go.

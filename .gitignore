@@ -69,14 +69,14 @@ docs/*
 docs/pr-dashboard/data.json
 .ai-workflows/
 
-# Workflow artifacts (bugfix, implement)
-.artifacts/
-
 # Workflow artifacts (bugfix, implement) — keep shared config
 .artifacts/*
 !.artifacts/prd/
 .artifacts/prd/*
 !.artifacts/prd/config.json
+
+# Eval run outputs (large logs, not committed)
+eval/*/runs/
 
 # AI Tooling
 .cursor/

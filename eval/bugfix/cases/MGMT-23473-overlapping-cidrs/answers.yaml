@@ -1,0 +1,5 @@
+clarification_guidance: |
+  - For confirmation questions: answer "yes"
+  - For branch name: use "bugfix/MGMT-23473"
+  - For PR creation: answer "No"
+  - For lint/test commands: let the agent auto-detect from the repo

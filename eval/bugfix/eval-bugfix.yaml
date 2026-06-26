@@ -1,0 +1,273 @@
+name: bugfix-unattended-eval
+description: Evaluate the bugfix /unattended workflow against real OSAC bugs with known fixes
+skill: bugfix
+
+execution:
+  mode: case
+  arguments: "Read and follow task.md"
+  timeout: 1200
+  max_budget_usd: 15.0
+
+runner:
+  type: claude-code
+  effort: high
+  system_prompt: |
+    You are working in the osac-workspace. Component repos are nested directories
+    (fulfillment-service/, osac-operator/, osac-aap/, osac-installer/, etc.).
+    Use the CLAUDE.md and .planning/codebase/ files for project context.
+    Read task.md for instructions and issue.md for the bug report.
+    Do NOT create PRs or push to remotes. Work locally only.
+
+models:
+  skill: claude-opus-4-6
+  subagent: claude-sonnet-4-6
+  judge: claude-opus-4-6
+  hook: claude-sonnet-4-6
+
+mlflow:
+  experiment: bugfix-unattended-eval
+
+permissions:
+  allow:
+    - "Skill"
+    - "Write"
+    - "Read"
+    - "Edit"
+    - "Bash"
+    - "Agent"
+    - "Glob"
+    - "Grep"
+    - "LSP"
+    - "EnterPlanMode"
+    - "ExitPlanMode"
+    - "AskUserQuestion"
+    - "TaskCreate"
+    - "TaskUpdate"
+    - "TaskList"
+    - "TaskGet"
+  deny:
+    - "mcp__github__*"
+    - "mcp__jira__*"
+
+dataset:
+  path: eval/bugfix/cases
+  schema: |
+    Each case directory contains:
+    - input.yaml: YAML with 'jira_key' (e.g., MGMT-23473),
+      'repos' (dict of repo_name -> pinned SHA for all 7 repos),
+      'primary_repo' (main fix target).
+    - issue.md: The Jira ticket content (title, description, comments,
+      attachments) — the bug report the agent reads.
+    - reference.md: The real PR diff that fixed the bug, used by LLM judges
+      for correctness comparison.
+    - annotations.yaml: Expected outcomes — 'expected_files', 'expected_repos',
+      'bug_category', 'difficulty', 'multi_repo'.
+    - answers.yaml: Guidance for AskUserQuestion hook.
+
+inputs:
+  tools:
+    - match: Questions asked via AskUserQuestion during bugfix workflow phases
+      prompt: |
+        Answer based on the test case context. For confirmation questions
+        ("proceed?", "continue?"), answer "yes". For branch name questions,
+        use "bugfix/{jira_key}". For PR questions, answer "No" — do not
+        create PRs during evaluation. Default: pick the first option.
+
+    - match: |
+        Bash commands containing "git push", "gh pr", or "gh api".
+        Only intercept Bash, nothing else.
+      prompt: |
+        Block all remote git/GitHub operations. The agent should fix the
+        code locally but not push or create PRs during evaluation.
+
+outputs:
+  - path: .ai-bot
+    schema: |
+      The bugfix workflow writes artifacts to .ai-bot/ containing:
+      - root-cause.md: Root cause analysis
+      - implementation-notes.md: What was changed and why
+      - verification.md: Test results
+      - review.md: Self-review findings
+      - pr.md: PR title and description
+      - session-context.md: Summary manifest
+      Additionally, the working tree will have uncommitted changes (the fix).
+  - path: .eval-ref
+    schema: |
+      Reference data for judges (not produced by the skill).
+      Contains reference.md with the real PR diff for comparison.
+
+traces:
+  stdout: true
+  stderr: true
+  events: false
+  metrics: true
+
+judges:
+  # Note: each check: block runs in isolation — the harness does not support
+  # shared helpers, so _extract_edited_paths is defined in each judge.
+
+  - name: correct_repo
+    description: Agent modified files in the expected repository/repositories
+    check: |
+      import json
+      def _extract_edited_paths(stdout):
+          paths = set()
+          for line in stdout.split("\n"):
+              try:
+                  e = json.loads(line)
+                  if e.get("type") != "assistant": continue
+                  for block in (e.get("message", {}).get("content") or []):
+                      if block.get("type") == "tool_use" and block.get("name") in ("Edit", "Write"):
+                          fp = block.get("input", {}).get("file_path", "")
+                          if fp: paths.add(fp)
+              except (json.JSONDecodeError, TypeError): pass
+          return paths
+      expected = set(outputs.get("annotations", {}).get("expected_repos", []))
+      if not expected:
+          return (False, "No expected_repos in annotations")
+      edited_paths = _extract_edited_paths(outputs.get("stdout", ""))
+      modified_repos = set()
+      for fp in edited_paths:
+          for repo in expected:
+              if f"/{repo}/" in fp or fp.startswith(repo + "/"):
+                  modified_repos.add(repo)
+      if not modified_repos:
+          return (False, f"No changes in expected repos {expected}. Edited: {edited_paths}")
+      missing = expected - modified_repos
+      if missing:
+          return (False, f"Missing changes in: {missing}. Modified: {modified_repos}")
+      return (True, f"Correct repos modified: {modified_repos}")
+
+  - name: correct_files
+    description: Agent modified the expected files (or semantically equivalent ones)
+    check: |
+      import json
+      def _extract_edited_paths(stdout):
+          paths = set()
+          for line in stdout.split("\n"):
+              try:
+                  e = json.loads(line)
+                  if e.get("type") != "assistant": continue
+                  for block in (e.get("message", {}).get("content") or []):
+                      if block.get("type") == "tool_use" and block.get("name") in ("Edit", "Write"):
+                          fp = block.get("input", {}).get("file_path", "")
+                          if fp: paths.add(fp)
+              except (json.JSONDecodeError, TypeError): pass
+          return paths
+      expected_files = outputs.get("annotations", {}).get("expected_files", [])
+      if not expected_files:
+          return (True, "No expected_files specified — skipping")
+      edited_paths = _extract_edited_paths(outputs.get("stdout", ""))
+      matched = 0
+      for ef in expected_files:
+          for fp in edited_paths:
+              if ef in fp or fp.endswith(ef):
+                  matched += 1
+                  break
+      ratio = matched / len(expected_files) if expected_files else 0
+      if ratio < 0.5:
+          return (False, f"Only {matched}/{len(expected_files)} expected files. Edited: {sorted(edited_paths)[:10]}")
+      return (True, f"{matched}/{len(expected_files)} expected files modified")
+
+  - name: tests_added
+    description: Agent added or modified at least one test file
+    check: |
+      import json
+      def _extract_edited_paths(stdout):
+          paths = set()
+          for line in stdout.split("\n"):
+              try:
+                  e = json.loads(line)
+                  if e.get("type") != "assistant": continue
+                  for block in (e.get("message", {}).get("content") or []):
+                      if block.get("type") == "tool_use" and block.get("name") in ("Edit", "Write"):
+                          fp = block.get("input", {}).get("file_path", "")
+                          if fp: paths.add(fp)
+              except (json.JSONDecodeError, TypeError): pass
+          return paths
+      edited_paths = _extract_edited_paths(outputs.get("stdout", ""))
+      test_files = [f for f in edited_paths if "_test." in f or "test_" in f or ".spec." in f or "/tests/" in f]
+      if not test_files:
+          return (False, "No test files added or modified")
+      return (True, f"Test files: {test_files}")
+
+  - name: artifacts_produced
+    description: Bugfix workflow produced expected artifact files
+    check: |
+      files = outputs.get("files", {})
+      expected_artifacts = ["root-cause.md", "implementation-notes.md", "verification.md"]
+      found = []
+      missing = []
+      for artifact in expected_artifacts:
+          matches = [k for k in files if k.endswith(artifact)]
+          if matches:
+              found.append(artifact)
+          else:
+              missing.append(artifact)
+      if missing:
+          return (False, f"Missing artifacts: {missing}. Found: {found}")
+      return (True, f"All key artifacts produced: {found}")
+
+  - name: fix_correctness
+    description: |
+      LLM judge comparing the agent's fix against the real merged PR.
+      Evaluates whether the agent identified the same root cause and
+      applied a semantically equivalent fix.
+    prompt: |
+      You are evaluating a bugfix produced by an AI agent against the real
+      fix that was merged by human developers.
+
+      Below are all collected outputs. The file `.eval-ref/reference.md`
+      contains the real PR diff that fixed this bug. Files under `.ai-bot/`
+      are the agent's artifacts (root-cause analysis, implementation notes,
+      etc.). Compare the agent's approach against the reference fix.
+
+      {{ outputs }}
+
+      ## Evaluation Criteria
+
+      Score each dimension 1-5:
+
+      1. **Root Cause Identification** (1-5):
+         - 1: Completely wrong diagnosis
+         - 3: Partially correct — identified the area but missed the exact cause
+         - 5: Identified the same root cause as the real fix
+
+      2. **Fix Correctness** (1-5):
+         - 1: Fix is wrong or would break things
+         - 3: Fix addresses the symptom but not the root cause, or is correct but significantly different approach
+         - 5: Semantically equivalent to the real fix (same files, same logic, may differ in style)
+
+      3. **Fix Completeness** (1-5):
+         - 1: Major parts of the fix are missing
+         - 3: Core fix present but missed edge cases or secondary changes
+         - 5: All aspects of the real fix are covered
+
+      4. **Test Quality** (1-5):
+         - 1: No tests or irrelevant tests
+         - 3: Some tests but don't fully verify the fix
+         - 5: Tests prove the bug is fixed and cover edge cases
+
+      Provide your assessment as:
+      ```
+      root_cause: <1-5>
+      fix_correctness: <1-5>
+      fix_completeness: <1-5>
+      test_quality: <1-5>
+      overall: <1-5 weighted average, fix_correctness counts double>
+      reasoning: <2-3 sentences on key differences from the real fix>
+      ```
+
+      Return the overall score as your final score.
+
+thresholds:
+  correct_repo:
+    min_pass_rate: 1.0
+  correct_files:
+    min_pass_rate: 0.7
+  tests_added:
+    min_pass_rate: 0.8
+  artifacts_produced:
+    min_pass_rate: 0.9
+  fix_correctness:
+    min_mean: 3.0

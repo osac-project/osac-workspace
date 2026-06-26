@@ -1,0 +1,10 @@
+expected_repos:
+  - fulfillment-service
+expected_files:
+  - internal/servers/generic_server.go
+bug_category: logic-error
+difficulty: hard
+multi_repo: false
+description: |
+  Field mask update replaces entire spec message instead of setting the leaf field.
+  Fix requires changing how nested paths are handled in the update/merge logic.

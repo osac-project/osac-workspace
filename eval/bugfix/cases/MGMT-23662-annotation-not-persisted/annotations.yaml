@@ -1,0 +1,10 @@
+expected_repos:
+  - osac-operator
+expected_files:
+  - internal/controller/computeinstance_controller.go
+bug_category: missing-persist
+difficulty: medium
+multi_repo: false
+description: |
+  Annotation set in memory but only Status().Update() called, not Update() for metadata.
+  Fix: add r.Update() call to persist metadata changes alongside the status update.

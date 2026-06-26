@@ -1,0 +1,30 @@
+jira_key: MGMT-24142
+bug_date: "2026-04-27"
+primary_repo: fulfillment-service
+repos:
+  fulfillment-service: 3fe2d597ca418d6505624e7e4109d6a621dc8570
+  osac-operator: d4c5c66b7eb88c7e1ef8184cf4a6a2544d9fa4fb
+  osac-aap: e802b54e650127ace7568da81fd8a3c05386b938
+  osac-installer: 3fb56e56c3df233189eed2ac07d370d6d400eb6d
+  docs: 8c016d3983f673ab4a6f11de72372e66177b7669
+  enhancement-proposals: 39cebc6437d6d19db59c56468591efcf237a5a7d
+  osac-test-infra: 0031d78bd60a166d2d1482ec7705e11315b4997b
+prompt: |
+  Fix bug MGMT-24142: osac get networkclasses fails — missing table rendering YAML
+
+  Description:
+  osac get networkclasses crashes with a file-not-found error because the table rendering definition for NetworkClass is missing from fulfillment-service. All sibling resources (Cluster, Subnet, VirtualNetwork, SecurityGroup, HostClass, etc.) have their osac.public.v1.<Type>.yaml file; NetworkClass was never added.
+
+  How reproducible: Always
+
+  Steps to reproduce:
+  Run: osac get networkclasses
+
+  Expected: Table output listing NetworkClass objects.
+  Actual: Error: open tables/osac.public.v1.NetworkClass.yaml: file does not exist
+
+  Root cause:
+  internal/rendering/tables/osac.public.v1.NetworkClass.yaml (and osac.private.v1.NetworkClass.yaml) are absent from fulfillment-service. The NetworkClass resource is otherwise fully implemented — gRPC server (network_classes_server.go), proto-generated types (network_class_type.pb.go), and the osac CLI binary all reference it. Only the table rendering YAML is missing.
+
+  Fix:
+  Add osac.public.v1.NetworkClass.yaml and osac.private.v1.NetworkClass.yaml to fulfillment-service/internal/rendering/tables/, modelled on osac.public.v1.VirtualNetwork.yaml or another networking sibling.

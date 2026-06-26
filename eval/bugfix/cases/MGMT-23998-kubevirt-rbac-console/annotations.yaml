@@ -1,0 +1,12 @@
+expected_repos:
+  - fulfillment-service
+  - osac-installer
+expected_files:
+  - internal/servers/console_server.go
+  - base/hub-access/rbac.yaml
+bug_category: missing-rbac
+difficulty: hard
+multi_repo: true
+description: |
+  Two-part fix: (1) add KubeVirt RBAC to osac-installer hub-access,
+  (2) add ERROR logging to fulfillment-service console_server.go.
