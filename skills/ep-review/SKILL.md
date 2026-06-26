@@ -47,7 +47,13 @@ Before reviewing, read these files if they exist:
 1. `.design/context/osac-dimensions.md` — services, personas, cross-cutting dimensions
 2. `.design/context/review-patterns.md` — reviewer feedback themes, anti-patterns, EP reference library
 3. `.planning/codebase/ARCHITECTURE.md` — system architecture for technical grounding
-4. `docs/personas.md` — canonical OSAC persona definitions
+4. `osac-docs/personas.md` — canonical OSAC persona definitions (bootstrapped from `osac-project/docs`)
+
+Before scoring Completeness, read every `###` section under **Cross-Cutting Dimensions**
+in the loaded `osac-dimensions.md`. For each section **relevant** to this EP, the EP must
+**address** it in Proposal/Test Plan/Non-Goals or **explicitly defer** (e.g., "API/CLI-only",
+"documentation deferred to Graduation Criteria"). Flag **Important** if relevant but silent.
+Irrelevant sections → N/A (do not penalize).
 
 ## Review Dimensions
 
@@ -138,7 +144,7 @@ Check against the [EP template](https://github.com/osac-project/enhancement-prop
 - [ ] No placeholder-only sections — every section has substantive content or explains N/A
 - [ ] Terminology defined upfront and used consistently throughout
 - [ ] Test plan describes strategy (unit, integration, e2e) even if details are TBD
-- [ ] OSAC dimensions addressed for in-scope services (from `.design/context/osac-dimensions.md`)
+- [ ] **Cross-cutting dimensions:** For each relevant `###` section in the loaded `osac-dimensions.md` (including UI, Documentation, E2E Testing when present), EP addresses or explicitly defers — not silent
 - [ ] Length is in the 300-800 line range (under 200 suggests insufficient depth)
 
 **Scoring guide:**
@@ -192,6 +198,12 @@ Present findings as a structured review:
 #### Completeness
 {Section coverage, dimension coverage, length assessment}
 
+#### Cross-cutting dimensions (from osac-dimensions.md)
+
+| Dimension | Relevant? | EP status |
+|-----------|-----------|-----------|
+| {name} | Yes / No / N/A | Addressed / Deferred / Gap / N/A |
+
 ### Comparison with Similar EPs
 {Reference 1-2 merged EPs from the EP reference library in review-patterns.md
 that cover similar scope. Note what this EP does well or could learn from them.}
@@ -214,13 +226,13 @@ that cover similar scope. Note what this EP does well or could learn from them.}
 ## Severity Classification
 
 - **Critical**: Missing required sections, fundamental architectural misalignment, breaking changes without migration path, security gaps, no tenant isolation on new resources
-- **Important**: Incomplete sections, terminology inconsistencies, missing personas, unclear workflow, vague non-goals, generic risks, thin implementation details
+- **Important**: Incomplete sections, terminology inconsistencies, missing personas, unclear workflow, vague non-goals, generic risks, thin implementation details; **relevant cross-cutting dimension from `osac-dimensions.md` neither addressed nor explicitly deferred**
 - **Suggestion**: Style improvements, additional user stories, deeper alternatives discussion, more specific test plan, documentation polish
 
 ## Notes
 
 - Score based on what's in the EP, not what you think should be there
-- The coverage checks use `osac-dimensions.md` as a relevance guide — features that don't touch networking shouldn't be penalized for not addressing networking
+- Use `osac-dimensions.md` to decide **relevance** per section (e.g., skip Networking for a storage-only EP). When a section **is** relevant, require address-or-defer — silence is a gap, not N/A
 - Reference merged EPs in `enhancement-proposals/enhancements/` for calibration on depth and style
 - Push for specificity: "handle errors" is not a mitigation; "retry with exponential backoff, circuit-break after 3 failures" is
 - The review process requires consensus from all stakeholders — flag sections that would likely trigger stakeholder questions

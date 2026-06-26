@@ -21,7 +21,7 @@ implementation differences.
 
 ## Personas
 
-OSAC has four canonical personas (defined in `docs/personas.md`). Features
+OSAC has four canonical personas (defined in `osac-docs/personas.md`). Features
 must specify what each affected persona can see and do. Use these exact names
 in user stories and workflow descriptions.
 
@@ -90,6 +90,17 @@ How does the feature affect deployment and installation?
 - CI pipeline implications
 - New prerequisites or dependencies
 - `osac-installer/setup.sh` updates needed
+
+### Documentation
+
+What user-facing documentation does the feature require?
+
+- What user-facing documentation is needed (user guides, API reference, architecture docs)?
+- API reference may live in component repos (e.g. `fulfillment-service/`) rather than `osac-docs/` alone.
+- Which persona workflows need documented?
+- Are there docs repo updates needed (`osac-docs/`, `enhancement-proposals/`)?
+- Is documentation in scope for this milestone or explicitly deferred?
+- Does the feature change existing documented workflows that need updating?
 
 ## User-Facing API
 
