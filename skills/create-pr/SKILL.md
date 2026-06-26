@@ -79,44 +79,6 @@ python3 scripts/sync-authconfig-rego.py
 
 The sync scripts support `--fix` to auto-correct drift. All scripts require submodules to be initialized (`git submodule update --init --recursive`).
 
-### osac-workspace (meta-workspace)
-
-This repo uses **inverted remotes** compared to component repos:
-
-| Remote | Points to | Role |
-|--------|-----------|------|
-| `origin` | Your fork (`<user>/osac-workspace`) | **Push target** (equivalent to `fork` elsewhere) |
-| `upstream` | `osac-project/osac-workspace` | **PR target** (equivalent to `origin` elsewhere) |
-
-There is no `fork` remote — that is expected.
-
-**Step 1 gate override:** If `REPO_NAME` is `osac-workspace` and `upstream` exists, treat remotes as valid (skip the `fork` remote check).
-
-**Step 2 validation:** None — `AGENTS.md` states this workspace has no build step of its own. Continue to Step 3.
-
-**Step 3 push:** Push to `origin`, not `fork`:
-
-```bash
-git push -u origin "$BRANCH"
-```
-
-**Step 5 create PR:** Target `upstream`, not `origin`:
-
-```bash
-UPSTREAM="osac-project/osac-workspace"
-FORK_OWNER=$(gh api user -q .login)
-
-gh pr list --repo "$UPSTREAM" --head "${FORK_OWNER}:${BRANCH}" --json number,url
-# If a PR exists, show its URL and stop.
-
-gh pr create \
-  --repo "$UPSTREAM" \
-  --head "${FORK_OWNER}:${BRANCH}" \
-  --base main \
-  --title "$PR_TITLE" \
-  --body "..."
-```
-
 ### Other repos
 
 Read the component's CLAUDE.md or Makefile for the correct validation sequence.
@@ -290,7 +252,7 @@ If a PR already exists, show its URL instead of creating a duplicate.
 ## Red Flags
 
 **Never:**
-- Push to `origin` on component repos — always use `fork` there (meta-workspace `osac-workspace` is the exception: push to `origin`)
+- Push to `origin` — always use `fork`
 - Create a PR from `main`
 - Skip validation checks
 - Force-push without user confirmation
