@@ -4,6 +4,11 @@ set -euo pipefail
 GITHUB_ORG="osac-project"
 NO_FORK=false
 
+declare -A FORK_OVERRIDES=()
+if [[ -f "$(dirname "$0")/fork-overrides.sh" ]]; then
+  source "$(dirname "$0")/fork-overrides.sh"
+fi
+
 usage() {
   cat <<'EOF'
 Usage: ./bootstrap.sh [--no-fork]
@@ -53,10 +58,11 @@ fi
 
 get_fork_url() {
   local repo="$1"
+  local fork_repo="${FORK_OVERRIDES[$repo]:-$repo}"
   if [ "$GIT_PROTOCOL" = "ssh" ]; then
-    echo "git@github.com:${GH_USER}/${repo}.git"
+    echo "git@github.com:${GH_USER}/${fork_repo}.git"
   else
-    echo "https://github.com/${GH_USER}/${repo}.git"
+    echo "https://github.com/${GH_USER}/${fork_repo}.git"
   fi
 }
 
@@ -74,8 +80,9 @@ ensure_fork_remote() {
   local repo="$1"
   local dir="$2"
   # Ensure fork exists on GitHub, then verify it
+  local fork_repo="${FORK_OVERRIDES[$repo]:-$repo}"
   if ! gh repo fork "${GITHUB_ORG}/${repo}" --clone=false --default-branch-only; then
-    if ! gh repo view "${GH_USER}/${repo}"; then
+    if ! gh repo view "${GH_USER}/${fork_repo}"; then
       echo "❌ Failed to fork ${GITHUB_ORG}/${repo}. Skipping fork remote."
       return 1
     fi
