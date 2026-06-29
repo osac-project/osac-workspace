@@ -1,3 +1,6 @@
+# Local fork name overrides (user-specific, not committed)
+fork-overrides.sh
+
 # Credentials and config
 kubeconfig
 *.kubeconfig

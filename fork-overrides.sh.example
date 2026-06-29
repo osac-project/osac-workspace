@@ -1,0 +1,5 @@
+# Fork name overrides — map upstream repo names to your fork names.
+# Copy this file to fork-overrides.sh and uncomment/add entries.
+declare -A FORK_OVERRIDES=(
+  # ["docs"]="osac-docs"
+)
