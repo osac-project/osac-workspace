@@ -13,7 +13,6 @@ OSAC (Open Sovereign AI Cloud) is a fulfillment system for provisioning Kubernet
 - **Fork-based workflow**: always push to `fork` remote, never to `origin`. PRs go from `fork/<branch>` to `origin/main`
 - **AI attribution**: use `Assisted-by: Claude Code <noreply@anthropic.com>` trailer on commits — never use `Co-Authored-By` for AI tools (Red Hat attribution standard)
 - When debugging Kubernetes operators, check for stale vendor directories and cached images before rebuilding
-- **Never modify tracked files without prompting** — before changing any git-tracked file, ask to commit properly in a git worktree with a related Jira ticket. Always prompt the user first!
 
 ## Repository Structure
 
