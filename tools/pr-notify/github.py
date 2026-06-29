@@ -57,6 +57,7 @@ def _build_graphql_query(repos: list[str]) -> str:
                 statusCheckRollup {{
                   state
                   contexts(first: 100) {{
+                    pageInfo {{ hasNextPage }}
                     nodes {{
                       __typename
                       ... on CheckRun {{
@@ -99,13 +100,19 @@ def _parse_pr_nodes(repo_name: str, pr_nodes: list[dict]) -> list[PRData]:
             "SUCCESS": "SUCCESS",
             "FAILURE": "FAILURE",
             "ERROR": "FAILURE",
-            "EXPECTED": "SUCCESS",
+            "EXPECTED": None,
             "PENDING": None,
         }
 
         check_runs = []
         if rollup:
-            for node in rollup.get("contexts", {}).get("nodes", []):
+            contexts_data = rollup.get("contexts", {})
+            if contexts_data.get("pageInfo", {}).get("hasNextPage"):
+                logger.warning(
+                    "PR '%s' has more than 100 check contexts; results truncated",
+                    pr.get("title", ""),
+                )
+            for node in contexts_data.get("nodes", []):
                 typename = node.get("__typename")
                 if typename == "CheckRun":
                     check_runs.append(CheckRun(
