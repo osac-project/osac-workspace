@@ -141,12 +141,14 @@ When fixing bugs or adding features, **check all controllers** that follow the s
 
 See [`AI-assisted-development-workflow.md`](AI-assisted-development-workflow.md) for the full workflow: Feature → PRD → Design → Jira sync → Implement.
 
-## E2E Test Skills (from osac-test-infra)
+## E2E Test Skills
 
-The `osac-test-infra` repo provides skills for writing and debugging E2E tests. These skills are available from the `osac-workspace/` root:
+Two complementary skills for E2E tests, available from the `osac-workspace/` root:
 
-- `/e2e` — Write a pytest E2E test from a description or Jira ticket
-- `/debug-e2e` — Debug a failing Prow CI job using build logs and gathered OSAC artifacts
+- `/e2e` (ai-workflows) — Full story-to-test workflow: `/e2e:ingest` a Jira [QE] story → `/e2e:plan` scenarios → `/e2e:code` tests → `/e2e:validate` → `/e2e:publish` PR. Framework-agnostic — discovers osac-test-infra's pytest patterns during ingest.
+- `/debug-e2e` (osac-test-infra) — Debug a failing Prow CI job using build logs and gathered OSAC artifacts. Use after tests exist and fail in CI.
+
+The `/e2e` workflow writes tests in `osac-test-infra/tests/` following the conventions in `osac-test-infra/.claude/skills/e2e.md` (gRPC client patterns, K8s client patterns, wait helpers, pytest fixtures). The `/debug-e2e` skill reads Prow logs and OSAC gathered artifacts to diagnose failures.
 
 ## Development Notes
 
