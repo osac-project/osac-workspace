@@ -1,0 +1,140 @@
+# Umbrella chart values for kind development environment
+# Usage: helm install osac osac-installer/charts/osac/ --values kind-dev/values-kind.yaml --namespace osac
+
+# --- Operator ---
+operator:
+  image:
+    repository: ghcr.io/osac-project/osac-operator
+    tag: latest
+    pullPolicy: Always
+  aap:
+    url: ""
+    insecureSkipVerify: "true"
+    statusPollInterval: "30s"
+    templatePrefix: "osac"
+  fulfillment:
+    serverAddress: "fulfillment-internal-api:8001"
+    tokenFile: "/var/run/secrets/kubernetes.io/serviceaccount/token"
+  controllers:
+    clusterOrder: true
+    computeInstance: true
+    tenant: true
+    networking: false
+    bareMetalInstance: false
+  certs:
+    issuerRef:
+      name: default-ca
+
+# --- Fulfillment Service ---
+service:
+  variant: kind
+  externalHostname: fulfillment-api.osac.svc.cluster.local
+  internalHostname: fulfillment-internal-api.osac.svc.cluster.local
+  images:
+    service: ghcr.io/osac-project/fulfillment-service:latest
+  certs:
+    issuerRef:
+      kind: ClusterIssuer
+      name: default-ca
+    caBundle:
+      configMap: ca-bundle
+  auth:
+    issuerUrl: https://keycloak.osac.localhost:8443/realms/osac
+    emergencyServiceAccounts:
+      - admin
+      - osac-operator
+      - osac-operator-controller-manager
+    controllerCredentials:
+      - secret:
+          name: fulfillment-controller-credentials
+          items:
+            - key: client-id
+              param: client-id
+            - key: client-secret
+              param: client-secret
+  idp:
+    provider: keycloak
+    url: https://keycloak.osac.localhost:8443
+    credentials:
+      - secret:
+          name: fulfillment-controller-credentials
+          items:
+            - key: client-id
+              param: client-id
+            - key: client-secret
+              param: client-secret
+  database:
+    connection:
+      - configMap:
+          name: fulfillment-database-config
+          items:
+            - key: url
+              param: url
+            - key: sslmode
+              param: sslmode
+      - secret:
+          name: fulfillment-database-client-cert
+          items:
+            - key: tls.crt
+              param: sslcert
+            - key: tls.key
+              param: sslkey
+            - key: ca.crt
+              param: sslrootcert
+  log:
+    level: debug
+
+# --- AAP (disabled for kind) ---
+aap:
+  aap:
+    instance:
+      enabled: false
+  bootstrap:
+    enabled: false
+
+# --- Bare Metal Fulfillment (disabled) ---
+bmf:
+  enabled: false
+
+# --- Bundled PostgreSQL ---
+bundledPostgres:
+  enabled: true
+  database:
+    name: service
+    user: service
+
+# --- Hub Access ---
+hubAccess:
+  enabled: true
+
+# --- Publish Templates ---
+publishTemplates:
+  enabled: false
+
+# --- Validation hooks ---
+validation:
+  enabled: false
+
+# --- Database migration ---
+dbMigrate:
+  enabled: false
+
+# --- Instance Groups (disabled) ---
+instanceGroups:
+  enabled: false
+
+# --- Cluster/Network/Storage Fulfillment (disabled) ---
+clusterFulfillment:
+  enabled: false
+networkFulfillment:
+  enabled: false
+storageFulfillment:
+  enabled: false
+
+# --- MetalLB (disabled) ---
+metallb:
+  enabled: false
+
+# --- CAPI Provider (disabled) ---
+capiProvider:
+  enabled: false
