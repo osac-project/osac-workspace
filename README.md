@@ -66,6 +66,7 @@ This workspace provides a pre-configured AI-assisted development environment:
 | File | Purpose |
 |------|---------|
 | `bootstrap.sh` | Clones or updates all component repos to latest `main` — re-run anytime to sync |
+| `osac-helpers.sh` | Developer shell helpers — source to get worktree and workflow utilities |
 | `CLAUDE.md` | Project instructions Claude Code reads automatically — build commands, architecture patterns, conventions |
 | `.claude/settings.json` | Pre-approved shell commands (git, ls, cat, etc.) so Claude doesn't prompt for routine operations |
 | `AI-assisted-development-workflow.md` | AI-assisted development workflow: Feature → PRD → Design → Jira sync → Implement |
@@ -116,6 +117,45 @@ To update all repos to latest `main` at any time, simply re-run:
 ```bash
 ./bootstrap.sh
 ```
+
+## Developer Helpers
+
+`osac-helpers.sh` provides shell functions for common development workflows. Source it in your terminal to make them available:
+
+```bash
+source osac-helpers.sh
+```
+
+### `osac-new-worktree <branch-name>`
+
+Creates an isolated git worktree for development:
+
+```bash
+osac-new-worktree feat/storage-qos
+osac-new-worktree fix/login-bug
+osac-new-worktree OSAC-1234
+```
+
+This will:
+1. Create a new branch with the given name
+2. Set up a worktree at `../osac-workspace-<basename>` (e.g., `../osac-workspace-storage-qos`)
+3. Switch into the new directory
+4. Run `bootstrap.sh` to clone all component repos
+5. If the branch name contains an OSAC Jira ticket (e.g., `OSAC-1234`), fetch the ticket summary and append it to `.claude/CLAUDE.md`
+
+Each worktree is a fully independent workspace — you can work on multiple features in parallel without stashing or switching branches.
+
+**Clean up** when you're done (run from the original osac-workspace directory):
+
+```bash
+# First, exit the worktree if you're still in it
+cd ~/path/to/original/osac-workspace
+git worktree remove ../osac-workspace-storage-qos
+```
+
+**Note:** Git will refuse to remove a worktree with uncommitted changes. Commit or stash your work first, or use `git worktree remove --force` if you're certain you want to discard the changes.
+
+**Tip:** Add `source /path/to/osac-workspace/osac-helpers.sh` to your `~/.bashrc` or `~/.zshrc` so the helpers are always available.
 
 ## Quick Reference
 
