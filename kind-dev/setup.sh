@@ -10,12 +10,21 @@
 #   ./setup.sh --cluster-only     # Kind cluster only (with CoreDNS *.localhost rewrite)
 #
 # Prerequisites:
-#   - podman (rootless, with socket active)
+#   - podman (rootful — see below)
 #   - kind >= v0.20
 #   - helm >= v3.10
 #   - kubectl
 #   - openssl
 #   - inotify max_user_instances >= 256
+#
+# Rootful podman setup:
+#   - Host:      sudo is used directly (no extra setup needed)
+#   - Distrobox: install the systemd socket override on the host:
+#       sudo install -d /etc/systemd/system/podman.socket.d
+#       sudo install -m 0644 kind-dev/podman-socket-rootful.conf \
+#         /etc/systemd/system/podman.socket.d/rootful-group.conf
+#       sudo chgrp wheel /run/podman && sudo chmod 710 /run/podman
+#       sudo systemctl daemon-reload && sudo systemctl restart podman.socket
 #
 # Environment variables:
 #   CLUSTER_NAME        Kind cluster name (default: osac-dev)
@@ -43,6 +52,60 @@ AUTHORINO_VERSION="v0.23.1"
 # Networking — services are accessed as <service>.<namespace>.localhost
 EXTERNAL_INGRESS_PORT=8443
 INTERNAL_INGRESS_NODE_PORT=30443
+KIND_PROVIDER="${KIND_EXPERIMENTAL_PROVIDER:-podman}"
+
+# Detect distrobox: podman is a host-exec wrapper, sudo can't reach it.
+# On the host: use sudo for rootful podman (separate socket/namespace).
+if grep -qsw distrobox-host-exec "$(command -v podman 2>/dev/null)"; then
+  IN_DISTROBOX=true
+else
+  IN_DISTROBOX=false
+fi
+
+ROOTFUL_SOCKET="/run/podman/podman.sock"
+
+detect_podman_mode() {
+  if [[ "$IN_DISTROBOX" == "true" ]]; then
+    # Check if the rootful socket is reachable from the host
+    if distrobox-host-exec env CONTAINER_HOST="unix://${ROOTFUL_SOCKET}" \
+         podman info --format '{{.Host.Security.Rootless}}' 2>/dev/null | grep -q false; then
+      export PODMAN_ROOTFUL=1
+      info "Using rootful podman via ${ROOTFUL_SOCKET}"
+    else
+      export PODMAN_ROOTFUL=0
+      warn "Rootful podman socket not available — using rootless"
+      warn "For rootful mode, run on the host:"
+      warn "  sudo install -m 0644 kind-dev/podman-socket-rootful.conf \\"
+      warn "    /etc/systemd/system/podman.socket.d/rootful-group.conf"
+      warn "  sudo systemctl daemon-reload && sudo systemctl restart podman.socket"
+    fi
+  fi
+}
+
+kind_cmd() {
+  if [[ "$IN_DISTROBOX" == "true" ]]; then
+    if [[ "${PODMAN_ROOTFUL:-0}" == "1" ]]; then
+      systemd-run --scope --user \
+        env KIND_EXPERIMENTAL_PROVIDER="${KIND_PROVIDER}" \
+        CONTAINER_HOST="unix://${ROOTFUL_SOCKET}" \
+        kind "$@"
+    else
+      systemd-run --scope --user \
+        env KIND_EXPERIMENTAL_PROVIDER="${KIND_PROVIDER}" \
+        kind "$@"
+    fi
+  else
+    sudo KIND_EXPERIMENTAL_PROVIDER="${KIND_PROVIDER}" kind "$@"
+  fi
+}
+
+podman_cmd() {
+  if [[ "$IN_DISTROBOX" == "true" ]]; then
+    podman "$@"   # wrapper handles PODMAN_ROOTFUL
+  else
+    sudo podman "$@"
+  fi
+}
 
 # Colors
 RED='\033[0;31m'
@@ -79,10 +142,14 @@ check_prerequisites() {
     exit 1
   fi
 
-  if ! systemctl --user is-active podman.socket >/dev/null 2>&1; then
-    warn "Podman socket not active. Starting it..."
-    systemctl --user start podman.socket
+  if ! podman info >/dev/null 2>&1; then
+    err "Podman is not reachable. Ensure the podman socket is active."
+    err "  Host: systemctl --user start podman.socket"
+    err "  Distrobox: the podman wrapper should delegate to the host"
+    exit 1
   fi
+
+  detect_podman_mode
 
   local max_instances
   max_instances=$(cat /proc/sys/fs/inotify/max_user_instances 2>/dev/null || echo 0)
@@ -125,16 +192,17 @@ wait_for_secret() {
 # ── Cluster ────────────────────────────────────────────────────────────────────
 
 create_cluster() {
-  local kind_bin
-  kind_bin=$(which kind)
-
-  if sudo "${kind_bin}" get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
+  if kind_cmd get clusters 2>/dev/null | grep -q "^${CLUSTER_NAME}$"; then
     log "Kind cluster '${CLUSTER_NAME}' already exists, reusing it"
     return 0
   fi
 
-  log "Creating kind cluster '${CLUSTER_NAME}' (rootful podman)..."
-  sudo "${kind_bin}" create cluster \
+  if [[ "$IN_DISTROBOX" != "true" ]] || [[ "${PODMAN_ROOTFUL:-0}" == "1" ]]; then
+    log "Creating kind cluster '${CLUSTER_NAME}' (rootful podman)..."
+  else
+    log "Creating kind cluster '${CLUSTER_NAME}' (rootless podman)..."
+  fi
+  kind_cmd create cluster \
     --name "${CLUSTER_NAME}" \
     --config "${SCRIPT_DIR}/kind-config.yaml" \
     --wait 60s
@@ -143,11 +211,11 @@ create_cluster() {
 }
 
 setup_kubeconfig() {
-  local kind_bin kc_file
-  kind_bin=$(which kind)
-  kc_file="${HOME}/.kube/${CLUSTER_NAME}-kind-root.kubeconfig"
+  local kc_file
+  kc_file="${HOME}/.kube/${CLUSTER_NAME}-kind.kubeconfig"
+  mkdir -p "${HOME}/.kube"
 
-  sudo "${kind_bin}" get kubeconfig --name "${CLUSTER_NAME}" 2>/dev/null > "${kc_file}"
+  kind_cmd get kubeconfig --name "${CLUSTER_NAME}" 2>/dev/null > "${kc_file}"
   chmod 600 "${kc_file}"
   export KUBECONFIG="${kc_file}"
   log "Kubeconfig: ${KUBECONFIG}"
@@ -629,12 +697,9 @@ install_multus() {
   kubectl apply -f https://raw.githubusercontent.com/k8snetworkplumbingwg/multus-cni/master/deployments/multus-daemonset.yml 2>&1 | tail -3
   kubectl -n kube-system wait --for=condition=Ready pods -l app=multus --timeout=120s
 
-  local kind_bin
-  kind_bin=$(which kind)
-
   log "Installing bridge CNI plugin into kind node..."
   local node_name="${CLUSTER_NAME}-control-plane"
-  sudo podman exec "${node_name}" bash -c \
+  podman_cmd exec "${node_name}" bash -c \
     'curl -sL https://github.com/containernetworking/plugins/releases/download/v1.6.2/cni-plugins-linux-amd64-v1.6.2.tgz | tar -C /opt/cni/bin -xz'
 
   log "Multus installed"
