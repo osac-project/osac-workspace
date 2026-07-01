@@ -42,7 +42,7 @@ The bootstrap script clones all OSAC repos into the workspace. Each repo is an i
 - `origin` = osac-project (upstream source, PR target)
 - `fork` = your GitHub fork (push target for feature branches)
 
-Use `--no-fork` if you only need read-only access or are running in CI.
+Use `--no-fork` if you only need read-only access or are running in CI. To override fork repo names (e.g., if your fork of `docs` is named `osac-docs`), copy `fork-overrides.sh.example` to `fork-overrides.sh` and edit it.
 
 ## Components
 
