@@ -55,7 +55,7 @@ Use this table to go directly to the right file for common bug patterns instead 
 
 ## PRD and Design Configuration
 
-OSAC uses the flightctl ai-workflows PRD and design skills with project-level template overrides in `.design/templates/`. The two-stage flow replaces the single-step `/ep-create` for new enhancement proposals.
+OSAC uses the flightctl ai-workflows PRD and design skills with project-level template overrides in `.design/templates/`. The two-stage flow produces a PRD followed by a design document.
 
 ### Docs Repo
 

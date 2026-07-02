@@ -1,21 +1,21 @@
 ---
-name: ep-review
+name: design-review
 description: |
-  Review an OSAC enhancement proposal against template requirements, architectural patterns,
-  and historical reviewer expectations. Use when reviewing an EP PR, preparing an EP for
+  Review an OSAC design document against template requirements, architectural patterns,
+  and historical reviewer expectations. Use when reviewing a design PR, preparing a design for
   submission, or self-reviewing a draft before requesting feedback. Produces rubric scores
   and structured findings with severity levels and actionable suggestions.
 
-  Also trigger when user says "review this EP", "check this enhancement proposal",
-  "is this EP ready", "review PR on enhancement-proposals", or references a PR
+  Also trigger when user says "review this design", "check this design document",
+  "is this design ready", "review PR on enhancement-proposals", or references a PR
   on osac-project/enhancement-proposals.
 ---
 
-# OSAC Enhancement Proposal Reviewer
+# OSAC Design Document Reviewer
 
 ## Overview
 
-This skill reviews an enhancement proposal against the [OSAC EP template](https://github.com/osac-project/enhancement-proposals/blob/main/guidelines/enhancement_template.md),
+This skill reviews a design document against the [OSAC design template](https://github.com/osac-project/enhancement-proposals/blob/main/guidelines/enhancement_template.md),
 architectural conventions, and patterns learned from past reviewer feedback.
 It uses calibrated 0-2 scoring across 4 dimensions with hard pass/fail
 thresholds — matching the Org Pulse dashboard assessment format.
@@ -23,18 +23,18 @@ thresholds — matching the Org Pulse dashboard assessment format.
 ## When to Use
 
 - Reviewing a PR on `osac-project/enhancement-proposals`
-- Self-reviewing a draft EP before submitting
+- Self-reviewing a draft design before submitting
 - Preparing a revision in response to reviewer feedback
-- Checking if an EP is ready for merge
+- Checking if a design is ready for merge
 - After `/design:revise` to verify improvements
 
 ## Input Detection
 
 Detect what's being reviewed:
 
-1. **PR URL or number** → Fetch the EP content from the PR diff
-2. **Local file path** → Read the EP from disk (e.g., `enhancement-proposals/enhancements/<slug>/README.md`)
-3. **No input** → Ask: "Which EP should I review? Provide a PR number, URL, or file path."
+1. **PR URL or number** → Fetch the design content from the PR diff
+2. **Local file path** → Read the design from disk (e.g., `enhancement-proposals/enhancements/<slug>/design.md` or `README.md`)
+3. **No input** → Ask: "Which design should I review? Provide a PR number, URL, or file path."
 
 ### Fetching from PR
 
@@ -48,7 +48,7 @@ gh pr view <N> --repo osac-project/enhancement-proposals --json title,body,autho
 Before reviewing, read these files if they exist:
 
 1. `.design/context/osac-dimensions.md` — services, personas, cross-cutting dimensions
-2. `.design/context/review-patterns.md` — reviewer feedback themes, anti-patterns, EP reference library
+2. `.design/context/review-patterns.md` — reviewer feedback themes, anti-patterns, design reference library
 3. `.planning/codebase/ARCHITECTURE.md` — system architecture for technical grounding
 4. `docs/personas.md` — canonical OSAC persona definitions
 
@@ -56,7 +56,7 @@ Before reviewing, read these files if they exist:
 
 ### Context
 
-An enhancement proposal describes HOW a feature will be implemented — architecture,
+A design document describes HOW a feature will be implemented — architecture,
 API design, controller logic, provisioning workflows. It builds on a PRD (WHAT/WHY)
 and provides enough detail for engineering to estimate, plan, and implement.
 
@@ -101,9 +101,9 @@ Check:
 
 **Calibration examples:**
 
-- A=0: EP introduces new CRDs without tenant annotation, uses direct DB access instead of gRPC, doesn't mention which repos need changes.
-- A=1: EP follows controller patterns and has tenant isolation, but uses maps in CRDs and doesn't describe interaction with osac-aap for provisioning.
-- A=2: EP follows all conventions, describes the full resource hierarchy with owner references, enumerates cross-repo changes (fulfillment-service proto + osac-operator controller + osac-aap role), and defines terminology upfront.
+- A=0: Design introduces new CRDs without tenant annotation, uses direct DB access instead of gRPC, doesn't mention which repos need changes.
+- A=1: Design follows controller patterns and has tenant isolation, but uses maps in CRDs and doesn't describe interaction with osac-aap for provisioning.
+- A=2: Design follows all conventions, describes the full resource hierarchy with owner references, enumerates cross-repo changes (fulfillment-service proto + osac-operator controller + osac-aap role), and defines terminology upfront.
 
 #### 2. Feasibility (0-2)
 
@@ -126,12 +126,12 @@ Check:
 **Calibration examples:**
 
 - F=0: "The controller will handle provisioning appropriately" with no detail on what provisioning means, no proto schema, and risks like "implementation might be complex."
-- F=1: EP includes proto schemas for the main resource and describes create/get/list, but update and delete flows are "TBD." Risks mention "race conditions" without specifying which ones or how to mitigate.
-- F=2: EP includes full proto schemas with field types and validation annotations, describes all CRUD lifecycle operations with error codes, identifies specific risks ("concurrent subnet allocation may cause CIDR overlap") with concrete mitigations ("use optimistic locking with resource version").
+- F=1: Design includes proto schemas for the main resource and describes create/get/list, but update and delete flows are "TBD." Risks mention "race conditions" without specifying which ones or how to mitigate.
+- F=2: Design includes full proto schemas with field types and validation annotations, describes all CRUD lifecycle operations with error codes, identifies specific risks ("concurrent subnet allocation may cause CIDR overlap") with concrete mitigations ("use optimistic locking with resource version").
 
 #### 3. Scope (0-2)
 
-Is the EP right-sized with clear boundaries, covering relevant personas and dimensions?
+Is the design right-sized with clear boundaries, covering relevant personas and dimensions?
 
 Check:
 - [ ] Summary is 3-5 sentences: what's added, why it's valuable, key capabilities
@@ -143,7 +143,7 @@ Check:
 - [ ] User stories follow: "As a [role], I want to [action] so that I can [goal]"
 
 Using `.design/context/osac-dimensions.md`, also check cross-cutting dimension
-coverage — for each dimension relevant to this EP, the EP must address it or
+coverage — for each dimension relevant to this design, the design must address it or
 explicitly defer. Silence on a relevant dimension is a gap.
 
 - 0 = Scope unbounded, only one persona, vague non-goals, no alternatives, relevant dimensions ignored
@@ -152,13 +152,13 @@ explicitly defer. Silence on a relevant dimension is a gap.
 
 **Calibration examples:**
 
-- S=0: EP has no non-goals, covers only "Tenant User" persona, and says "Alternatives: none considered." Storage dimension is relevant but not mentioned.
-- S=1: EP covers Tenant Admin and Tenant User but not Cloud Provider Admin (who would manage the feature's backend config). Non-goals say "advanced features are out of scope" without specifying which. Networking dimension acknowledged but not addressed.
-- S=2: EP covers all relevant personas with user stories, non-goals explicitly exclude auto-scaling and multi-region ("deferred to v0.2, see OSAC-XXXX"), alternatives section compares two real approaches with trade-offs, and all relevant dimensions from osac-dimensions.md are addressed or explicitly deferred.
+- S=0: Design has no non-goals, covers only "Tenant User" persona, and says "Alternatives: none considered." Storage dimension is relevant but not mentioned.
+- S=1: Design covers Tenant Admin and Tenant User but not Cloud Provider Admin (who would manage the feature's backend config). Non-goals say "advanced features are out of scope" without specifying which. Networking dimension acknowledged but not addressed.
+- S=2: Design covers all relevant personas with user stories, non-goals explicitly exclude auto-scaling and multi-region ("deferred to v0.2, see OSAC-XXXX"), alternatives section compares two real approaches with trade-offs, and all relevant dimensions from osac-dimensions.md are addressed or explicitly deferred.
 
 #### 4. Testability (0-2)
 
-Does the EP describe a concrete test strategy that would catch regressions?
+Does the design describe a concrete test strategy that would catch regressions?
 
 Check:
 - [ ] Test plan describes strategy per level: unit, integration, e2e
@@ -191,7 +191,7 @@ zero-scored criteria before resubmission.
 Present findings as a structured review:
 
 ```markdown
-## EP Review: {title}
+## Design Review: {title}
 
 ### Rubric Scores
 
@@ -220,18 +220,18 @@ Present findings as a structured review:
 
 ### Criterion Details
 
-{For each criterion, explain the score with specific quotes from the EP.
+{For each criterion, explain the score with specific quotes from the design.
 Show what's good and what needs improvement.}
 
 ### Cross-cutting Dimensions (from osac-dimensions.md)
 
-| Dimension | Relevant? | EP Status |
+| Dimension | Relevant? | Status |
 |-----------|-----------|-----------|
 | {name} | Yes / No | Addressed / Deferred / Gap |
 
-### Comparison with Similar EPs
-{Reference 1-2 merged EPs from the EP reference library in review-patterns.md
-that cover similar scope. Note what this EP does well or could learn from them.}
+### Comparison with Similar Designs
+{Reference 1-2 merged designs from the design reference library in review-patterns.md
+that cover similar scope. Note what this design does well or could learn from them.}
 ```
 
 ## Severity Classification
@@ -242,9 +242,9 @@ that cover similar scope. Note what this EP does well or could learn from them.}
 
 ## Notes
 
-- Score based on what's in the EP, not what you think should be there
-- Use `osac-dimensions.md` to decide relevance per dimension — skip Networking for a storage-only EP. When a dimension is relevant, require address-or-defer — silence is a gap
-- Reference merged EPs in `enhancement-proposals/enhancements/` for calibration on depth and style
+- Score based on what's in the design, not what you think should be there
+- Use `osac-dimensions.md` to decide relevance per dimension — skip Networking for a storage-only design. When a dimension is relevant, require address-or-defer — silence is a gap
+- Reference merged designs in `enhancement-proposals/enhancements/` for calibration on depth and style
 - Push for specificity: "handle errors" is not a mitigation; "retry with exponential backoff, circuit-break after 3 failures" is
 - The review process requires consensus from all stakeholders — flag sections that would likely trigger stakeholder questions
 
