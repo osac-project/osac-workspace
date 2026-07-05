@@ -141,8 +141,8 @@ When publishing PRDs and design documents to the enhancement-proposals repo:
 - Skip the "release" question — use `enhancements` as the fixed directory prefix
 - Feature directory: `enhancements/<feature-slug>/` (e.g., `enhancements/storage-network/`)
 - PRD filename: `prd.md`
-- Design (EP) filename: `README.md` (not `design.md` — this is the main EP file)
-- Both files live in the same directory: `enhancements/<slug>/prd.md` and `enhancements/<slug>/README.md`
+- Design (EP) filename: `design.md`
+- Both files live in the same directory: `enhancements/<slug>/prd.md` and `enhancements/<slug>/design.md`
 
 ### Fork-Based Workflow
 

@@ -261,7 +261,7 @@ The PRD lives in `enhancement-proposals/enhancements/<feature>/prd.md` — a loc
 - `/design:publish` submitted for team review
 - Reviewers commented on credential handling and Signal RPC decisions
 
-The EP lives in `enhancement-proposals/enhancements/<feature>/README.md`.
+The EP lives in `enhancement-proposals/enhancements/<feature>/design.md`.
 
 ---
 
@@ -300,7 +300,7 @@ enhancement-proposals/
 └── enhancements/
     └── storage-backend/
         ├── prd.md          ← requirements
-        └── README.md       ← design / EP
+        └── design.md       ← design / EP
 ```
 
 When `/implement:ingest` runs, it reads these local files directly — no need to re-fetch from Jira or re-derive context.

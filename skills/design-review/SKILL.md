@@ -33,7 +33,7 @@ thresholds — matching the Org Pulse dashboard assessment format.
 Detect what's being reviewed:
 
 1. **PR URL or number** → Fetch the design content from the PR diff
-2. **Local file path** → Read the design from disk (e.g., `enhancement-proposals/enhancements/<slug>/design.md` or `README.md`)
+2. **Local file path** → Read the design from disk (e.g., `enhancement-proposals/enhancements/<slug>/design.md`)
 3. **No input** → Ask: "Which design should I review? Provide a PR number, URL, or file path."
 
 ### Fetching from PR
