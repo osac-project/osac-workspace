@@ -51,24 +51,43 @@ All tasks inherit the Feature's components. In addition:
 - **All other persona** tasks get `UI` component added and use
   `OSAC-UI-<fixVersion>` label.
 
-### Step 3: Ask user for UI work descriptions
+### Step 3: Extract UI work per persona from existing documents
 
-Present the four personas and ask the user to provide a short description
-of the UI work for each, or mark as "not affected":
+Before asking the user, try to extract per-persona UI descriptions from
+the Feature's approved PRD and design document:
+
+1. **Feature description** — read the Feature issue body from Jira
+   (`jira issue view <feature-key> --raw`). Look for User Stories
+   grouped by persona.
+2. **PRD** — check if an approved PRD exists at
+   `enhancement-proposals/enhancements/<feature-slug>/prd.md`. Look for
+   user stories, acceptance criteria, or requirements that describe
+   UI-observable capabilities per persona.
+3. **Design document (EP)** — check if an approved design exists at
+   `enhancement-proposals/enhancements/<feature-slug>/README.md`. Look
+   for the Workflow Description section which describes what each persona
+   does, and the API Extensions section for user-facing surfaces.
+
+From these sources, draft a short UI task description per persona. Then
+present to the user for confirmation:
 
 ```
 Feature: <feature-key> — <summary>
 Version: <fixVersion>
 Components: <components>
 
-Please provide a short UI task description for each persona
-(or "skip" if not affected):
+Based on the PRD and design document, here are the proposed UI tasks:
 
-1. Cloud Provider Admin (Console):
-2. Cloud Infrastructure Admin (Enclave):
-3. Tenant Admin (Console):
-4. Tenant User (Console):
+1. Cloud Provider Admin (Console): <extracted description>
+2. Cloud Infrastructure Admin (Enclave): <extracted description>
+3. Tenant Admin (Console): <extracted description>
+4. Tenant User (Console): <extracted description>
+
+Please confirm, edit, or mark any persona as "skip" if not affected.
 ```
+
+If no PRD or design document is found, ask the user to provide
+descriptions directly.
 
 ### Step 4: Create the UI Epic
 
