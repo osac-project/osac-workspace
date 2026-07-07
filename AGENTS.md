@@ -37,24 +37,26 @@ Re-run `./bootstrap.sh` anytime to update all repos to latest `main`.
 
 ## Repository Structure
 
-Meta-workspace — run `./bootstrap.sh` to clone/update all component repos to latest `main`. **Read the component's AGENTS.md before making changes in that repo.**
+Meta-workspace — run `./bootstrap.sh` to clone/update all component repos to latest `main`. **In component repos, read `CLAUDE.md` first** (progressive disclosure). Use that component's `AGENTS.md` where the table below shows **Yes** for tool-agnostic build/test conventions.
+
+Note: `fulfillment-api` and `fulfillment-common` were merged into `fulfillment-service`.
 
 | Component | Description | AGENTS.md |
 |-----------|-------------|-----------|
 | [`fulfillment-service`](https://github.com/osac-project/fulfillment-service) | gRPC server + REST gateway, PostgreSQL, integrated API definitions | Yes |
 | [`osac-operator`](https://github.com/osac-project/osac-operator) | Kubernetes operator for OpenShift clusters via Hosted Control Planes | Yes |
-| [`osac-aap`](https://github.com/osac-project/osac-aap) | Ansible Automation Platform roles for network provisioning | Yes |
+| [`osac-aap`](https://github.com/osac-project/osac-aap) | Ansible Automation Platform roles for network provisioning | — |
 | [`osac-installer`](https://github.com/osac-project/osac-installer) | Installation manifests and prerequisites | Yes |
-| [`osac-test-infra`](https://github.com/osac-project/osac-test-infra) | Integration testing infrastructure | Yes |
+| [`osac-test-infra`](https://github.com/osac-project/osac-test-infra) | Integration testing infrastructure | — |
 | [`osac-ui`](https://github.com/osac-project/osac-ui) | OSAC UI web console | Yes |
 | [`enhancement-proposals`](https://github.com/osac-project/enhancement-proposals) | Design documents and RFCs | — |
 | [`docs`](https://github.com/osac-project/docs) | Architecture docs and guides (see `docs/architecture/`) | — |
-| [`host-management-openstack`](https://github.com/osac-project/host-management-openstack) | Bare metal host management via OpenStack | Yes |
+| [`host-management-openstack`](https://github.com/osac-project/host-management-openstack) | Bare metal host management via OpenStack | — |
 | [`bare-metal-fulfillment-operator`](https://github.com/osac-project/bare-metal-fulfillment-operator) | Kubernetes operator for bare metal fulfillment | Yes |
 
 ## Build and Test
 
-This workspace has no build step of its own. Each component repo has its own build and test commands documented in its AGENTS.md.
+This workspace has no build step of its own. Each component repo documents build and test commands in its `AGENTS.md` or `CLAUDE.md`.
 
 | Component              | Build                              | Unit Tests               | Lint                       |
 |------------------------|------------------------------------|--------------------------|----------------------------|
@@ -118,7 +120,7 @@ Link PRs in descriptions: "Depends on fulfillment-service#123".
 - **New AAP roles or collections** in `osac-aap` → bump the submodule ref in `osac-installer`
 - **New CRD types** in `osac-operator` → register in the fulfillment-service reconciler
 
-Failing to update `osac-installer` after cross-component changes causes CI failures and deployment mismatches.
+Failing to update `osac-installer` after cross-component changes causes CI failures and deployment mismatches. See `.planning/codebase/CONVENTIONS.md` for the full cross-repo dependency table.
 
 ## Enhancement Proposals
 
@@ -155,6 +157,8 @@ Push to the `fork` remote in the enhancement-proposals repo, not `origin`. PRs g
 
 ## AI-Assisted Workflows
 
+See [`AI-assisted-development-workflow.md`](AI-assisted-development-workflow.md) for the full workflow: Feature → PRD → Design → Jira sync → Implement.
+
 Installed via `bootstrap.sh` from [flightctl/ai-workflows](https://github.com/flightctl/ai-workflows). Available in Claude Code, Cursor, and other AI tools (command syntax varies by tool).
 
 ### Development Workflows
@@ -172,7 +176,7 @@ Two-stage enhancement proposal flow. See the Enhancement Proposals section above
 
 **Stage 2 — Design (EP):** ingest → draft → publish → respond → decompose → sync
 
-**Single-step (legacy):** ep-create
+**Single-step (legacy):** `/ep.create` (registered legacy skill name; see `CLAUDE.md` for Claude command syntax)
 
 ### E2E Test Workflows
 
@@ -260,6 +264,7 @@ grpcurl -insecure -H "Authorization: Bearer ${token}" ${route}:443 fulfillment.v
 bootstrap.sh              # Clone/update all component repos
 Makefile                   # Distrobox dev environment targets
 Containerfile              # Dev container image (Fedora 42 + all tools)
+AGENTS.md                  # Tool-agnostic project conventions (this file)
 CLAUDE.md                  # Claude Code project instructions
 .claude/settings.json      # Pre-approved shell commands
 .claude/rules/             # Architecture, protobuf, cross-repo conventions

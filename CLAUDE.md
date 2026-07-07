@@ -5,7 +5,7 @@
 ## Critical Rules
 
 - **`osac-workspace/` is the project root** — all work happens from here; component `CLAUDE.md` files are loaded via progressive disclosure
-- **Read component CLAUDE.md first** before making changes in any component repo
+- **Read component `CLAUDE.md` first** before making changes in any component repo (progressive disclosure). Where a component also has `AGENTS.md`, it holds tool-agnostic conventions; `CLAUDE.md` remains the Claude entry point.
 
 ## Detailed Rules (auto-loaded from `.claude/rules/`)
 
