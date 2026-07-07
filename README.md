@@ -69,7 +69,7 @@ This workspace provides a pre-configured AI-assisted development environment:
 |------|---------|
 | `bootstrap.sh` | Clones or updates all component repos, installs ai-workflows, and wires agent skill symlinks — re-run anytime to sync |
 | `osac-helpers.sh` | Developer shell helpers — source to get worktree and workflow utilities |
-| `AGENTS.md` | Project instructions for AI agents (Claude, Cursor, Gemini, Copilot) — build commands, architecture, skill discovery |
+| `AGENTS.md` | Tool-agnostic project instructions (Claude, Cursor, Gemini, Copilot) — build commands, architecture; bootstrap-linked skills for Claude/Cursor/Gemini; Copilot reads this file for conventions only |
 | `CLAUDE.md` | Thin wrapper that loads `AGENTS.md` plus Claude-specific command syntax |
 | `tools/link-agent-skills.sh` | Links `.claude/skills`, `.cursor/skills`, and `.gemini/skills` to canonical `skills/` |
 | `.claude/settings.json` | Pre-approved shell commands (git, ls, cat, etc.) so Claude doesn't prompt for routine operations |
