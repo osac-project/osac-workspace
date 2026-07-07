@@ -10,7 +10,7 @@ persona, properly labeled and component-tagged.
 
 ## When to Use
 
-- After a Feature is created and UI work needs to be tracked per persona
+- After a PRD and design document (EP) have been approved for the Feature
 - User says "add UI epic", "create UI tasks", "add UI work to feature"
 
 ## Gather Inputs
