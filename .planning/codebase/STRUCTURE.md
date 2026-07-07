@@ -305,4 +305,37 @@ osac-project/                          # Monorepo root
 
 ---
 
+## osac-ux (UI Reference)
+
+GitHub: [osac-project/osac-ux](https://github.com/osac-project/osac-ux)
+pnpm workspace monorepo. Cloned read-only — no PRs from backend sessions.
+
+```
+osac-ux/
+├── apps/
+│   ├── app-frontend/          # @osac/app-frontend — React 19 SPA (Vite)
+│   └── e2e/                   # @osac/e2e — Cypress tests
+├── libs/
+│   ├── types/                 # @osac/types — Buf-generated TS from fulfillment-service protos
+│   └── ui-components/         # @osac/ui-components — PatternFly 6 components + API hooks
+│       └── src/
+│           ├── pages/
+│           │   ├── tenant/    # screens — tenant role
+│           │   ├── admin/     # screens — admin + provider roles
+│           │   └── provider/  # screens — provider role only
+│           ├── components/    # real UI logic, grouped by domain (vm/, Cluster/, Network/…)
+│           └── api/v1/        # TanStack Query hooks per resource
+├── proxy/                     # Go chi reverse proxy — OIDC auth + API forwarding
+├── docs/                      # api-query-arch.md, deployment guide
+└── AGENTS.md                  # Authoritative UI coding spec (structure, PatternFly 6, API hooks, UX rules)
+```
+
+Key reference files for AI agents:
+- `libs/ui-components/src/api/types.ts` — ApiRoute union + @temp-api annotations
+- `libs/ui-components/src/api/v1/<resource>.ts` — @temp-api type definitions
+- `apps/app-frontend/src/demo/mock-store.ts` — full mock data for all resources
+- `AGENTS.md` — coding spec (PatternFly 6 rules, TypeScript conventions, component structure)
+
+---
+
 *Structure analysis: 2026-03-30*

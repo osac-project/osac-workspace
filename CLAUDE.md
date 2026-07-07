@@ -26,6 +26,7 @@ Meta-workspace — run `./bootstrap.sh` to clone/update all component repos to l
 | [`osac-installer`](https://github.com/osac-project/osac-installer) | Installation manifests and prerequisites | — |
 | [`osac-test-infra`](https://github.com/osac-project/osac-test-infra) | Integration testing infrastructure | — |
 | [`osac-ui`](https://github.com/osac-project/osac-ui) | OSAC UI web console | — |
+| [`osac-ux`](https://github.com/osac-project/osac-ux) | React 19 + PatternFly 6 UI console — read-only UI reference | Yes (`osac-ux/AGENTS.md`) |
 | [`enhancement-proposals`](https://github.com/osac-project/enhancement-proposals) | Design documents and RFCs | — |
 | [`docs`](https://github.com/osac-project/docs) | Architecture docs and guides (see `docs/architecture/`) | — |
 | [`host-management-openstack`](https://github.com/osac-project/host-management-openstack) | Bare metal host management via OpenStack | — |
@@ -149,6 +150,54 @@ Two complementary skills for E2E tests, available from the `osac-workspace/` roo
 - `/debug-e2e` (osac-test-infra) — Debug a failing Prow CI job using build logs and gathered OSAC artifacts. Use after tests exist and fail in CI.
 
 The `/e2e` workflow writes tests in `osac-test-infra/tests/` following the conventions in `osac-test-infra/.claude/skills/e2e.md` (gRPC client patterns, K8s client patterns, wait helpers, pytest fixtures). The `/debug-e2e` skill reads Prow logs and OSAC gathered artifacts to diagnose failures.
+
+## UI Reference (osac-ux)
+
+`osac-ux/` is cloned read-only from [osac-project/osac-ux](https://github.com/osac-project/osac-ux).
+No PRs are created against it from backend workflow sessions (no `fork` remote).
+
+### What to read during /design:research and /implement:ingest
+
+| Path | Purpose |
+|------|---------|
+| `osac-ux/libs/ui-components/src/pages/tenant/` | Tenant screens — form fields, list columns, actions |
+| `osac-ux/libs/ui-components/src/pages/provider/` | Provider admin screens |
+| `osac-ux/libs/ui-components/src/pages/admin/` | Tenant admin screens |
+| `osac-ux/libs/ui-components/src/api/v1/` | @temp-api types — use as primary proto field input |
+| `osac-ux/apps/e2e/cypress/e2e/flows/` | User journeys for Cypress scenario planning |
+
+### @temp-api types are primary proto input
+
+For **any EP** (new resource or existing resource enhancement), check whether
+a matching `@temp-api` file exists at `osac-ux/libs/ui-components/src/api/v1/<resource>.ts`.
+If it does, read it and use the TypeScript fields as the source for proto field names
+(converting camelCase → snake_case). The EP must include a `## UX Alignment` section
+with a field-by-field mapping table and a justification for any deviation.
+
+For existing resources, the @temp-api file may contain fields the UI needs but the
+backend has not yet returned — these are real requirements, not speculation.
+
+### API coverage audit (one-time and on-demand)
+
+To surface the full backlog of existing API gaps against the current UI, run:
+
+```bash
+cd osac-ux && node scripts/gen-api-diff.mjs
+```
+
+This compares all live UI routes against the backend OpenAPI spec and lists
+uncovered or mismatched fields. Use the output as input when scoping EP work,
+not as a file to commit or reference statically.
+
+### Known deviations — flag these in the EP, do not copy from @temp-api
+
+| @temp-api pattern | Correct fulfillment-service design |
+|---|---|
+| Sub-resource actions: `POST .../attach`, `POST .../restore` | Standalone `*_attachments` resource (pattern: `public_ip_attachments`) |
+| `storageClass: 'ssd' \| 'nvme' \| 'standard'` string union | `storage_tier_id: string` reference to StorageTier resource |
+| `spec.storageClassName`, `spec.storageBackend` in StorageTier | Private API only — omit from public proto |
+| `status.secretAccessKey?: string` on create response | Separate `Create*Response` proto message |
+| `AiEnvironment.spec.rhoaiVersion`, `gatewayEndpoint` | RHOAI operator fields — verify these belong in public API before adding |
 
 ## Development Notes
 

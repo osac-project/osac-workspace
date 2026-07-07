@@ -99,6 +99,13 @@ REPOS=(
   "bare-metal-fulfillment-operator"
 )
 
+# Reference repos — cloned read-only from osac-project, no fork remote added.
+# Used by AI agents for context during /design and /implement phases only.
+# GITHUB_ORG resolves these to https://github.com/osac-project/<repo>.git
+REFERENCE_REPOS=(
+  "osac-ux"
+)
+
 UPDATE_WARNINGS=0
 
 is_expected_clone() {
@@ -139,6 +146,19 @@ for entry in "${REPOS[@]}"; do
       echo "🍴 Adding fork remote for $repo..."
       ensure_fork_remote "$repo" "$dir" || confirm_continue "Fork remote for $repo failed."
     fi
+  fi
+done
+
+for entry in "${REFERENCE_REPOS[@]}"; do
+  repo="${entry%%:*}"
+  dir="${entry#*:}"
+  if [ -d "$dir" ] && is_expected_clone "$dir" "$repo"; then
+    echo "📦 Updating $dir (reference)..."
+    (cd "$dir" && git fetch origin && git rebase origin/main --autostash) || \
+      echo "⚠️  Update failed for $dir — skipping."
+  elif [ ! -d "$dir" ]; then
+    echo "📥 Cloning $repo (reference, no fork)..."
+    git clone "https://github.com/${GITHUB_ORG}/${repo}.git" "$dir"
   fi
 done
 

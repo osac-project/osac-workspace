@@ -101,6 +101,27 @@ and finalizers, i.e. those mechanisms that change the API surface and behaviour.
   by other parties than the authoring team (including upstream resources), and, if yes, how?
   Please add those other parties as reviewers to the enhancement.
 
+## UX Alignment
+
+*Skip this section if `osac-ux/libs/ui-components/src/api/v1/<resource>.ts` does not exist.*
+
+If a matching `@temp-api` file exists — whether this EP covers a new resource or
+adds/changes fields on an existing one — complete the table below. This section is
+reviewed alongside the proto design to ensure the backend ships fields the UI can
+consume without a migration pass.
+
+| UI field (`@temp-api` TypeScript) | Proto field (this EP) | Notes / deviation |
+|---|---|---|
+| `spec.fieldName` | `spec.field_name` | Direct mapping |
+| `spec.storageClass` | `spec.storage_tier_id` | Deviation: UI uses string enum; proto references StorageTier resource |
+
+List any deviations from the known anti-patterns (sub-resource actions,
+string-union storage classes, K8s-internal fields, one-time secrets, RHOAI
+operator fields). Each deviation requires a justification.
+
+After the backend ships and `pnpm gen-types` is run in osac-ux, the UI
+migration diff should be limited to the deviations documented here.
+
 ### Implementation Details/Notes/Constraints
 
 What are some important details that didn't come across above in the
