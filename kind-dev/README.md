@@ -5,7 +5,7 @@ dependency for local development and testing.
 
 ## What This Gives You
 
-A single-node kind cluster running the core OSAC stack:
+A single-node kind cluster running the full OSAC stack with real KubeVirt and AWX:
 
 | Component | Version | Status |
 |-----------|---------|--------|
@@ -16,33 +16,63 @@ A single-node kind cluster running the core OSAC stack:
 | PostgreSQL (mTLS) | — | Fully working |
 | Keycloak (OIDC) | — | Fully working |
 | Fulfillment Service (gRPC + REST) | latest | Fully working |
-| OSAC Operator | latest | Runs, but no AAP backend |
-| Fake CRDs (HyperShift, KubeVirt, OVN-K) | — | Stubs only |
+| OSAC Operator | latest | Fully working (AWX backend) |
+| OSAC UI | latest | Fully working |
+| KubeVirt | latest stable | Fully working (KVM accelerated) |
+| CDI (Containerized Data Importer) | latest | Fully working |
+| Multus CNI | latest | Fully working |
+| AWX (AAP substitute) | latest | Fully working |
+| Fake CRDs (HyperShift, OVN-K) | — | Stubs only |
 
-**Setup time**: ~5-8 minutes from scratch.
+**Setup time**: ~25 minutes from scratch (see [Installation Timeline](#installation-timeline)).
 
 ## Prerequisites
 
-- **Podman** (rootless, with socket active — `systemctl --user start podman.socket`)
+- **Docker** (macOS — Docker Desktop, auto-detected) or **podman** (Linux — rootful, see below)
 - **kind** >= v0.20 (`go install sigs.k8s.io/kind@latest`)
 - **helm** >= v3.10
 - **kubectl**
 - **openssl** (for CA generation)
+- **python3** with `requests` module (`pip install requests`) — for AWX configuration
+- **grpcurl** (optional — for automatic hub registration)
 
-### System Tuning (one-time)
+### System Tuning (one-time, Linux)
 
 ```bash
-# kind nodes need many inotify watchers — default 128 is too low
+# kind nodes need many inotify watchers — need >= 256
 sudo sysctl fs.inotify.max_user_instances=512
 # Persist across reboots:
 echo 'fs.inotify.max_user_instances=512' | sudo tee /etc/sysctl.d/99-kind-inotify.conf
 sudo sysctl --system
 ```
 
+### Rootful Podman (Linux)
+
+KubeVirt requires rootful podman for KVM device access. The setup script
+uses `sudo` automatically on Linux (or the rootful socket in Distrobox).
+
+For **Distrobox** users, install the systemd socket override on the host:
+
+```bash
+sudo install -d /etc/systemd/system/podman.socket.d
+sudo install -m 0644 kind-dev/podman-socket-rootful.conf \
+  /etc/systemd/system/podman.socket.d/rootful-group.conf
+sudo chgrp wheel /run/podman && sudo chmod 710 /run/podman
+sudo systemctl daemon-reload && sudo systemctl restart podman.socket
+```
+
+### KVM Requirement
+
+Host must have `/dev/kvm` available for KubeVirt (Intel VT-x / AMD-V):
+
+```bash
+ls /dev/kvm && grep -c -E 'vmx|svm' /proc/cpuinfo
+```
+
 No `/etc/hosts` entries needed — services are accessed via `*.localhost`
-hostnames (e.g. `api.osac.localhost`) which resolve automatically via
-systemd-resolved. The setup script adds a CoreDNS rewrite rule so the
-same hostnames resolve inside pods too.
+hostnames which resolve automatically via systemd-resolved (Linux) or
+natively on macOS Sonoma+. The setup script adds a CoreDNS rewrite rule
+so the same hostnames resolve inside pods too.
 
 ## Quick Start
 
@@ -92,6 +122,8 @@ standalone scripts that any developer can run.
 | `api.osac.localhost:8443` | Fulfillment API (external) |
 | `internal-api.osac.localhost:8443` | Fulfillment API (internal/admin) |
 | `keycloak.keycloak.localhost:8443` | Keycloak admin UI and OIDC |
+| `ui.osac.localhost:8080` | OSAC UI web console |
+| `awx.awx.localhost:8080` | AWX web UI (admin/password) |
 
 ## Research Findings
 
@@ -108,31 +140,28 @@ prerequisites as OLM Subscriptions from the `redhat-operators` catalog. However,
 OLM adds several pods (olm-operator, catalog-operator, packageserver) and
 complexity. Skip it unless you specifically need to test OLM-based installation.
 
-### AAP: Stubbed Out
+### AAP: AWX (Open-Source Upstream)
 
-Red Hat Ansible Automation Platform is a heavyweight dependency (requires its own
-operator, execution environments, license). In the kind environment:
+The setup script installs AWX (open-source upstream of Red Hat AAP) via the
+awx-operator Helm chart. AWX provides the full provisioning backend:
 
-- The osac-operator runs but with no AAP URL configured
-- Provisioning requests (ClusterOrders, ComputeInstances) will be accepted by
-  the fulfillment-service but won't complete lifecycle transitions
-- This is sufficient for testing API flows, RBAC, multi-tenancy, and CRD
-  reconciliation without actual provisioning
+- The osac-operator calls AWX job templates for compute and networking operations
+- Real `osac-aap` playbooks run on AWX with a pod-network override for kind
+- Compute instance creation triggers KubeVirt VM provisioning end-to-end
+- Networking templates run as no-ops (kind has no real networking backend)
 
-To test with AAP, use an OpenShift cluster with the full osac-installer.
+AWX needs a Kubernetes credential to reach the cluster API. The setup script
+creates this automatically along with all required job templates.
 
-### KubeVirt: Possible But Secondary
+### KubeVirt: Full KVM-Accelerated VMs
 
-KubeVirt can run on kind in two modes:
+The setup script installs real KubeVirt with KVM hardware acceleration,
+plus CDI (Containerized Data Importer) and Multus CNI. The osac-operator's
+ComputeInstance controller creates real VirtualMachine CRs that boot actual
+guest VMs.
 
-1. **Hardware virtualization**: Requires `/dev/kvm` exposed into kind nodes.
-   Works on bare-metal Linux with nested virt enabled. Full VM performance.
-2. **Software emulation**: Set `useEmulation: true` in KubeVirt config.
-   10-100x slower — only useful for testing controller logic, not running VMs.
-
-The kind-dev environment installs fake KubeVirt CRDs so the osac-operator's
-ComputeInstance controller can load without errors. To actually run VMs, install
-KubeVirt separately.
+Requires `/dev/kvm` on the host (Intel VT-x / AMD-V) and rootful podman
+on Linux. See [KVM Requirement](#kvm-requirement) above.
 
 ### Multiple Workers: Not Needed
 
@@ -177,112 +206,48 @@ helm upgrade fulfillment-service charts/service \
 |---|---------|-------------|---------------|
 | **Target** | Local dev laptop | Baremetal server | OpenShift cluster |
 | **Cluster type** | kind (containers) | SNO VM (libvirt) | OpenShift |
-| **Setup time** | ~5-8 min | ~5 min (from snapshot) | ~30-45 min |
-| **Resources** | ~4 GB RAM | 64+ GB RAM | Full OCP cluster |
-| **AAP** | Stubbed | Full | Full |
-| **VMs** | Fake CRDs | Full KubeVirt | Full KubeVirt |
-| **Use case** | API/controller dev | Full integration | Production-like |
+| **Setup time** | ~25 min | ~5 min (from snapshot) | ~30-45 min |
+| **Resources** | ~8 GB RAM | 64+ GB RAM | Full OCP cluster |
+| **AAP** | AWX (open-source) | Full | Full |
+| **VMs** | Full KubeVirt (KVM) | Full KubeVirt | Full KubeVirt |
+| **Use case** | Full-stack dev | Full integration | Production-like |
 
-## Stage 2: KubeVirt on Kind (Experimental)
+## Installation Timeline
 
-The goal is to run actual VMs on the kind cluster via KubeVirt, so the
-osac-operator's ComputeInstance controller can create real VirtualMachine CRs
-that boot actual guest VMs.
+Measured on a developer laptop (times are approximate):
 
-### Prerequisites
+| Phase | Duration | Cumulative |
+|-------|----------|------------|
+| Kind cluster + CoreDNS | ~0.5 min | 0.5 min |
+| cert-manager + trust-manager | ~1 min | 1.5 min |
+| Envoy Gateway + Authorino | ~1 min | 2.5 min |
+| PostgreSQL + DB resources | ~1 min | 3.5 min |
+| Keycloak | ~3 min | 6.5 min |
+| OSAC umbrella chart + UI | ~2 min | 8.5 min |
+| Multus CNI | ~0.5 min | 9 min |
+| KubeVirt (operator + virt-*) | ~5 min | 14 min |
+| CDI | ~1 min | 15 min |
+| AWX operator | ~0.5 min | 15.5 min |
+| AWX pods + migrations | ~10 min | 25.5 min |
+| AWX configuration | ~1 min | ~25 min |
+| Catalog seeding (template + instance types) | ~0.5 min | ~25 min |
 
-- Host must have `/dev/kvm` available (hardware virtualization: Intel VT-x / AMD-V)
-- Verify: `ls /dev/kvm` and `grep -c -E 'vmx|svm' /proc/cpuinfo`
+## Seeded Catalog
 
-### Status: Working with Rootful Podman
+The setup script seeds the fulfillment-service with a compute instance
+template and instance types so you can immediately create VMs:
 
-KubeVirt v1.8.4 runs on kind with full KVM hardware acceleration when
-the cluster is created with rootful podman (`sudo kind create cluster`).
-A cirros VM boots in ~40 seconds.
+| Resource | ID | Details |
+|----------|----|---------|
+| Template | `osac.templates.ocp_virt_vm` | Linux/Windows VM (defaults: 2c/2G, Fedora, 10G disk) |
+| Catalog Item | `linux-vm` | Published, references the VM template |
+| Instance Type | `u1-small` | 2 cores, 4 GiB RAM |
+| Instance Type | `u1-medium` | 4 cores, 8 GiB RAM |
+| Instance Type | `u1-large` | 8 cores, 16 GiB RAM |
 
-**Rootless podman does NOT work** for KubeVirt VMs. The virt-handler
-needs to `chmod`/`chown` `/dev/kvm`, which rootless user namespaces deny.
-The init container `chmod` can be patched via `customizeComponents`, but
-the virt-handler binary's `chown` during VMI sync is in compiled code and
-cannot be worked around.
+## End-to-End Flow
 
-### Quick Start (Stage 2)
-
-```bash
-# Create a rootful kind cluster
-sudo $(which kind) create cluster --name osac-dev --config kind-dev/kind-config.yaml --wait 60s
-
-# Save kubeconfig
-mkdir -p ~/clusters/osac-dev-rootful
-sudo $(which kind) get kubeconfig --name osac-dev 2>/dev/null > ~/clusters/osac-dev-rootful/kubeconfig
-export KUBECONFIG=~/clusters/osac-dev-rootful/kubeconfig
-
-# Install KubeVirt
-VERSION=$(curl -s https://storage.googleapis.com/kubevirt-prow/release/kubevirt/kubevirt/stable.txt)
-kubectl apply -f "https://github.com/kubevirt/kubevirt/releases/download/${VERSION}/kubevirt-operator.yaml"
-kubectl wait --for=condition=available --timeout=120s -n kubevirt deployments -l kubevirt.io
-kubectl apply -f "https://github.com/kubevirt/kubevirt/releases/download/${VERSION}/kubevirt-cr.yaml"
-kubectl -n kubevirt wait kv kubevirt --for condition=Available --timeout=300s
-
-# Test with a cirros VM
-kubectl create namespace osac
-kubectl apply -f - <<EOF
-apiVersion: kubevirt.io/v1
-kind: VirtualMachine
-metadata:
-  name: testvm
-  namespace: osac
-spec:
-  runStrategy: Always
-  template:
-    spec:
-      domain:
-        devices:
-          disks:
-          - name: containerdisk
-            disk:
-              bus: virtio
-          interfaces:
-          - name: default
-            masquerade: {}
-        resources:
-          requests:
-            memory: 128Mi
-      networks:
-      - name: default
-        pod: {}
-      volumes:
-      - name: containerdisk
-        containerDisk:
-          image: quay.io/kubevirt/cirros-container-disk-demo:latest
-EOF
-
-# Verify
-kubectl get vm,vmi -n osac    # STATUS: Running, READY: True
-```
-
-### Rootless vs Rootful
-
-| | Rootless podman (stage 1) | Rootful podman (stage 2) |
-|---|---|---|
-| Kind cluster | Works | Works (`sudo`) |
-| OSAC stack | Works | Works |
-| KubeVirt install | Needs chmod patch | Works out of the box |
-| VM launch | Blocked (chown EPERM) | Works — KVM accelerated |
-| VM boot time | N/A | ~40 seconds (cirros) |
-| Use case | API/controller dev | Full VM lifecycle |
-
-### Stage 3: AWX as AAP Substitute (Proven)
-
-AWX (open-source upstream of AAP) deploys on kind in ~12 minutes via the
-awx-operator Helm chart. The osac-operator successfully launches AWX job
-templates and polls for completion.
-
-**Measured timeline:**
-- AWX operator: 36s | AWX pods + migrations: ~12 min | Config: ~1 min
-- **Repeatable total: ~15 minutes with a script**
-
-**Full end-to-end flow — proven:**
+With the full setup, the complete provisioning flow works:
 
 ```
 osac create computeinstance --name kind-vm --template osac.templates.ocp_virt_vm ...
@@ -295,56 +260,29 @@ osac create computeinstance --name kind-vm --template osac.templates.ocp_virt_vm
   → VM Running, Ready=True, IP assigned
 ```
 
-**Key findings:**
-- The operator runs in **local mode** by default (no `multicluster-runtime`
-  remote provider needed). It watches and creates resources on its own cluster.
-- Hub registration uses the internal K8s API (`https://10.96.0.1:443`), not
-  the host-reachable address. Hub namespace must match the operator's namespace.
-- AWX `aap.url` must include `/api` path prefix (`http://awx-service.awx.svc.cluster.local:80/api`).
-- Tenant namespaces (`shared`, `system`) must exist for the tenant controller.
-- The ComputeInstance template ID must match the Ansible role name
-  (`osac.templates.ocp_virt_vm`), not an arbitrary name.
-- The real `osac-aap` playbooks work on kind with two adaptations:
-  1. A pod-network override task (replaces Multus/CUDN with pod/masquerade)
-  2. Extra vars: `tenant_target_namespace`, `compute_instance_target_namespace`,
-     `tenant_storage_classes`
-- CDI (Containerized Data Importer) is required for DataVolume-based VMs.
-- AWX needs a Kubernetes credential or kubeconfig mount to reach the cluster API.
-- AWX project sync must disable collection install (Red Hat proprietary
-  collections like `ansible.platform` are not available in open-source AWX).
-
 ### Pod Network Override
 
-The osac-aap playbooks hardcode Multus/CUDN networking. For kind (no Multus),
-a small override task replaces the network spec with pod networking:
+The osac-aap playbooks hardcode Multus/CUDN networking. For kind, a small
+override task replaces the network spec with pod networking. This is
+configured automatically via AWX job template extra_vars by the setup script.
 
-```
-osac-aap/collections/ansible_collections/osac/templates/roles/
-  ocp_virt_vm/tasks/create_modify_vm_spec_pod_network.yaml
-```
+## Implementation Notes
 
-Activated via AWX job template extra_vars:
-
-```yaml
-create_step_modify_vm_spec_override:
-  name: osac.templates.ocp_virt_vm
-  tasks_from: create_modify_vm_spec_pod_network.yaml
-```
-
-### Progress
-
-- [x] KubeVirt VMs boot on rootful podman kind with KVM accel
-- [x] Full OSAC stack deployed (fulfillment-service + osac-operator)
-- [x] Hub registered, ComputeInstance CR created in correct namespace
-- [x] AWX deployed on kind (~12 min), operator calls AWX API successfully
-- [x] Real osac-aap playbooks run on AWX with pod network override
-- [x] **Full end-to-end: `osac create computeinstance` → running KubeVirt VM**
+- The operator runs in **local mode** by default (no `multicluster-runtime`
+  remote provider needed). It watches and creates resources on its own cluster.
+- Hub registration uses the internal K8s API (`https://kubernetes.default.svc.cluster.local:443`),
+  not the host-reachable address.
+- AWX `aap.url` must include `/api` path prefix.
+- The ComputeInstance template ID must match the Ansible role name
+  (`osac.templates.ocp_virt_vm`), not an arbitrary name.
+- AWX project sync disables collection install (Red Hat proprietary
+  collections like `ansible.platform` are not available in open-source AWX).
+- **Rootless podman does NOT work** for KubeVirt — virt-handler needs to
+  `chown` `/dev/kvm`, which rootless user namespaces deny.
 
 ## Known Limitations
 
-- No AAP provisioning backend (ClusterOrder/ComputeInstance lifecycle won't complete)
-- No real KubeVirt VMs in stage 1 (fake CRDs only — see Stage 2 above)
+- Networking provisioning templates are no-ops (kind has no real networking backend)
 - No OpenShift Routes (uses Gateway API TLSRoute instead)
-- Rootless podman may have issues with low ports and PID limits; if you hit
-  problems, see the [kind rootless docs](https://kind.sigs.k8s.io/docs/user/rootless/)
+- Requires rootful podman on Linux (rootless does not support KubeVirt)
 - Images must be loaded via `kind load image-archive` (not `docker-image`)

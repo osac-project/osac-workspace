@@ -222,9 +222,9 @@ check_prerequisites() {
         vpn_prio=$(ip rule show 2>/dev/null | awk "/lookup ${vpn_table}/"'{gsub(/:/, "", $1); print $1; exit}')
         if [[ -n "$vpn_prio" ]]; then
           local bypass_prio=$(( vpn_prio - 1 ))
-          if ! ip rule show 2>/dev/null | grep -q "to 10\\..*lookup main.*$bypass_prio"; then
+          if ! ip rule show 2>/dev/null | grep -q "to 10\.89\.0\.0/16 lookup main"; then
             warn "VPN route table ${vpn_table} covers 10.0.0.0/8 — adding bypass for podman subnets"
-            sudo ip rule add to 10.89.0.0/16 lookup main priority "$bypass_prio"
+            sudo ip rule add to 10.89.0.0/16 lookup main priority "$bypass_prio" 2>/dev/null || true
             log "Added ip rule: to 10.89.0.0/16 lookup main priority ${bypass_prio}"
           fi
         fi
@@ -1145,6 +1145,110 @@ create_step_modify_vm_spec_override:
   log "AWX configured for OSAC"
 }
 
+# ── Catalog Seeding ───────────────────────────────────────────────────────────
+
+seed_catalog() {
+  log "Seeding compute instance template and instance types..."
+
+  local admin_token api_base
+  admin_token=$(kubectl -n "${OSAC_NAMESPACE}" create token admin)
+  api_base="https://internal-api.${OSAC_NAMESPACE}.localhost:${EXTERNAL_INGRESS_PORT}"
+
+  # Seed ComputeInstance template (osac.templates.ocp_virt_vm)
+  local tpl_response
+  tpl_response=$(curl -sk -X POST "${api_base}/api/private/v1/compute_instance_templates" \
+    -H "Authorization: Bearer ${admin_token}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "id": "osac.templates.ocp_virt_vm",
+      "title": "Virtual Machine Template (Linux and Windows)",
+      "description": "VM template for OpenShift Virtualization supporting Linux and Windows guests.",
+      "spec_defaults": {
+        "cores": 2,
+        "memory_gib": 2,
+        "boot_disk": {"size_gib": 10},
+        "image": {"source_type": "registry", "source_ref": "quay.io/containerdisks/fedora:latest"},
+        "run_strategy": "Always"
+      },
+      "parameters": [
+        {
+          "name": "exposed_ports",
+          "title": "Exposed Ports",
+          "description": "Ports to expose (e.g. 22/tcp,80/tcp)",
+          "type": "string",
+          "required": false
+        }
+      ]
+    }')
+
+  if echo "$tpl_response" | python3 -c "import json,sys; d=json.load(sys.stdin); sys.exit(0 if 'id' in d else 1)" 2>/dev/null; then
+    log "  template: osac.templates.ocp_virt_vm"
+  else
+    warn "  template creation failed (may already exist)"
+  fi
+
+  # Seed InstanceTypes
+  local instance_types=(
+    "u1-small:2:4:2 cores, 4 GiB RAM"
+    "u1-medium:4:8:4 cores, 8 GiB RAM"
+    "u1-large:8:16:8 cores, 16 GiB RAM"
+  )
+
+  for entry in "${instance_types[@]}"; do
+    local name cores mem desc
+    name="${entry%%:*}"; entry="${entry#*:}"
+    cores="${entry%%:*}"; entry="${entry#*:}"
+    mem="${entry%%:*}"; desc="${entry#*:}"
+
+    local it_response
+    it_response=$(curl -sk -X POST "${api_base}/api/private/v1/instance_types" \
+      -H "Authorization: Bearer ${admin_token}" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"metadata\": {\"name\": \"${name}\"},
+        \"spec\": {\"cores\": ${cores}, \"memory_gib\": ${mem}, \"description\": \"${desc}\", \"state\": \"INSTANCE_TYPE_STATE_ACTIVE\"}
+      }")
+
+    if echo "$it_response" | python3 -c "import json,sys; d=json.load(sys.stdin); sys.exit(0 if 'id' in d else 1)" 2>/dev/null; then
+      log "  instance-type: ${name} (${desc})"
+    else
+      warn "  instance-type ${name} creation failed (may already exist)"
+    fi
+  done
+
+  # Seed catalog items (visible in UI)
+  local catalog_items=(
+    'linux-vm:Linux Virtual Machine:Fedora-based virtual machine with KVM acceleration. Default: 2 cores, 2 GiB RAM, 10 GiB disk.'
+  )
+
+  for entry in "${catalog_items[@]}"; do
+    local ci_name ci_title ci_desc
+    ci_name="${entry%%:*}"; entry="${entry#*:}"
+    ci_title="${entry%%:*}"; ci_desc="${entry#*:}"
+
+    local ci_response
+    ci_response=$(curl -sk -X POST "${api_base}/api/private/v1/compute_instance_catalog_items" \
+      -H "Authorization: Bearer ${admin_token}" \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"metadata\": {\"name\": \"${ci_name}\"},
+        \"title\": \"${ci_title}\",
+        \"description\": \"${ci_desc}\",
+        \"template\": \"osac.templates.ocp_virt_vm\",
+        \"published\": true,
+        \"tenant\": \"\"
+      }")
+
+    if echo "$ci_response" | python3 -c "import json,sys; d=json.load(sys.stdin); sys.exit(0 if 'id' in d else 1)" 2>/dev/null; then
+      log "  catalog-item: ${ci_name} (${ci_title})"
+    else
+      warn "  catalog-item ${ci_name} creation failed (may already exist)"
+    fi
+  done
+
+  log "Catalog seeded — ready to create compute instances"
+}
+
 # ── Summary ────────────────────────────────────────────────────────────────────
 
 print_summary() {
@@ -1258,6 +1362,9 @@ main() {
   # Step 7: Install and configure AWX
   install_awx
   configure_awx
+
+  # Step 8: Seed catalog (templates + instance types)
+  seed_catalog
 
   print_summary
 }
