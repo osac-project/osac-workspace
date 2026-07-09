@@ -26,7 +26,7 @@ NC='\033[0m'
 log()  { echo -e "${GREEN}[+]${NC} $*"; }
 
 KIND_BIN="$(which kind)"
-KC_FILE="${HOME}/.kube/${CLUSTER_NAME}-kind-root.kubeconfig"
+KC_FILE="${HOME}/.kube/${CLUSTER_NAME}-kind.kubeconfig"
 
 if [[ "$KEEP_DATA" == "true" ]]; then
   log "Uninstalling OSAC services (keeping cluster)..."

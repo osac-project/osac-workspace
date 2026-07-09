@@ -922,6 +922,13 @@ install_kubevirt() {
   kubectl apply -f "https://github.com/kubevirt/kubevirt/releases/download/${version}/kubevirt-cr.yaml"
   kubectl -n kubevirt wait kv kubevirt --for condition=Available --timeout=300s
 
+  # Register l2bridge network binding plugin (replicates what HCO does on OpenShift).
+  # The osac-aap ocp_virt_vm role builds VM specs with "binding: name: l2bridge".
+  # managedTap creates a tap device wired through a bridge to the pod interface.
+  log "Registering l2bridge network binding plugin..."
+  kubectl patch kubevirts -n kubevirt kubevirt --type=merge \
+    -p='{"spec":{"configuration":{"network":{"binding":{"l2bridge":{"domainAttachmentType":"managedTap"}}}}}}'
+
   log "KubeVirt installed"
 }
 
