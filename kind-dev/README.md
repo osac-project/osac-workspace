@@ -240,9 +240,10 @@ can immediately create VMs:
 
 | Resource | ID | Details |
 |----------|----|---------|
-| Network Class | `pod-network` | Default, no-op fabric manager for kind |
+| Network Class | `pod-network` | Default, uses cudn_net role (no real L2 on kind) |
 | Virtual Network | `default` | 10.100.0.0/16, region: kind |
 | Subnet | `default` | 10.100.0.0/24, in the default VN |
+| Security Group | `default` | SSH inbound, all outbound |
 | Template | `osac.templates.ocp_virt_vm` | Linux/Windows VM (defaults: 2c/2G, Fedora, 10G disk) |
 | Catalog Item | `linux-vm` | Published, references the VM template |
 | Instance Type | `u1-small` | 2 cores, 4 GiB RAM |

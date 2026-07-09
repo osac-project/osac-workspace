@@ -757,6 +757,39 @@ install_fake_crds() {
     [[ "$base" == *"osac.openshift.io"* ]] && continue
     kubectl apply -f "$f" 2>/dev/null || true
   done
+  # ClusterUserDefinedNetwork CRD — needed by the cudn_net Ansible role for
+  # subnet provisioning. OVN-Kubernetes is not installed on kind, but the CRD
+  # must exist so the k8s module can create CUDN resources without errors.
+  kubectl apply -f - <<'CRDEOF'
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: clusteruserdefinednetworks.k8s.ovn.org
+spec:
+  group: k8s.ovn.org
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+  scope: Cluster
+  names:
+    plural: clusteruserdefinednetworks
+    singular: clusteruserdefinednetwork
+    kind: ClusterUserDefinedNetwork
+    shortNames:
+      - cudn
+CRDEOF
+
   log "Fake CRDs installed"
 }
 
@@ -1258,8 +1291,8 @@ seed_catalog() {
     -d '{
       "metadata": {"name": "pod-network"},
       "title": "Pod Network (kind)",
-      "description": "Default pod network for kind dev. VMs use pod networking with masquerade.",
-      "implementation_strategy": "pod_network",
+      "description": "Default network for kind dev. Uses cudn_net role — creates namespace but no real L2.",
+      "implementation_strategy": "cudn_net",
       "fabric_manager": "noop",
       "is_default": true,
       "capabilities": {"supports_ipv4": true}
@@ -1325,9 +1358,29 @@ seed_catalog() {
       else
         warn "  subnet creation failed: $(echo "$sn_response" | python3 -c "import json,sys; print(json.load(sys.stdin).get('message','unknown'))" 2>/dev/null)"
       fi
+
+      # Security group — allow SSH inbound, all outbound
+      local sg_response
+      sg_response=$(curl -sk -X POST "${api_base}/api/private/v1/security_groups" \
+        -H "Authorization: Bearer ${admin_token}" \
+        -H "Content-Type: application/json" \
+        -d "{
+          \"metadata\": {\"name\": \"default\"},
+          \"spec\": {
+            \"virtual_network\": \"${vn_id}\",
+            \"ingress\": [{\"protocol\": \"PROTOCOL_TCP\", \"port_from\": 22, \"port_to\": 22, \"ipv4_cidr\": \"0.0.0.0/0\"}],
+            \"egress\": [{\"protocol\": \"PROTOCOL_ALL\", \"ipv4_cidr\": \"0.0.0.0/0\"}]
+          }
+        }")
+
+      if echo "$sg_response" | python3 -c "import json,sys; d=json.load(sys.stdin); sys.exit(0 if 'id' in d else 1)" 2>/dev/null; then
+        log "  security-group: default (SSH in, all out)"
+      else
+        warn "  security-group creation failed (may already exist)"
+      fi
     else
-      warn "  virtual-network did not reach READY (state=${vn_state}) — skipping subnet creation"
-      warn "  Create subnet manually once the VN is ready"
+      warn "  virtual-network did not reach READY (state=${vn_state}) — skipping subnet/security-group creation"
+      warn "  Create them manually once the VN is ready"
     fi
   fi
 
