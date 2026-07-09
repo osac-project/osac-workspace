@@ -1068,16 +1068,13 @@ configure_awx() {
   done
   log "AWX project synced: ${proj_status}"
 
-  # Create compute instance job templates (real playbooks + pod network override for kind)
+  # Create compute instance job templates (real playbooks)
   local compute_extra_vars
   compute_extra_vars="tenant_target_namespace: ${OSAC_NAMESPACE}
 compute_instance_target_namespace: ${OSAC_NAMESPACE}
 tenant_storage_classes:
   - name: standard
-    tier: default
-create_step_modify_vm_spec_override:
-  name: osac.templates.ocp_virt_vm
-  tasks_from: create_modify_vm_spec_pod_network.yaml"
+    tier: default"
 
   local compute_templates=(
     "osac-create-compute-instance:playbook_osac_create_compute_instance.yml"
