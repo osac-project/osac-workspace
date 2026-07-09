@@ -206,6 +206,32 @@ check_prerequisites() {
     fi
   fi
 
+  # VPN route conflict check (Linux + rootful podman only)
+  # VPNs often add a broad 10.0.0.0/8 route via tun0 in a policy-routing table
+  # that takes precedence over the main table. If the podman bridge subnet
+  # (e.g. 10.89.x.0/24) falls within that range, container traffic is sent
+  # through the VPN instead of the local bridge — making kind unreachable.
+  if [[ "$KIND_PROVIDER" == "podman" && "$(uname -s)" == "Linux" ]]; then
+    local vpn_table
+    vpn_table=$(ip rule show 2>/dev/null | awk '/proto static/ && /lookup [0-9]/ {for(i=1;i<=NF;i++) if($i=="lookup") {print $(i+1); exit}}' || true)
+    if [[ -n "$vpn_table" ]]; then
+      local vpn_catch_all
+      vpn_catch_all=$(ip route show table "$vpn_table" 2>/dev/null | grep -E '^10\.' | head -1 || true)
+      if [[ -n "$vpn_catch_all" ]]; then
+        local vpn_prio
+        vpn_prio=$(ip rule show 2>/dev/null | awk "/lookup ${vpn_table}/"'{gsub(/:/, "", $1); print $1; exit}')
+        if [[ -n "$vpn_prio" ]]; then
+          local bypass_prio=$(( vpn_prio - 1 ))
+          if ! ip rule show 2>/dev/null | grep -q "to 10\\..*lookup main.*$bypass_prio"; then
+            warn "VPN route table ${vpn_table} covers 10.0.0.0/8 — adding bypass for podman subnets"
+            sudo ip rule add to 10.89.0.0/16 lookup main priority "$bypass_prio"
+            log "Added ip rule: to 10.89.0.0/16 lookup main priority ${bypass_prio}"
+          fi
+        fi
+      fi
+    fi
+  fi
+
   # Check for Python requests module (needed for AWX configuration)
   if ! python3 -c "import requests" 2>/dev/null; then
     err "Python 'requests' module not found (needed for AWX configuration)"
