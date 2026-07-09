@@ -1068,17 +1068,19 @@ create_step_modify_vm_spec_override:
     log "  template: ${name}"
   done
 
-  # Create no-op networking job templates (hello_world.yml — kind has no real networking backend)
-  local noop_templates=(
-    "osac-create-virtual-network"
-    "osac-delete-virtual-network"
-    "osac-create-subnet"
-    "osac-delete-subnet"
-    "osac-create-security-group"
-    "osac-delete-security-group"
+  # Create networking job templates (use real playbooks — they are effective no-ops
+  # on kind because there is no matching implementation strategy / fabric manager)
+  local network_templates=(
+    "osac-create-virtual-network:playbook_osac_create_virtual_network.yml"
+    "osac-delete-virtual-network:playbook_osac_delete_virtual_network.yml"
+    "osac-create-subnet:playbook_osac_create_subnet.yml"
+    "osac-delete-subnet:playbook_osac_delete_subnet.yml"
+    "osac-create-security-group:playbook_osac_create_security_group.yml"
+    "osac-delete-security-group:playbook_osac_delete_security_group.yml"
   )
 
-  for name in "${noop_templates[@]}"; do
+  for entry in "${network_templates[@]}"; do
+    local name="${entry%%:*}" playbook="${entry##*:}"
     curl -s -X POST http://localhost:8052/api/v2/job_templates/ \
       -H "Authorization: Bearer ${awx_token}" \
       -H "Content-Type: application/json" \
@@ -1087,10 +1089,10 @@ create_step_modify_vm_spec_override:
         \"organization\": 1,
         \"inventory\": ${inv_id},
         \"project\": ${project_id},
-        \"playbook\": \"hello_world.yml\",
+        \"playbook\": \"${playbook}\",
         \"ask_variables_on_launch\": true
       }" >/dev/null
-    log "  template: ${name} (no-op)"
+    log "  template: ${name}"
   done
 
   # Create Kubernetes credential for AWX
@@ -1245,6 +1247,89 @@ seed_catalog() {
       warn "  catalog-item ${ci_name} creation failed (may already exist)"
     fi
   done
+
+  # Seed networking resources (NetworkClass → VirtualNetwork → Subnet)
+  log "Seeding networking resources..."
+
+  local nc_response
+  nc_response=$(curl -sk -X POST "${api_base}/api/private/v1/network_classes" \
+    -H "Authorization: Bearer ${admin_token}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "metadata": {"name": "pod-network"},
+      "title": "Pod Network (kind)",
+      "description": "Default pod network for kind dev. VMs use pod networking with masquerade.",
+      "implementation_strategy": "pod_network",
+      "fabric_manager": "noop",
+      "is_default": true,
+      "capabilities": {"supports_ipv4": true}
+    }')
+
+  if echo "$nc_response" | python3 -c "import json,sys; d=json.load(sys.stdin); sys.exit(0 if 'id' in d else 1)" 2>/dev/null; then
+    log "  network-class: pod-network (default)"
+  else
+    warn "  network-class creation failed (may already exist)"
+  fi
+
+  local vn_response vn_id
+  vn_response=$(curl -sk -X POST "${api_base}/api/private/v1/virtual_networks" \
+    -H "Authorization: Bearer ${admin_token}" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "metadata": {"name": "default"},
+      "spec": {
+        "region": "kind",
+        "ipv4_cidr": "10.100.0.0/16"
+      }
+    }')
+
+  vn_id=$(echo "$vn_response" | python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" 2>/dev/null)
+  if [[ -n "$vn_id" ]]; then
+    log "  virtual-network: default (id=${vn_id})"
+  else
+    warn "  virtual-network creation failed (may already exist)"
+    vn_id=$(curl -sk -H "Authorization: Bearer ${admin_token}" \
+      "${api_base}/api/private/v1/virtual_networks" 2>/dev/null | \
+      python3 -c "import json,sys; items=json.load(sys.stdin).get('items',[]); print(next((i['id'] for i in items if i.get('metadata',{}).get('name')=='default'), ''))" 2>/dev/null)
+  fi
+
+  # Wait for VirtualNetwork to reach READY (operator runs AWX no-op job)
+  if [[ -n "$vn_id" ]]; then
+    log "  waiting for virtual-network to become READY..."
+    local vn_state="unknown"
+    for i in $(seq 1 30); do
+      vn_state=$(curl -sk -H "Authorization: Bearer ${admin_token}" \
+        "${api_base}/api/private/v1/virtual_networks/${vn_id}" 2>/dev/null | \
+        python3 -c "import json,sys; print(json.load(sys.stdin).get('status',{}).get('state','unknown'))" 2>/dev/null)
+      if [[ "$vn_state" == "VIRTUAL_NETWORK_STATE_READY" ]]; then break; fi
+      sleep 5
+    done
+
+    if [[ "$vn_state" == "VIRTUAL_NETWORK_STATE_READY" ]]; then
+      log "  virtual-network: READY"
+
+      local sn_response
+      sn_response=$(curl -sk -X POST "${api_base}/api/private/v1/subnets" \
+        -H "Authorization: Bearer ${admin_token}" \
+        -H "Content-Type: application/json" \
+        -d "{
+          \"metadata\": {\"name\": \"default\"},
+          \"spec\": {
+            \"virtual_network\": \"${vn_id}\",
+            \"ipv4_cidr\": \"10.100.0.0/24\"
+          }
+        }")
+
+      if echo "$sn_response" | python3 -c "import json,sys; d=json.load(sys.stdin); sys.exit(0 if 'id' in d else 1)" 2>/dev/null; then
+        log "  subnet: default (10.100.0.0/24)"
+      else
+        warn "  subnet creation failed: $(echo "$sn_response" | python3 -c "import json,sys; print(json.load(sys.stdin).get('message','unknown'))" 2>/dev/null)"
+      fi
+    else
+      warn "  virtual-network did not reach READY (state=${vn_state}) — skipping subnet creation"
+      warn "  Create subnet manually once the VN is ready"
+    fi
+  fi
 
   log "Catalog seeded — ready to create compute instances"
 }

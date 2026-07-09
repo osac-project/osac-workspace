@@ -234,11 +234,15 @@ Measured on a developer laptop (times are approximate):
 
 ## Seeded Catalog
 
-The setup script seeds the fulfillment-service with a compute instance
-template and instance types so you can immediately create VMs:
+The setup script seeds the fulfillment-service with networking resources,
+a compute instance template, instance types, and a catalog item so you
+can immediately create VMs:
 
 | Resource | ID | Details |
 |----------|----|---------|
+| Network Class | `pod-network` | Default, no-op fabric manager for kind |
+| Virtual Network | `default` | 10.100.0.0/16, region: kind |
+| Subnet | `default` | 10.100.0.0/24, in the default VN |
 | Template | `osac.templates.ocp_virt_vm` | Linux/Windows VM (defaults: 2c/2G, Fedora, 10G disk) |
 | Catalog Item | `linux-vm` | Published, references the VM template |
 | Instance Type | `u1-small` | 2 cores, 4 GiB RAM |
