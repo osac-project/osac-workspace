@@ -77,6 +77,10 @@ docs/pr-dashboard/data.json
 # Workflow artifacts (bugfix, implement)
 .artifacts/
 
+# skillsaw baseline not used — strict lint only
+.skillsaw-baseline.json
+**/.skillsaw-baseline.json
+
 # Workflow artifacts (bugfix, implement) — keep shared config
 .artifacts/*
 !.artifacts/prd/

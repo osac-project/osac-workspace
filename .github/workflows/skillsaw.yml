@@ -1,0 +1,33 @@
+name: Skillsaw
+
+on:
+  pull_request:
+    paths-ignore:
+      - 'docs/pr-dashboard/**'
+      - 'tools/pr-notify/**'
+      - 'evals/**'
+      - 'kind-dev/**'
+      - '.artifacts/**'
+
+# SECURITY: read-only on untrusted PR code; inline comments are posted by
+# skillsaw-review.yml (workflow_run, no PR checkout).
+permissions:
+  contents: read
+
+concurrency:
+  group: skillsaw-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  skillsaw:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - uses: stbenjam/skillsaw@641606f379ebea086b31dec023366c7ff89301a2 # v0
+        with:
+          path: .
+          version: "0.16.0"
+          strict: true
