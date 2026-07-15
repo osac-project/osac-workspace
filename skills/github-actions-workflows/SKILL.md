@@ -167,9 +167,9 @@ real build/compile steps confined to the unprivileged workflow. See
 [reference.md](reference.md#workflow-run-privilege-escalation) for the
 general pattern.
 
-Tag protection isn't optional hardening here, it's what makes the SHA
-re-checks above actually mean something - see
-[reference.md](reference.md#tag-immutability).
+An immutability control isn't optional here - a tag-protection ruleset or
+immutable release is what makes the SHA re-checks above actually mean
+something - see [reference.md](reference.md#tag-immutability).
 
 ## Verification before committing
 
