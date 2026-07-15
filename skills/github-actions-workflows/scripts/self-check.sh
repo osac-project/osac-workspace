@@ -91,9 +91,17 @@ check_regex_table image-tag-safe "$image_tag_safe_re" \
 
 echo
 echo "== verify-tag-matches-sha.sh, functionally, against a real repo/tag =="
-if command -v gh &>/dev/null && gh auth status &>/dev/null; then
-  REPO="osac-project/osac-operator"
-  TAG="v0.0.1"
+if [ -n "${SELF_CHECK_SKIP_LIVE:-}" ]; then
+  echo "  skip: SELF_CHECK_SKIP_LIVE set"
+elif command -v gh &>/dev/null && gh auth status &>/dev/null; then
+  # Overridable via env vars rather than hardcoded, so this doesn't
+  # permanently couple the skill's own self-check to one specific
+  # external repo/tag continuing to exist - set SELF_CHECK_REPO/
+  # SELF_CHECK_TAG to point at something else, or SELF_CHECK_SKIP_LIVE=1
+  # to skip this network-dependent block entirely (e.g. in an offline or
+  # sandboxed environment).
+  REPO="${SELF_CHECK_REPO:-osac-project/osac-operator}"
+  TAG="${SELF_CHECK_TAG:-v0.0.1}"
   # Resolve the expected commit SHA the same way verify-tag-matches-sha.sh
   # does (peel annotated tags) rather than reading .object.sha directly -
   # for a lightweight tag that's already the commit SHA, but for an
@@ -111,15 +119,18 @@ if command -v gh &>/dev/null && gh auth status &>/dev/null; then
     fi
   fi
   if [ -n "$GUARDED_SHA" ]; then
-    if GH_TOKEN="$(gh auth token)" REPO="$REPO" TAG="$TAG" GUARDED_SHA="$GUARDED_SHA" \
-        "$SCRIPT_DIR/verify-tag-matches-sha.sh" &>/dev/null; then
+    # Capture combined output (not &>/dev/null) so a failure message can
+    # show *why* - a real regression vs. a transient gh api hiccup look
+    # identical from the exit code alone.
+    if pos_out="$(GH_TOKEN="$(gh auth token)" REPO="$REPO" TAG="$TAG" GUARDED_SHA="$GUARDED_SHA" \
+        "$SCRIPT_DIR/verify-tag-matches-sha.sh" 2>&1)"; then
       pass "positive case ($REPO@$TAG, correct SHA) exits 0"
     else
-      fail "positive case ($REPO@$TAG, correct SHA) should have exited 0"
+      fail "positive case ($REPO@$TAG, correct SHA) should have exited 0: $pos_out"
     fi
-    if GH_TOKEN="$(gh auth token)" REPO="$REPO" TAG="$TAG" GUARDED_SHA="0000000000000000000000000000000000dead" \
-        "$SCRIPT_DIR/verify-tag-matches-sha.sh" &>/dev/null; then
-      fail "negative case (deliberately wrong SHA) should have exited non-zero"
+    if neg_out="$(GH_TOKEN="$(gh auth token)" REPO="$REPO" TAG="$TAG" GUARDED_SHA="0000000000000000000000000000000000dead" \
+        "$SCRIPT_DIR/verify-tag-matches-sha.sh" 2>&1)"; then
+      fail "negative case (deliberately wrong SHA) should have exited non-zero: $neg_out"
     else
       pass "negative case (deliberately wrong SHA) exits non-zero"
     fi

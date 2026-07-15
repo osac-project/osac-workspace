@@ -197,6 +197,10 @@ Editing *this skill itself* (not a workflow that uses it)? Run
 against the skill's own embedded template/script/regexes, plus a live
 functional test of `verify-tag-matches-sha.sh` against a real tag, so a
 content edit can't silently break an example without something catching it.
+The full guarantee only holds when `actionlint` and an authenticated `gh`
+are both installed - missing either degrades that specific check to a
+printed `skip`, not a failure, so re-run with both available before
+trusting an all-green result completely.
 
 ## Also applies (enforced automatically, not just for workflows)
 

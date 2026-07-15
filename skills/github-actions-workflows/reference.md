@@ -178,6 +178,31 @@ owns the run first, by looking at the failed check's "Details" link URL:
   instead - `gh run rerun` doesn't apply since GitHub Actions never owned
   the run.
 
+## Self-check / test script hygiene
+
+Found via review of this skill's own
+[scripts/self-check.sh](scripts/self-check.sh) - the same scrutiny applies
+to any test/verification script, not just the workflows it exercises:
+
+- **Don't discard a subprocess's output on failure just because you only
+  check its exit code.** `cmd &>/dev/null; then pass; else fail "should
+  have succeeded"; fi` gives a real regression and a transient network
+  hiccup an identical, contentless failure message. Capture combined
+  output into a variable and include it in the failure message instead:
+  `out="$(cmd 2>&1)" && pass || fail "should have succeeded: $out"`.
+- **If a test exercises a real external resource** (a specific repo, tag,
+  or endpoint), make it overridable via env vars with the current value as
+  the default (`REPO="${SELF_CHECK_REPO:-osac-project/osac-operator}"`)
+  rather than hardcoding it, and provide an explicit skip switch (e.g.
+  `SELF_CHECK_SKIP_LIVE=1`) for offline/sandboxed runs. The test's own
+  reliability shouldn't be permanently coupled to one third party's tag
+  never disappearing or a network call always succeeding.
+- **If any step degrades to "skip" rather than "fail" when an optional
+  tool is missing, say so wherever the script's guarantee is described.**
+  An all-green run with `actionlint`/`gh`/etc. absent is a materially
+  weaker guarantee than one with everything present - don't let the
+  wording imply otherwise.
+
 ## Niche bash pitfalls
 
 - **`"${arr[*]}"` only honors the first character of a multi-character
