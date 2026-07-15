@@ -6,6 +6,6 @@ OSAC follows [Kubernetes API conventions](https://github.com/kubernetes/communit
 
 ## Workflow
 
-- Always run `buf lint` before committing proto changes
-- Regenerate code with `buf generate` after proto changes
+- Always run `buf lint` from `fulfillment-service/` before committing proto changes
+- Regenerate code by running `buf generate` from `fulfillment-service/` after proto changes
 - `SERVICE_SUFFIX` lint rule is intentionally excluded in `buf.yaml`
