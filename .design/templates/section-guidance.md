@@ -84,11 +84,10 @@ List each extension and note operational impact (what happens if the controller 
 ### Implementation Details/Notes/Constraints
 
 This is where technical depth lives. Include:
-- Proto schema snippets (fields, enums, validation rules)
+- Proto schema snippets following the standard object shape (`id`, `Metadata`, `<Type>Spec`, `<Type>Status`) and conventions in [`fulfillment-service/docs/API.md`](../../fulfillment-service/docs/API.md) — spec for desired state, status for observed state, conditions for lifecycle, declarative design (no imperative methods)
 - Database schema considerations (new tables, migrations)
 - Controller reconciliation logic (state machine, finalizer flow)
 - Integration with existing OSAC components (fulfillment-service, osac-operator, osac-aap)
-- Follow OSAC proto conventions: `snake_case` fields, `PascalCase` messages, `SCREAMING_SNAKE_CASE` enums
 
 ### Security Considerations
 

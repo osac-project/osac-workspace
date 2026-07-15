@@ -155,6 +155,12 @@ Both PRD and design ingest phases must read all files in `.design/context/`:
 - **`osac-dimensions.md`** — Cross-cutting dimensions (services, personas, tenant onboarding, inventory, provisioning, networking, storage, installation, E2E testing, documentation, UI) that every OSAC feature must address. Use it to guide clarifying questions during PRD clarify and persona/user-story scope during PRD draft (see Personas and `osac-docs/personas.md`); ensure the design covers all relevant dimensions.
 - **`review-patterns.md`** — Common design reviewer feedback themes, anti-patterns, and the design reference library. Use during PRD draft and design draft to anticipate reviewer expectations.
 
+### Component Conventions
+
+Design and implement ingest phases must read the `AGENTS.md` of each component repo affected by the feature. These contain authoritative conventions for API design, database patterns, testing, and build tooling that the generic workspace rules summarize but do not replace.
+
+For features involving the fulfillment-service API (proto definitions, services, request/response patterns), `fulfillment-service/AGENTS.md` points to [`fulfillment-service/docs/API.md`](fulfillment-service/docs/API.md) — the canonical API design guidelines. Read it before drafting or reviewing proto schemas.
+
 ### Template Overrides
 
 - Design template: `.design/templates/design.md` (EP format with PRD-aware modifications)
