@@ -123,8 +123,12 @@ jobs:
 
     # ... package/publish steps here, using needs.guard.outputs.tag ...
 
-    # Re-verify again immediately before the release call (defense in depth),
-    # and add --verify-tag as a final cheap safety net.
+    # Re-verify again immediately before the release call. This - and
+    # --verify-tag below - are defense in depth, not a guarantee: a tag
+    # can still be moved in the instant between this check and the API
+    # call. The structural fix is a tag-protection ruleset or immutable
+    # releases on the repo (see reference.md#tag-immutability) so tags
+    # can't be moved after creation in the first place.
     - name: Verify tag still points at the guarded commit
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -133,6 +137,9 @@ jobs:
         REPO: ${{ github.repository }}
       run: .github/scripts/verify-tag-matches-sha.sh
 
+    # --verify-tag only confirms the tag still exists at release-creation
+    # time - it does NOT re-check which commit it points at, so it can't
+    # by itself catch a retag that happened after the check above.
     - name: Create GitHub Release
       run: |
         gh release create "${TAG}" --repo "${REPO}" --generate-notes --verify-tag
@@ -146,17 +153,37 @@ Copy [scripts/verify-tag-matches-sha.sh](scripts/verify-tag-matches-sha.sh)
 into the target repo's `.github/scripts/` and `chmod +x` it - don't
 reimplement the dereferencing/failure-masking logic inline.
 
+**This checkout is the repo's own tagged source** (pushed by someone with
+write access to create the tag), not an untrusted pull-request
+contribution, so the classic `workflow_run` privilege-escalation risk - a
+`pull_request`-triggered workflow chaining into a privileged `workflow_run`
+job that then checks out and executes attacker-controlled code - doesn't
+directly apply to this specific gate. If you adapt this pattern to gate on
+a workflow that *can* be triggered by an untrusted contribution (e.g. one
+that also runs on `pull_request` from forks), don't check out or execute
+that contributor's code in the privileged `publish` job - treat anything
+produced by the upstream run as untrusted data (verify/attest it) and keep
+real build/compile steps confined to the unprivileged workflow. See
+[reference.md](reference.md#workflow-run-privilege-escalation) for the
+general pattern.
+
+Tag protection isn't optional hardening here, it's what makes the SHA
+re-checks above actually mean something - see
+[reference.md](reference.md#tag-immutability).
+
 ## Verification before committing
 
 1. `actionlint path/to/workflow.yaml` - must be 0 errors.
 2. `bash -n path/to/script.sh` on any new/edited script.
 3. Test any new regex directly, don't just read it:
+
    ```bash
    semver_re='...'
    for t in "v1.2.3" "v01.2.3" "v1.2.3+build.1" "vfoo"; do
      [[ "$t" =~ $semver_re ]] && echo "MATCH: $t" || echo "REJECT: $t"
    done
    ```
+
 4. If the change is a `workflow_run` trigger or anything tag/release-related,
    static checks aren't enough - it needs a real end-to-end test (push a real
    tag to a fork, watch the run, and also break something deliberately to

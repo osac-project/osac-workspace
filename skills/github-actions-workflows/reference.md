@@ -47,6 +47,55 @@ fi
 Note `ref_json` is captured *before* `read` - see the checklist item on
 `gh api`-into-`read` masking.
 
+## Tag immutability
+
+Re-checking a tag's SHA right before publishing (see the `workflow_run` gate
+template in [SKILL.md](SKILL.md)) is defense in depth, not a guarantee -
+there's still a window between the last check and the actual publish/release
+call where a tag could be force-moved. `gh release create --verify-tag` does
+not close that window either: it only confirms the tag *exists* at
+release-creation time, it does not re-check *which commit* it points at.
+
+The structural fix is to make the tag unable to move in the first place:
+
+- **Tag-protection ruleset**: a repository ruleset targeting tags (e.g.
+  `v*`) that blocks force-pushes/deletions on matching refs. Configured via
+  repo Settings -> Rules -> Rulesets, no workflow-side change needed.
+- **Immutable releases** (GitHub feature, currently rolling out): once a
+  release is marked immutable, its underlying tag is locked to that commit
+  for the release's lifetime - it can't be force-moved even by someone with
+  push access, unlike a ruleset which is more broadly bypassable by anyone
+  with ruleset-bypass permissions.
+
+If neither is enabled on a repo, say so explicitly when proposing this gate
+pattern - don't let the SHA re-checks imply a stronger guarantee than they
+actually provide.
+
+## workflow_run privilege escalation
+
+The classic `workflow_run` risk (see GitHub's own
+[Actions Security Lab writeups](https://securitylab.github.com/resources/github-actions-new-patterns-and-mitigations/)):
+an unprivileged workflow triggered by `pull_request` (which can run on an
+untrusted fork's code with a read-only token) completes, then a *privileged*
+`workflow_run` job - with `contents: write`/`secrets` access - checks out
+and executes that same untrusted code, effectively laundering it into a
+privileged context.
+
+The gate pattern in this skill checks out the repo's own tagged source
+(pushed by someone who already had write access to create the tag), not an
+untrusted contribution, so that specific escalation path doesn't apply to
+it directly. But if you adapt the pattern to gate on a workflow that *can*
+be triggered by an untrusted contribution (most commonly: one that also
+runs on `pull_request` from forks), don't carry over the "just check out
+and build in the privileged job" shape unchanged:
+
+- Don't check out or execute the contributor's code in the privileged job.
+- Treat anything the upstream (unprivileged) run produced - artifacts,
+  outputs - as untrusted data; verify or attest it rather than trusting it.
+- Keep real build/compile steps in the unprivileged workflow; let the
+  privileged job do only release-specific work (tagging, publishing
+  already-built/verified artifacts).
+
 ## Shared scripts
 
 Copy-pasting the same bash logic into multiple `run:` blocks - especially
@@ -83,8 +132,12 @@ trigger's actual runtime behavior. When testing on a personal fork:
 
 - **Concurrency-group collisions**: if the test tag points at the same
   commit as a `push`-to-`main` build, and both workflows share a
-  concurrency group keyed by `github.sha`, GitHub queues one behind the
-  other - it looks stuck but isn't.
+  concurrency group keyed by the commit SHA, GitHub queues one behind the
+  other - it looks stuck but isn't. On a `workflow_run` trigger, key the
+  group off `github.event.workflow_run.head_sha`, not plain `github.sha` -
+  the latter resolves to the default branch's latest commit on this event
+  type, not the commit that triggered the run, so it silently fails to
+  collide with the build it's supposed to be paired with.
 - **GHCR "Manage Actions access" chicken-and-egg**: pushing a *new* OCI
   package under a nested path that doesn't match the repo name (e.g.
   `charts/<name>` vs. repo `<name>`) 403s on the very first push, even with
@@ -93,14 +146,22 @@ trigger's actual runtime behavior. When testing on a personal fork:
   seed the package once via a personal-access-token push from outside
   Actions, then manually add the repo under the package's "Manage Actions
   access" with Write role (no API exists for this step, UI only).
-- **Forked repos have Actions disabled by default** until the owner clicks
-  through the one-time "I understand my workflows, go ahead and enable
-  them" banner - `gh api repos/{owner}/{repo}/actions/runs --jq .total_count`
-  returning `0` even after a push is the tell.
-- **CodeRabbit auto-pauses reviews** after enough rapid-fire commits on one
-  PR ("branch under active development") and silently stops posting
-  anything - neither approve nor request-changes - until `@coderabbitai
-  review` is commented to manually trigger a review of the pending commit.
+- **A public fork's Actions are disabled by default** until the owner
+  clicks through the one-time "I understand my workflows, go ahead and
+  enable them" banner - `gh api repos/{owner}/{repo}/actions/runs --jq
+  .total_count` returning `0` even after a direct push is the tell. This is
+  scenario-specific, though: `schedule:`-triggered workflows stay disabled
+  on a public fork even after that banner is clicked (no equivalent
+  one-time unlock exists for cron), and pull-request runs *from* a fork are
+  gated by a separate "approve and run" requirement on top of it. Private
+  forks aren't affected by any of this the same way - don't apply this note
+  there unchanged.
+- **AI review bots can auto-pause** after enough rapid-fire commits on one
+  PR ("branch under active development") and silently stop posting
+  anything - neither approve nor request-changes. Check for this before
+  assuming a stalled review means everything already passed; most bots
+  (e.g. CodeRabbit via `@coderabbitai review`) need to be manually
+  re-triggered with a PR comment to review the pending commits.
 
 ## Re-triggering a failed check
 
@@ -122,9 +183,11 @@ owns the run first, by looking at the failed check's "Details" link URL:
 - **`"${arr[*]}"` only honors the first character of a multi-character
   `IFS`.** `IFS=", "; echo "${arr[*]}"` joins with `,` only, silently
   dropping the space. Join explicitly instead:
+
   ```bash
   joined=$(printf ', %s' "${arr[@]}"); joined="${joined#, }"
   ```
+
 - **Shallow submodule clones break `git describe --tags` inside them.**
   `actions/checkout` clones submodules at `--depth=1` even when the
   superproject uses `fetch-depth: 0` - that setting doesn't propagate to
