@@ -83,7 +83,11 @@ Run through this for every new or edited workflow file:
       field you expect - `jq`'s `.items[]?` turns a missing/wrong-typed
       field into empty output just as readily as a genuinely-empty result,
       so validate the field is actually an array (`jq -e '.items | type ==
-      "array"'`) before trusting "empty" as a real answer. Some GitHub
+      "array"'`) before trusting "empty" as a real answer - and if you're
+      also bounds-checking a count field (e.g. `total_count <= 100`), check
+      its *type* too: a missing/null field passes a bare `<=` comparison in
+      `jq` (null compares less than any number), so `type == "number"` has
+      to come first. Some GitHub
       endpoints add a *third* way to be wrong on a 200: code search can
       return `incomplete_results: true` on a server-side timeout with an
       otherwise well-formed `.items` array - check API-specific

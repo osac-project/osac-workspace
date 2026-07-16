@@ -401,3 +401,29 @@ to any test/verification script, not just the workflows it exercises:
   Stage each file individually (`git add -- pathA; git add -- pathB`) or
   filter to paths that actually exist first, rather than one combined
   command copy-pasted across repos with differing layouts.
+- **A command's exit status inside process substitution (`done < <(cmd)`)
+  is invisible to the surrounding shell, even under `set -e`.** If `cmd`
+  fails partway through emitting output (e.g. `jq` hits a malformed item
+  mid-stream), whatever it already flushed still reaches the loop as if
+  nothing went wrong - the failure never trips `errexit` and the loop
+  variable driving your success/failure tracking (e.g. `DISCOVERY_FAILED`)
+  never finds out. Redirect to a file with its own explicitly-checked exit
+  status first, then loop over the file, instead of piping straight into
+  the loop:
+
+  ```bash
+  # BAD - a jq failure partway through leaves TARGETS silently partial,
+  # with nothing here to notice
+  while IFS= read -r TARGET; do
+    TARGETS+=("${TARGET}")
+  done < <(jq -r '.items[]? | ...' "${RESP}" | sort -u)
+
+  # GOOD
+  if ! jq -r '.items[]? | ...' "${RESP}" | sort -u > "${TARGETS_FILE}"; then
+    DISCOVERY_FAILED=true
+  else
+    while IFS= read -r TARGET; do
+      TARGETS+=("${TARGET}")
+    done < "${TARGETS_FILE}"
+  fi
+  ```
