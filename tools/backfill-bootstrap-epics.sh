@@ -67,13 +67,11 @@ epic_has_any_fix_version() {
   [ "${count:-0}" -gt 0 ]
 }
 
+# Takes the already-fetched parent Feature payload (see process_epic) rather
+# than re-fetching by key — avoids a duplicate `jira issue view` per epic.
+# Caller has already verified the parent is a Feature.
 parent_feature_fix_version() {
-  local parent_key=$1 count version
-  local parent_raw
-  parent_raw=$(jira issue view "$parent_key" --raw 2>/dev/null) || return 1
-  if [ "$(printf '%s' "$parent_raw" | jq -r '.fields.issuetype.name // empty')" != "Feature" ]; then
-    return 1
-  fi
+  local parent_raw=$1 count version
   count=$(printf '%s' "$parent_raw" | jq -r '[.fields.fixVersions[]?.name] | length')
   if [ "${count:-0}" -ne 1 ]; then
     return 2
@@ -85,7 +83,7 @@ parent_feature_fix_version() {
 
 process_epic() {
   local epic_key=$1
-  local raw parent_key parent_type needs_label=0 needs_version=0 version="" rc=0
+  local raw parent_key parent_raw parent_type needs_label=0 needs_version=0 version="" rc=0
 
   if ! raw=$(jira issue view "$epic_key" --raw 2>/dev/null); then
     warn "Could not load ${epic_key} — skipping"
@@ -98,8 +96,11 @@ process_epic() {
     return 0
   fi
 
-  parent_type=$(jira issue view "$parent_key" --raw 2>/dev/null \
-    | jq -r '.fields.issuetype.name // empty' || true)
+  if ! parent_raw=$(jira issue view "$parent_key" --raw 2>/dev/null); then
+    warn "${epic_key}: could not load parent ${parent_key} — skipping"
+    return 0
+  fi
+  parent_type=$(printf '%s' "$parent_raw" | jq -r '.fields.issuetype.name // empty')
   if [ "$parent_type" != "Feature" ]; then
     warn "${epic_key}: parent ${parent_key} is ${parent_type:-unknown}, not Feature — skipping"
     return 0
@@ -111,7 +112,7 @@ process_epic() {
 
   version=""
   rc=0
-  version=$(parent_feature_fix_version "$parent_key") || rc=$?
+  version=$(parent_feature_fix_version "$parent_raw") || rc=$?
   if [ "$rc" -eq 2 ]; then
     warn "${epic_key}: parent ${parent_key} has 0 or multiple fixVersions — label only"
     version=""
@@ -140,13 +141,17 @@ process_epic() {
     return 0
   fi
 
-  if [ "$needs_label" -eq 1 ]; then
-    jira issue edit "$epic_key" -l bootstrap --no-input </dev/null
+  local edit_args=()
+  [ "$needs_label" -eq 1 ] && edit_args+=(-l bootstrap)
+  [ "$needs_version" -eq 1 ] && edit_args+=(--fix-version "$version")
+
+  # set -e is active; a single failed edit must not abort the remaining ~70
+  # epics, so capture the status explicitly instead of letting it propagate.
+  if jira issue edit "$epic_key" "${edit_args[@]}" --no-input </dev/null; then
+    log "APPLIED ${epic_key}: ${actions[*]}"
+  else
+    warn "${epic_key}: edit failed (${actions[*]}) — set manually and re-run with --epic ${epic_key}"
   fi
-  if [ "$needs_version" -eq 1 ]; then
-    jira issue edit "$epic_key" --fix-version "$version" --no-input </dev/null
-  fi
-  log "APPLIED ${epic_key}: ${actions[*]}"
 }
 
 while [[ $# -gt 0 ]]; do

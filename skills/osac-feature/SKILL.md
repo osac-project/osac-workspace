@@ -238,6 +238,8 @@ validate_fix_version() {
 # Set fixVersion on Feature when FIX_VERSION is not backlog.
 # Run after require_osac_key on Feature KEY, before assign/bootstrap; use </dev/null>.
 # jira issue edit --fix-version appends; safe on new Features (empty fixVersions).
+# Returns 1 on edit failure (non-fatal — does not exit) so the caller can avoid
+# copying an unset version onto the bootstrap epic. Backlog is not a failure.
 apply_feature_fix_version() {
   local key=$1 version=$2
   [ "$version" = "backlog" ] && return 0
@@ -248,19 +250,25 @@ apply_feature_fix_version() {
     echo "Fix version edit failed for ${key} (${version}) — set manually:" >&2
     echo "  jira issue edit ${key} --fix-version \"${version}\" --no-input </dev/null" >&2
     cat "$err" >&2
-    return 0
+    return 1
   fi
 }
 
 # After bootstrap epic parent verified. Label at create; copy fix version here.
 # Re-run safe on reuse: add label if missing; set fix version only when epic has none.
+# Caller passes "backlog" for fix_version when the Feature edit did not succeed,
+# so a failed Feature update never results in a copied version on the epic.
 apply_bootstrap_epic_metadata() {
   local epic_key=$1 feature_key=$2 fix_version=$3
   local err
   err=$(new_temp osac-jira-bootstrap-meta-err)
   add_temp "$err"
 
-  jira issue edit "$epic_key" -l bootstrap --no-input 2>>"$err" </dev/null || true
+  if ! jira issue edit "$epic_key" -l bootstrap --no-input 2>>"$err" </dev/null; then
+    echo "Bootstrap label edit failed for ${epic_key} — set manually:" >&2
+    echo "  jira issue edit ${epic_key} -l bootstrap --no-input </dev/null" >&2
+    cat "$err" >&2
+  fi
 
   [ "$fix_version" = "backlog" ] && return 0
 
@@ -376,13 +384,20 @@ jira issue create -t Feature --project OSAC \
 
 KEY=$(jq -r '.key // empty' "$OUT")
 require_osac_key "$KEY" "Feature" "$OUT" "$ERR"
-apply_feature_fix_version "$KEY" "$FIX_VERSION"
+if apply_feature_fix_version "$KEY" "$FIX_VERSION"; then
+  BOOTSTRAP_FIX_VERSION="$FIX_VERSION"
+else
+  echo "Feature fix version not applied — bootstrap epic will not receive a copy; set both manually" >&2
+  BOOTSTRAP_FIX_VERSION="backlog"
+fi
 ```
 
 Allow up to 3 minutes for create to complete.
 
 Order after Feature create: **fix version → assign (if any) → bootstrap epic**.
-Gate tasks never receive `--fix-version`.
+Gate tasks never receive `--fix-version`. Use `$BOOTSTRAP_FIX_VERSION` (not
+`$FIX_VERSION`) when applying bootstrap epic metadata below — it reflects
+whether the Feature edit actually succeeded.
 
 ### Assign if specified
 
@@ -491,7 +506,7 @@ Do not create bootstrap tasks.
 **Apply bootstrap metadata** (label + copied fix version when not backlog):
 
 ```bash
-apply_bootstrap_epic_metadata "$EPIC_KEY" "$KEY" "$FIX_VERSION"
+apply_bootstrap_epic_metadata "$EPIC_KEY" "$KEY" "$BOOTSTRAP_FIX_VERSION"
 ```
 
 Run after parent verify succeeds — including when reusing an epic from duplicate search.
