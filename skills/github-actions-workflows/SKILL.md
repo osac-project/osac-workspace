@@ -31,6 +31,17 @@ Run through this for every new or edited workflow file:
       ones. `actions/checkout` gets fixed first and often the last one in the
       same job (e.g. `azure/setup-helm@v5`) gets missed:
       `actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # v7.0.0`
+- [ ] **A SHA pin needs an update *mechanism*, not just an initial pin** -
+      this applies doubly to a pinned **reusable workflow** (`uses:
+      owner/repo/.github/workflows/x.yml@<sha>`), not just third-party
+      actions. Dependabot's `github-actions` ecosystem resolves updates
+      against the pinned repo's tags/releases; if that repo publishes none
+      (common for an internal/sibling repo, pinned once with a `# main`
+      comment), the pin can drift silently forever with nothing - not
+      Dependabot, not CI, not a human - ever flagging it. Either leave that
+      specific reference unpinned (`@main`) if the reduced hardening is
+      acceptable there, or add a scheduled job that actively re-resolves and
+      bumps it. See [reference.md](reference.md#stale-reusable-workflow-pins).
 - [ ] **`persist-credentials: false`** on every `actions/checkout` step unless
       that job explicitly pushes back to the repo.
 - [ ] **Validate tags with a real semver grammar**, not `startsWith(ref, 'v')`

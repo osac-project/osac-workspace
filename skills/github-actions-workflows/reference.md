@@ -19,6 +19,50 @@ tags cannot contain `+`, so a tag like `v1.2.3+build.1` would pass this regex
 but produce an unusable image reference downstream. Use the same grammar
 without the `v` prefix when validating an already-stripped version string.
 
+## Stale reusable-workflow pins
+
+Found on `osac-installer`'s `nightly-build.yaml`: it pinned
+`osac-test-infra/.github/workflows/e2e-vmaas-full-install.yml@<sha>  # main`
+once, when the nightly workflow was first added. Two weeks later,
+`osac-test-infra` restructured that reusable workflow (to track an unrelated
+install-path change upstream) - but the pin, never revisited, kept every
+nightly run on the old copy. It failed outright once the old copy's install
+step referenced a script the upstream change had deleted, and nothing
+caught the drift in those two weeks: `osac-installer`'s *own*
+`.github/dependabot.yml` already had `package-ecosystem: "github-actions"`
+configured, but Dependabot's action/reusable-workflow updater resolves new
+versions against the target repo's **tags/releases** - `osac-test-infra` has
+none, so there was never a "new version" for it to open a PR against, even
+though `osac-test-infra`'s `main` moved dozens of commits past the pin.
+
+The general shape: a SHA pin bought immutability at the moment it was
+written, but "immutable" and "current" are different properties, and only
+one of them degrades safely by default. A sibling caller in the same repo
+that referenced the identical reusable workflow via `@main` (unpinned)
+picked up the fix automatically and was unaffected - which is a useful
+diagnostic in itself: if one caller of a pinned dependency is broken and
+another unpinned caller of the *same* dependency isn't, staleness is the
+first thing to check, before assuming the two call sites differ in some
+other way.
+
+Two fixes, not one - re-pinning the immediate break is necessary but not
+sufficient:
+
+1. **Bump the stale pin** to the target repo's current branch tip.
+2. **Add (or extend) a scheduled bot** that keeps re-resolving and bumping
+   it, rather than leaving the new pin to go stale the exact same way. If
+   the repo already runs a similar scheduled bump bot for something else
+   (e.g. a submodule-bump workflow), extend that one instead of adding a
+   second, parallel scheduled job - one bot, one cadence, one PR/branch, is
+   easier to reason about than two near-identical bots drifting out of sync
+   with each other. Validate the resolved SHA is a real 40-hex commit before
+   rewriting anything with it (an empty/`null` API response - e.g. a typo'd
+   repo name, or a transient failure - must abort, not silently write `@`
+   with nothing after it into every matching file), and check *every*
+   distinct pin in a given file, not just the first match, so a file with
+   multiple references to the same pinned repo gets fully updated in one
+   pass rather than needing a second bot run to catch the rest.
+
 ## Documented endpoints
 
 "Empirically works" and "officially documented" aren't the same thing, and
@@ -485,3 +529,35 @@ to any test/verification script, not just the workflows it exercises:
   step, which also meant losing the `flagged-count` output (and therefore
   the tracking-issue report) for every leak already found on runs 1..N-1,
   not just failing to process run N itself.
+
+  A follow-up round on the same file found the inverse mistake: the calls
+  *inside* `process_one_run` were correctly guarded, but the loop's own
+  call to `process_one_run` itself had regressed to a bare statement (no
+  `if !`). A latent bug in the function's last statement - `[[ cond ]] &&
+  cmd` as the final line, which returns `1` whenever `cond` is false, even
+  though nothing actually failed - then had nothing stopping it from
+  aborting the whole loop on the very next *successful* run. Fixing the
+  function's own return value (an explicit trailing `return 0`) resolves
+  that specific bug, but isn't a substitute for guarding the call site too
+  - do both: guard every call to a function like this at its call site
+  *and* make sure the function itself can't return non-zero on a path that
+  isn't an actual failure. Either one alone is one future edit away from
+  reintroducing this same class of bug.
+- **`grep -o` combined with `-v` in the same invocation silently produces no
+  output at all**, not an error and not the "non-matching lines, matched
+  portion only" result the flag names would suggest:
+
+  ```bash
+  $ printf 'aaaa\nbbbb\n' | grep -ovE 'bbbb$'
+  # (nothing - not "aaaa", not an error, exit 0)
+  ```
+
+  A staleness check built on this (e.g. "does this file have any pin that
+  *doesn't* already equal the target SHA") silently evaluates to "nothing
+  stale" on every input, since `-v`'s line-selection and `-o`'s
+  matched-portion-only output don't compose the way each flag would suggest
+  alone - GNU grep just returns empty rather than raising an error. Verify
+  any `grep -o ... | grep -o/-v ...` two-stage pipeline against a small
+  fixture with a known expected result before trusting it, and prefer an
+  explicit set-difference instead of relying on the combination working:
+  `comm -23 <(all_values | sort -u) <(printf '%s\n' "$target" | sort -u)`.
