@@ -57,7 +57,7 @@ jira issue list --project OSAC -q "type = Epic AND parent = <FEATURE-KEY>" --pla
 
 For each child epic, extract: key, summary, status.
 
-**Note:** Fix versions are tracked at the Feature level only in this project. Do NOT query or report fix versions on epics.
+**Note:** Fix versions are the Feature's responsibility — Features are the single source of truth for milestone scope. Bootstrap epics carry a copy of the parent Feature's fix version (see `osac-feature`), but this is informational only; do NOT query or report fix versions on epics, and do NOT use an epic's fix version as a substitute for its parent Feature's.
 
 ### Step 3: Group by Use Case
 

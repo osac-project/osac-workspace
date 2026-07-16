@@ -106,7 +106,8 @@ If ambiguous, ask again — do not infer from the description.
 Ask explicitly — do not infer from summary text (e.g. `(0.2)` in the title).
 
 1. Run `list_fix_version_suggestions` (see Reusable bash patterns) to fetch
-   unreleased OSAC milestones, excluding `0.0`.
+   unreleased OSAC milestones, excluding `0.0` and the literal `Backlog`
+   release (collides with the `backlog` sentinel below — see step 3).
 2. Propose the highest version as default, e.g. "Proposed fix version: **0.3**.
    Accept, specify another milestone, or choose **backlog** (no fix version)?"
 3. Normalize the user's answer via `validate_fix_version` and store in `FIX_VERSION`:
@@ -209,13 +210,15 @@ collect_keys_from_jql() {
   done < <(list_keys_for_jql "$jql")
 }
 
-# Fetch OSAC fix-version candidates (exclude 0.0 — pre-team legacy bucket).
+# Fetch OSAC fix-version candidates (exclude 0.0 — pre-team legacy bucket —
+# and the literal "Backlog" release, which collides with this skill's own
+# "backlog" sentinel for "no fix version"; see validate_fix_version).
 # jira release list does NOT support useful --plain output; parse tab format.
 # Columns: ID, NAME, RELEASED, DESCRIPTION
 # Output: one version name per line, newest first (sort -Vr).
 list_fix_version_suggestions() {
   jira release list -p OSAC 2>/dev/null \
-    | awk -F'\t' 'NR>1 && $2 != "0.0" && $3 == "false" {print $2}' \
+    | awk -F'\t' 'NR>1 && $2 != "0.0" && tolower($2) != "backlog" && $3 == "false" {print $2}' \
     | sort -Vr
 }
 
