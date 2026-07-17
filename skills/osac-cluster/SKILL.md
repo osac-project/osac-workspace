@@ -40,7 +40,7 @@ cluster-tool runs on your laptop and manages VMs on remote baremetal servers ove
 cluster-tool is a single Python 3 file. No pip install, no build step.
 
 ```bash
-git clone https://github.com/omer-vishlitzky/cluster-tool.git
+git clone https://github.com/osac-project/cluster-tool.git
 cd cluster-tool
 ./cluster-tool --help
 ```
@@ -88,7 +88,7 @@ If the user is on macOS or Windows, **stop** — the client-side DNS setup (`set
 
 ```bash
 ssh root@server.example.com
-git clone https://github.com/omer-vishlitzky/cluster-tool.git
+git clone https://github.com/osac-project/cluster-tool.git
 cd cluster-tool
 ./cluster-tool connect local --host local --data-path /home/cluster-tool
 ./cluster-tool pull quay.io/rh-ee-ovishlit/cluster-flavors:vmaas
@@ -499,7 +499,7 @@ cluster-tool flavors --delete <flavor-name> --server <alias>
 
 ```bash
 # 1. Install cluster-tool
-git clone https://github.com/omer-vishlitzky/cluster-tool.git
+git clone https://github.com/osac-project/cluster-tool.git
 ln -sf "$(pwd)/cluster-tool/cluster-tool" ~/.local/bin/cluster-tool
 
 # 2. One-time client DNS setup
