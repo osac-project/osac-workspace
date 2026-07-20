@@ -22,7 +22,7 @@ Workflows from AGENTS.md are invoked with `/skill:phase` syntax in Claude Code:
 - **PRD:** `/prd:ingest`, `/prd:clarify`, `/prd:draft`, `/prd:publish`, `/prd:respond`
 - **Design:** `/design:ingest`, `/design:draft`, `/design:publish`, `/design:respond`, `/design:decompose`, `/design:sync`
 - **EP (legacy):** `/ep.create`
-- **E2E:** `/e2e`, `/debug-e2e`
+- **E2E:** `/e2e`, `/osac-debug-e2e`
 
 ## PRD and Design Configuration
 

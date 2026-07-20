@@ -201,9 +201,9 @@ Two-stage enhancement proposal flow. See the Enhancement Proposals section above
 Two complementary skills for E2E tests, available from the `osac-workspace/` root:
 
 - **e2e** (ai-workflows) — Full story-to-test workflow: `/e2e:ingest` a Jira [QE] story → `/e2e:plan` scenarios → `/e2e:code` tests → `/e2e:validate` → `/e2e:publish` PR. Framework-agnostic — discovers osac-test-infra's pytest patterns during ingest.
-- **debug-e2e** (osac-test-infra) — Debug a failing Prow CI job using build logs and gathered OSAC artifacts. Use after tests exist and fail in CI.
+- **osac-debug-e2e** — Debug a failing GitHub Actions E2E CI job. Downloads artifacts (pod logs, events, resource descriptions), identifies failure root causes, and suggests fixes. Use after tests exist and fail in CI.
 
-The `/e2e` workflow writes tests in `osac-test-infra/tests/` following the conventions in `osac-test-infra/.claude/skills/e2e.md` (gRPC client patterns, K8s client patterns, wait helpers, pytest fixtures). The `/debug-e2e` skill reads Prow logs and OSAC gathered artifacts to diagnose failures.
+The `/e2e` workflow writes tests in `osac-test-infra/tests/` following the conventions in `osac-test-infra/.claude/skills/e2e.md` (gRPC client patterns, K8s client patterns, wait helpers, pytest fixtures). The `/osac-debug-e2e` skill reads GitHub Actions build logs and OSAC gathered artifacts to diagnose failures.
 
 ### Skill discovery
 
@@ -262,6 +262,7 @@ Put `CRITICAL` / `IMPORTANT` rules in the first 20% of `SKILL.md` (skillsaw `con
 - **osac-demo-recording** — asciinema API demo recordings
 - **presentation** — Red Hat Marp slide decks
 - **osac-cluster** — Boot and manage OSAC development clusters via cluster-tool
+- **osac-debug-e2e** — Debug a failing GitHub Actions E2E CI job with differential analysis and artifact investigation
 - **osac-release** — Publish OSAC Helm chart versions across component repos
 
 ## Architecture
