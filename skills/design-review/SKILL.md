@@ -69,7 +69,8 @@ rather than blocking the review — the agent must always produce scores for
 all 4 dimensions.
 
 - YAML frontmatter: title, authors, creation-date, last-updated, tracking-link (full URL), prd (relative path to PRD)
-- Required sections: Summary, Motivation (Goals, Non-Goals), Proposal (Workflow Description, API Extensions, UX Alignment, Implementation Details, Security Considerations, Failure Handling and Recovery, RBAC/Tenancy, Observability and Monitoring, Risks and Mitigations, Drawbacks), Alternatives, Test Plan
+- Required sections: Summary, Motivation (Goals, Non-Goals), Proposal (Workflow Description, API Extensions, Implementation Details, Security Considerations, Failure Handling and Recovery, RBAC/Tenancy, Observability and Monitoring, Risks and Mitigations, Drawbacks), Alternatives, Test Plan
+- Conditionally required: UX Alignment (required only when a matching `@temp-api` file exists in `osac-ux/libs/ui-components/src/api/v1/`)
 - PRD reference: the `prd:` frontmatter field or an explicit link to `prd.md` must be present — user stories and persona coverage belong in the PRD, not the design
 - Placeholder-only sections (`TBD` with no other content, or a lone `TODO:` line with no other content) count against the relevant dimension score
 - Sections that are genuinely N/A must explain why — silence is a gap
