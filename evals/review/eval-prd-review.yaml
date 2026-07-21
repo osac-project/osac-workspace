@@ -1,5 +1,4 @@
 # Harness-ready config for PRD review evals.
-# Judges and thresholds: added when harness scoring is configured.
 
 name: prd-review
 description: Evaluate prd-review skill against human-validated PRD review baselines
@@ -45,15 +44,91 @@ dataset:
     - annotations.yaml: Expected verdict, scores, critical findings
 
 outputs:
-  - path: artifacts/review-output.md
+  - path: artifacts
     schema: |
-      Structured review markdown with rubric table, verdict PASS/FAIL,
-      and findings sections matching prd-review skill output format.
+      Directory containing review-output.md: structured review markdown
+      with rubric table, verdict PASS/FAIL, and findings sections matching
+      prd-review skill output format. Collected as a directory (not the
+      file directly) so the harness's load_case_record() can populate
+      outputs["files"] and the artifacts_content convenience key.
 
 traces:
   stdout: true
   stderr: true
   metrics: true
 
-# judges: TBD
-# thresholds: TBD
+judges:
+  - name: rubric_scoring
+    check: |
+      import re
+
+      annotations = outputs.get("annotations", {})
+      content = outputs.get("files", {}).get("artifacts/review-output.md", "")
+      if not content:
+          return (False, "No artifacts/review-output.md in case output")
+
+      verdict_m = re.search(r"### Verdict:\s*(PASS|FAIL)", content)
+      actual_verdict = verdict_m.group(1) if verdict_m else None
+
+      rows = re.findall(
+          r"^\|\s*\*{0,2}([^|*]+?)\*{0,2}\s*\|\s*\*{0,2}(\d+)/\d+\*{0,2}\s*\|",
+          content, re.MULTILINE,
+      )
+      actual_scores = {
+          name.strip(): int(score) for name, score in rows
+          if name.strip().lower() != "total"
+      }
+
+      expected_verdict = annotations.get("expected_verdict")
+      expected_scores = annotations.get("expected_scores") or {}
+
+      if not expected_scores:
+          return (True, "No expected_scores in annotations.yaml (smoke fixture) - skipped")
+
+      if actual_verdict != expected_verdict:
+          return (False, f"Verdict mismatch: expected {expected_verdict}, got {actual_verdict}")
+
+      mismatches = {
+          k: {"expected": v, "actual": actual_scores.get(k)}
+          for k, v in expected_scores.items()
+          if actual_scores.get(k) != v
+      }
+      if mismatches:
+          return (False, f"Score mismatches: {mismatches}")
+
+      return (True, f"Verdict and all {len(expected_scores)} criteria matched exactly")
+
+  - name: critical_findings_recall
+    if: "annotations.get('critical_findings')"
+    check: |
+      import re
+
+      def _tokens(s):
+          return set(re.findall(r"[a-z0-9]+", s.lower()))
+
+      annotations = outputs.get("annotations", {})
+      content = outputs.get("files", {}).get("artifacts/review-output.md", "")
+      content_tokens = _tokens(content)
+      missing = []
+      for cf in annotations.get("critical_findings", []):
+          cf_tokens = _tokens(cf)
+          if not cf_tokens:
+              continue
+          overlap = len(cf_tokens & content_tokens) / len(cf_tokens)
+          if overlap < 0.6:
+              missing.append(cf)
+      if missing:
+          return (False, f"Missing critical findings (<60% token overlap): {missing}")
+      return (True, "All critical findings recalled (>=60% token overlap)")
+
+  - name: qualitative_finding_quality
+    if: "not annotations.get('skip_quality')"
+    prompt_file: evals/review/judges/finding-quality.md
+
+thresholds:
+  rubric_scoring:
+    min_pass_rate: 1.0
+  critical_findings_recall:
+    min_pass_rate: 1.0
+  qualitative_finding_quality:
+    min_mean: 3.5
