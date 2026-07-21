@@ -103,8 +103,17 @@ judges:
     check: |
       import re
 
+      # Grammatical stopwords only (no domain nouns) - excluding them keeps
+      # overlap from being satisfied by near-universal function words alone.
+      _STOPWORDS = {
+          "a", "an", "the", "in", "on", "of", "to", "is", "are", "was",
+          "were", "be", "been", "for", "with", "and", "or", "but", "not",
+          "this", "that", "these", "those", "it", "its", "as", "at", "by",
+          "from", "into", "over", "under", "up", "down", "out", "off",
+      }
+
       def _tokens(s):
-          return set(re.findall(r"[a-z0-9]+", s.lower()))
+          return {t for t in re.findall(r"[a-z0-9]+", s.lower()) if t not in _STOPWORDS}
 
       annotations = outputs.get("annotations", {})
       content = outputs.get("files", {}).get("artifacts/review-output.md", "")

@@ -1,11 +1,11 @@
-# Case schema (draft)
+# Case schema
 
 Per-case layout for planning-phase review evals. Aligned with
 [agent-eval-harness](https://github.com/opendatahub-io/agent-eval-harness) RFE/review
 conventions (`input.yaml`, `reference-review.md`, `annotations.yaml`).
 
-Scoring enforcement fields in `annotations.yaml` are **draft** here; harness judge
-blocks in eval YAML finalize alignment.
+Every field below is enforced by the `judges:` blocks in `eval-prd-review.yaml`
+and `eval-design-review.yaml` — not aspirational.
 
 ## Directory layout
 
@@ -56,11 +56,12 @@ Expected outcomes for harness judges:
 
 | Field | Required | Description |
 |-------|----------|-------------|
-| `expected_verdict` | Yes | `PASS` or `FAIL` |
-| `expected_scores` | Yes | Map of criterion name → 0–2 (keys must match skill rubric table headers in `reference-review.md`) |
+| `expected_verdict` | Yes | `PASS` or `FAIL` — matched exactly against the agent output's `### Verdict:` line by the `rubric_scoring` judge |
+| `expected_scores` | Yes | Map of criterion name → 0–2 (keys must match skill rubric table headers in `reference-review.md`), matched exactly by the `rubric_scoring` judge. Leave `{}` for wiring fixtures (e.g. `_harness-smoke`) that carry no quality baseline — the judge skips instead of failing when this is empty |
 | `rubric_version` | Yes | Pin baseline rubric, e.g. `"2026-07"` |
-| `critical_findings` | No | Strings for fuzzy match against agent findings |
-| `skip_quality` | No | When true, skip optional LLM quality judge |
+| `critical_findings` | No | Strings fuzzy-matched (≥60% token overlap) against agent findings by the `critical_findings_recall` judge |
+| `skip_quality` | No | When true, skip the optional `qualitative_finding_quality` LLM judge |
+| `reference_review` | Effectively yes (for `qualitative_finding_quality`) | Filename of the human-validated review, relative to the case directory — typically `reference-review.md`. The harness's `load_case_record()` only resolves `outputs.annotation_{field}_content` for keys that are *literally present* in `annotations.yaml`; it does not fall back to `reference-review.md` by convention if the key is absent. Every case must set this key explicitly, even when the file is already named `reference-review.md`, or `outputs.annotation_reference_review_content` in the `qualitative_finding_quality` judge's prompt template renders empty and the judge scores against a blank reference with no error |
 
 Example (PRD — keys from `skills/prd-review/SKILL.md` rubric table):
 
@@ -75,6 +76,7 @@ expected_scores:
   "Testability": 2
 critical_findings:
   - "Missing tenant isolation in user stories"
+reference_review: reference-review.md
 ```
 
 Example (design — keys from `skills/design-review/SKILL.md` rubric table):
@@ -89,6 +91,7 @@ expected_scores:
   Testability: 2
 critical_findings:
   - "Missing tenant isolation in API section"
+reference_review: reference-review.md
 ```
 
 ## Harness config linkage
@@ -113,13 +116,23 @@ hooks:
     - description: design context for review skills
       command: test -d .design
 outputs:
-  - path: artifacts/review-output.md
+  - path: artifacts
+judges:
+  - name: rubric_scoring        # exact verdict + per-criterion score match
+  - name: critical_findings_recall   # fuzzy match, gated on critical_findings
+  - name: qualitative_finding_quality   # optional LLM judge, gated on skip_quality
+thresholds:
+  rubric_scoring: { min_pass_rate: 1.0 }
+  critical_findings_recall: { min_pass_rate: 1.0 }
+  qualitative_finding_quality: { min_mean: 3.5 }
 ```
 
 `run-eval.sh` passes `--symlinks` to `workspace.py` (see `evals/README.md`).
 `hooks.before_all` runs during `execute.py` inside each case workspace.
-
-Judges and `thresholds` blocks are added when harness scoring is configured.
+`outputs.path` is the `artifacts` directory, not the review file itself —
+the harness only populates `outputs["files"]` from a directory-typed
+`outputs.path`. See each eval YAML's `judges:` block for the full check
+snippets and the LLM judge's `prompt_file`.
 
 ## Smoke fixture (`_harness-smoke`)
 
