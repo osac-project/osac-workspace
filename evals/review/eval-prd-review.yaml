@@ -1,0 +1,59 @@
+# Harness-ready config for PRD review evals.
+# Judges and thresholds: added when harness scoring is configured.
+
+name: prd-review
+description: Evaluate prd-review skill against human-validated PRD review baselines
+
+execution:
+  mode: case
+  skill: prd-review
+  timeout: 600
+  arguments: >
+    Review the document at {document_path}.
+    Write the full structured review to artifacts/review-output.md.
+
+runner:
+  type: claude-code
+
+models:
+  skill: claude-sonnet-4-6
+  judge: claude-sonnet-4-6
+
+mlflow:
+  experiment: osac-review-eval
+
+permissions:
+  deny:
+    - "mcp__atlassian__*"
+    - "mcp__github__*"
+
+hooks:
+  before_all:
+    - description: enhancement-proposals available in case workspace
+      command: test -d enhancement-proposals
+    - description: design context for review skills
+      command: test -d .design
+    - description: prd-review skill available via workspace symlinks
+      command: test -d .claude/skills/prd-review || test -d skills/prd-review
+
+dataset:
+  path: cases/prd
+  schema: |
+    Each case directory contains:
+    - input.yaml: document_path, skill, case_id (see docs/case-schema.md)
+    - reference-review.md: Human-validated golden review output
+    - annotations.yaml: Expected verdict, scores, critical findings
+
+outputs:
+  - path: artifacts/review-output.md
+    schema: |
+      Structured review markdown with rubric table, verdict PASS/FAIL,
+      and findings sections matching prd-review skill output format.
+
+traces:
+  stdout: true
+  stderr: true
+  metrics: true
+
+# judges: TBD
+# thresholds: TBD

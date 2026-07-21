@@ -1,0 +1,163 @@
+# Unified eval report schema
+#
+# Consumed by the cross-workflow adapter and evals/run-all.sh.
+# Vocabulary aligned with ai_sdlc.gate.evaluation (gate, result, workflow).
+#
+# Output paths:
+#   evals/results/{run_id}/summary.json   — machine-readable (this schema)
+#   evals/results/{run_id}/summary.md     — human-readable digest
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+title: OSACUnifiedEvalReport
+type: object
+required:
+  - schema_version
+  - feed_type
+  - run_id
+  - timestamp
+  - workflows
+  - aggregate
+properties:
+  schema_version:
+    type: string
+    const: "2026-07"
+  feed_type:
+    type: string
+    const: eval_run
+    description: Org Pulse ingest discriminator for eval run feeds
+  run_id:
+    type: string
+    description: Shared run identifier across review + bugfix suites
+  timestamp:
+    type: string
+    format: date-time
+    description: UTC ISO-8601 when report was generated
+  provenance:
+    type: object
+    properties:
+      workspace_root:
+        type: string
+      review_harness_ref:
+        type: string
+        description: From evals/review/harness.lock
+      bugfix_eval_repo:
+        type: string
+        description: e.g. eranco74/osac-bugfix-eval@<sha>
+      rubric_version:
+        type: string
+        description: Planning cases only; from annotations.yaml
+  workflows:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/$defs/workflow_result"
+  aggregate:
+    $ref: "#/$defs/aggregate"
+
+$defs:
+  workflow_result:
+    type: object
+    required:
+      - workflow
+      - gate
+      - result
+      - cases
+    properties:
+      workflow:
+        type: string
+        enum:
+          - prd-review
+          - design-review
+          - bugfix
+      gate:
+        type: string
+        description: ai_sdlc.gate.evaluation gate name
+        examples:
+          - planning.review.prd
+          - planning.review.design
+          - execution.bugfix
+      result:
+        type: string
+        enum:
+          - pass
+          - fail
+          - partial
+          - skipped
+      source_path:
+        type: string
+        description: Relative path to detailed harness output
+      cases:
+        type: array
+        items:
+          $ref: "#/$defs/case_result"
+      workflow_aggregate:
+        type: object
+        properties:
+          pass_rate:
+            type: number
+            minimum: 0
+            maximum: 1
+          cases_total:
+            type: integer
+          cases_passed:
+            type: integer
+          fix_correctness_mean:
+            type: number
+            description: Bugfix workflow only (1-5 scale)
+
+  case_result:
+    type: object
+    required:
+      - case_id
+      - passed
+    properties:
+      case_id:
+        type: string
+      passed:
+        type: boolean
+      verdict:
+        type: string
+        enum:
+          - PASS
+          - FAIL
+      rubric_version:
+        type: string
+      scores:
+        type: object
+        additionalProperties:
+          type: integer
+          minimum: 0
+          maximum: 2
+      judges:
+        type: object
+        description: Bugfix inline/LLM judges
+        additionalProperties: true
+      run_result:
+        type: object
+        description: Bugfix per-case metrics
+        properties:
+          cost_usd:
+            type: number
+          num_turns:
+            type: integer
+          duration_s:
+            type: number
+      detail_path:
+        type: string
+
+  aggregate:
+    type: object
+    required:
+      - overall_pass_rate
+    properties:
+      overall_pass_rate:
+        type: number
+        minimum: 0
+        maximum: 1
+      workflows_passed:
+        type: integer
+      workflows_total:
+        type: integer
+      notes:
+        type: string
+        description: Free-form; e.g. bot divergence appendix pointers

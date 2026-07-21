@@ -1,0 +1,6 @@
+# Pinned agent-eval-harness for review evals.
+# Minimum v1.13.0 (lifecycle hooks in eval.yaml). Recommended v1.22.0.
+# Bump ref/sha intentionally; run setup-harness.sh after changes.
+repo: https://github.com/opendatahub-io/agent-eval-harness.git
+ref: v1.22.0
+sha: 4b540c652f5ed325e18abf6b4bd0eb4414a4bb3c

@@ -1,0 +1,8 @@
+# Pinned agent-eval-harness checkout (see harness.lock + setup-harness.sh)
+.harness/
+
+# Harness run output
+results/
+
+# Per-case review output from skill execution
+artifacts/
