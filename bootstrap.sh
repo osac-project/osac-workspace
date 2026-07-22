@@ -107,6 +107,20 @@ REFERENCE_REPOS=(
   "osac-ux"
 )
 
+# Self-update: pull latest osac-workspace before updating components
+CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "")
+if [ "$CURRENT_BRANCH" = "main" ]; then
+  echo "📦 Updating osac-workspace..."
+  if git fetch origin -q 2>/dev/null && git rebase origin/main --autostash -q 2>/dev/null; then
+    echo "   ✅ osac-workspace up to date"
+  else
+    git rebase --abort 2>/dev/null || true
+    echo "   ⚠️  osac-workspace rebase failed — continuing with current version"
+  fi
+else
+  echo "ℹ️  osac-workspace on branch '$CURRENT_BRANCH', skipping self-update"
+fi
+
 UPDATE_WARNINGS=0
 
 is_expected_clone() {
