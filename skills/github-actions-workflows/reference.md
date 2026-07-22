@@ -272,6 +272,36 @@ status pattern below); skipping an unredactable *file* inside a batch
 that's about to be uploaded as "the redacted copy" means shipping exactly
 the thing the step exists to prevent.
 
+The same fail-closed contract shows up in bash redaction pipelines that
+feed a composite-action marker (e.g. `.redaction-complete` only written
+when the gather script exits 0). A common false friend:
+
+```bash
+# BAD - || true is often added so an empty ARTIFACT_DIR doesn't abort,
+# but it also hides a real sed failure — the script still exits 0, the
+# marker gets written, and un-redacted files upload
+find "${ARTIFACT_DIR}" -type f \( -name "*.log" -o -name "*.txt" \) -print0 \
+  | xargs -0 sed -i -E -e 's/"password":[[:space:]]*"[^"]+"/"password": "REDACTED"/g' \
+  || true
+
+# GOOD - xargs -r (GNU) skips the command on empty input; omit || true so
+# genuine sed failures still propagate. pipefail ensures a failed find is
+# not masked by a successful xargs.
+set -o pipefail
+find "${ARTIFACT_DIR}" -type f \( -name "*.log" -o -name "*.txt" \) -print0 \
+  | xargs -r -0 sed -i -E -e 's/"password":[[:space:]]*"[^"]+"/"password": "REDACTED"/g'
+
+# GOOD - find -exec also succeeds on zero matches, fails if sed fails
+# (no pipe, so no pipefail requirement)
+find "${ARTIFACT_DIR}" -type f \( -name "*.log" -o -name "*.txt" \) \
+  -exec sed -i -E -e 's/"password":[[:space:]]*"[^"]+"/"password": "REDACTED"/g' {} + \
+  || { echo "ERROR: password redaction failed" >&2; exit 1; }
+```
+
+Pair that with nonzero exits on Python I/O errors inside the redactor
+itself — a silent `except OSError: continue` has the same shape as the
+`redact.py` example above.
+
 The same distinction applies one level down, inside a single API response,
 not just across targets. `discover-e2e-runs.sh` used `jq`'s `select(...)`
 to drop any malformed item out of a search-results array before building
@@ -344,13 +374,18 @@ Two independent mistakes, both required:
 1. **Encoding gap.** Plaintext JSON redaction never sees a base64 payload.
    JWT-shaped redaction (`eyJ.a.b`) misses single-segment base64 JSON.
    Substring-matching the base64 of the key name
-   (`YnJlYWtfZ2xhc3NfY3JlZGVudGlhbHM` for `break_glass_credentials`) is
+   (`ZXhhbXBsZV9zZWNyZXRfa2V5` for `example_secret_key`) is
    alignment-fragile - embedding the key at an arbitrary byte offset does
    not preserve a stable base64 substring. Decode each quoted candidate
    (standard and URL-safe) and look for the key in the plaintext; when
    found, replace the original encoded candidate in the output with a
    redaction marker (the encoded form is just as sensitive as the
-   plaintext).
+   plaintext). Use strict decode (`validate=True`, and `altchars=b"-_"`
+   / equivalent for URL-safe). Normalize `=` padding before decode —
+   unpadded URL-safe tokens otherwise fail under `validate=True` and
+   redaction can miss them. Cover both padded and unpadded encoded-secret
+   fixtures in tests. Permissive `validate=False` can silently strip
+   `-`/`_` from URL-safe input and miss the needle entirely.
 2. **Re-echo gap.** Even a perfect artifact redaction is undone if the
    job log reprints the pre-fix content (or a redaction miss) via
    `grep -C` / `cat` / `$GITHUB_STEP_SUMMARY`. Keep the full
@@ -606,3 +641,75 @@ to any test/verification script, not just the workflows it exercises:
   fixture with a known expected result before trusting it, and prefer an
   explicit set-difference instead of relying on the combination working:
   `comm -23 <(all_values | sort -u) <(printf '%s\n' "$target" | sort -u)`.
+
+## Sparse-checkout cone mode blocks single-file checkouts
+
+`actions/checkout`'s `sparse-checkout` input defaults to cone mode, which
+only accepts directory-level patterns. A single-file path like
+`.github/scripts/check-floating-tags.sh` silently checks out nothing
+useful in cone mode — you get the directory structure but not the file.
+Disable cone mode explicitly:
+
+```yaml
+- uses: actions/checkout@<sha>  # v7
+  with:
+    sparse-checkout: .github/scripts/check-floating-tags.sh
+    sparse-checkout-cone-mode: false   # required for file-level patterns
+    path: trusted
+```
+
+This came up in OSAC-2190 when checking out a trusted base-branch script
+alongside the full PR checkout — the script simply didn't appear in the
+`trusted/` directory until cone mode was disabled.
+
+## PR-controlled enforcement scripts
+
+A `pull_request`-triggered workflow that checks out the PR's code and runs a
+script from that checkout is **self-enforcing, not tamper-proof**: a
+contributor can modify the script in the same PR to always return success.
+This came up in OSAC-2190 where `check-floating-tags.sh` runs from the PR
+checkout — CodeRabbit flagged it as a security concern on every component
+repo PR.
+
+Three mitigation levels (pick the one that matches your threat model):
+
+1. **Trusted contributors (internal repos):** Accept the risk. The script
+   and workflow paths should be covered by CODEOWNERS so changes require
+   maintainer approval. Note: CODEOWNERS alone only *requests* review —
+   you must also enable branch protection with "Require review from Code
+   Owners" to make approval mandatory. Document this as accepted risk in
+   the PR description.
+
+2. **Base-branch checkout (script integrity only):** Check out the script
+   from the base branch instead of the PR head so the PR can't modify the
+   *script body*. This is not sufficient alone: on a same-repo
+   `pull_request`, the workflow file can still come from the PR head, so a
+   contributor can remove the step, change its args, or skip the call.
+   When the base branch lacks the trusted script, fail closed — do not
+   fall back to the PR copy.
+
+   ```yaml
+   - uses: actions/checkout@<sha>  # v7
+     with:
+       ref: ${{ github.event.pull_request.base.sha }}
+       persist-credentials: false
+       path: trusted
+   - uses: actions/checkout@<sha>  # v7
+     with:
+       persist-credentials: false
+       path: pr
+   - run: bash "$GITHUB_WORKSPACE/trusted/.github/scripts/check-floating-tags.sh"
+     working-directory: pr
+   ```
+
+   Trade-off: more complex checkout, and the script version can trail the
+   PR if the PR legitimately updates both the script and the values. Pair
+   with level 3 (or a required status check) when the threat model is
+   adversarial.
+
+3. **Protected reusable workflow + required check:** Move the enforcement
+   into a reusable workflow in a protected repo (e.g. `osac-test-infra`)
+   and make that check a required status check on the target branch. The
+   calling repo cannot alter the reusable workflow's code, and omitting the
+   call fails the merge gate. Trade-off: cross-repo dependency and pin
+   maintenance.
