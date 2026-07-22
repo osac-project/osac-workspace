@@ -1,11 +1,13 @@
-"""Synthetic-output tests for the eval-*.yaml check judges.
+"""Synthetic-output tests for the eval-*.yaml module/function judges.
 
 Loads eval-prd-review.yaml and eval-design-review.yaml through the pinned
 agent-eval-harness's own EvalConfig/load_judges, then feeds each judge
 synthetic `outputs` dicts directly (no case files on disk, no LLM calls) —
-this exercises the actual judge-loading and check-execution code path the
-harness uses at eval time, not a re-implementation of the regex logic that
-could silently drift from the shipped check snippets.
+this exercises the actual judge-loading and code-judge-execution path the
+harness uses at eval time (importlib.import_module against
+evals/review/lib/judges.py), confirming both eval YAMLs are wired to the
+real functions correctly. See test_judges_lib.py for direct,
+harness-independent tests of judges.py itself.
 
 Skips gracefully if the pinned harness hasn't been bootstrapped locally
 (run evals/review/setup-harness.sh first).

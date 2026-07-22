@@ -6,10 +6,14 @@ conventions (`input.yaml`, `reference-review.md`, `annotations.yaml`).
 
 **Judge layout reference:** the `judges:` / `thresholds:` blocks in
 `eval-prd-review.yaml` and `eval-design-review.yaml` follow the structure of
-the harness's own **rfe-creator** eval configuration (inline `check` judges +
-LLM quality judges) — see
+the harness's own **rfe-creator** eval configuration (code/LLM quality
+judges) — see
 [agent-eval-harness](https://github.com/opendatahub-io/agent-eval-harness)
-judge examples. (Introduced in **OSAC-2264**.)
+judge examples. (Introduced in **OSAC-2264**.) `rubric_scoring` and
+`critical_findings_recall` are `module`/`function` judges backed by
+`evals/review/lib/judges.py` (shared between both eval configs, not
+duplicated inline per file); `qualitative_finding_quality` is an LLM
+`prompt_file` judge.
 
 `expected_verdict`, `expected_scores`, `critical_findings`, `skip_quality`,
 and `reference_review` are enforced by the `judges:` blocks in
@@ -144,8 +148,9 @@ thresholds:
 `hooks.before_all` runs during `execute.py` inside each case workspace.
 `outputs.path` is the `artifacts` directory, not the review file itself —
 the harness only populates `outputs["files"]` from a directory-typed
-`outputs.path`. See each eval YAML's `judges:` block for the full check
-snippets and the LLM judge's `prompt_file`.
+`outputs.path`. See each eval YAML's `judges:` block for the `module`/
+`function` references (backed by `evals/review/lib/judges.py`) and the
+LLM judge's `prompt_file`.
 
 ## Smoke fixture (`_harness-smoke`)
 

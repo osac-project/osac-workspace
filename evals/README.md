@@ -174,7 +174,7 @@ human-validated reference cases.
 | `evals/review/cases/` | Test cases (`prd/`, `design/`) |
 | `evals/review/docs/` | Measurement taxonomy and case schema |
 | `evals/review/results/` | Run output (gitignored) |
-| `evals/review/lib/` | `validate_cases.py` and its judge/case pytest suites |
+| `evals/review/lib/` | `validate_cases.py`, `judges.py` (shared `rubric_scoring`/`critical_findings_recall` logic used by both eval configs via `module`/`function` judges), and their pytest suites |
 
 Run the `evals/review/lib/` pytest suites locally (no LLM calls):
 
