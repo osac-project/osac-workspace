@@ -7,7 +7,7 @@ Meta-workspace that bootstraps all OSAC (Open Sovereign AI Cloud) component repo
 - **`osac-workspace/` is the project root** — all work happens from here; component docs are loaded via progressive disclosure
 - **Never skip tenant isolation metadata** (`osac.openshift.io/tenant`, `osac.openshift.io/owner-reference` annotations) in new resources
 - **Always `buf lint` before committing** proto changes; regenerate with `buf generate`
-- **Fork-based workflow**: always push to `fork` remote, never to `origin`. PRs go from `fork/<branch>` to `origin/main`
+- **Fork-based workflow**: push to `$PUSH_REMOTE`, never to `$UPSTREAM_REMOTE` — resolve with `tools/resolve-remotes.sh`
 - **AI attribution**: use `Assisted-by: Claude Code <noreply@anthropic.com>` trailer on commits — never use `Co-Authored-By` for AI tools (Red Hat attribution standard)
 - When debugging Kubernetes operators, check for stale vendor directories and cached images before rebuilding
 - **Don't raise `.skillsaw.yaml`'s `context-budget` skill limit to silence a token-count warning** — split the oversized `SKILL.md` into `references/`/`steps/` instead (see Skill Authoring Conventions)
@@ -99,9 +99,9 @@ Component repos have their own CI pipelines.
 
 ### Git Workflow
 
-- **Fork-based**: push to `fork` remote, never to `origin`. PRs go from `fork/<branch>` to `origin/main`.
+- **Fork-based**: push to `$PUSH_REMOTE`, never to `$UPSTREAM_REMOTE`
 - **Branch naming**: `<type>/<ticket-or-description>` (e.g., `feat/OSAC-23607`, `fix/duplicate-aap-jobs`)
-- **Remotes**: `origin` = upstream osac-project (read-only), `fork` = developer fork (push target)
+- **Resolve remotes**: `eval $(tools/resolve-remotes.sh <component-path>)` sets `$UPSTREAM_REMOTE` and `$PUSH_REMOTE` (handles both bootstrap and manual remote naming)
 - **DCO sign-off**: `git commit -s` on all commits
 - **AI attribution**: `Assisted-by: Claude Code <noreply@anthropic.com>` trailer — never `Co-Authored-By` for AI tools
 
@@ -147,7 +147,7 @@ When publishing PRDs and design documents to the enhancement-proposals repo:
 
 ### Fork-Based Workflow
 
-Push to the `fork` remote in the enhancement-proposals repo, not `origin`. PRs go from `fork/<branch>` to `origin/main`.
+Resolve remotes with `tools/resolve-remotes.sh`. Push to `$PUSH_REMOTE`, never to `$UPSTREAM_REMOTE`.
 
 ### Feature Dimensions Context
 
@@ -307,7 +307,7 @@ When fixing bugs or adding features, **check all controllers** that follow the s
 ## UI Reference (osac-ux)
 
 `osac-ux/` is cloned read-only from [osac-project/osac-ux](https://github.com/osac-project/osac-ux).
-No PRs are created against it from backend workflow sessions (no `fork` remote).
+No PRs are created against it from backend workflow sessions (no push remote configured).
 
 ### What to read during /design:research and /implement:ingest
 

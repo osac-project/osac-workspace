@@ -42,12 +42,13 @@ When a feature spans repos (e.g., API + operator):
 - Branch naming: `<type>/<ticket-or-description>` (e.g., `feat/OSAC-23607`, `fix/duplicate-aap-jobs`)
 
 ### Remotes
-- `origin` — the upstream osac-project repo (read-only, never push here)
-- `fork` — developer fork (push target for all work)
+- **Default names** from `bootstrap.sh`: `origin` = upstream osac-project repo, `fork` = developer fork
+- **Manual setups** may reverse these (e.g., `origin` = fork, `upstream` = osac-project)
+- Run `eval $(tools/resolve-remotes.sh <component-path>)` to resolve `$UPSTREAM_REMOTE` and `$PUSH_REMOTE` dynamically
 
 ### Pushing and PR Submission
-- **Always push to `fork`**, never to `origin`
-- PRs go from `fork/<branch>` to `origin/main`
+- **Always push to `$PUSH_REMOTE`**, never to `$UPSTREAM_REMOTE`
+- PRs go from the push remote's branch to the upstream repo's `main`
 - Always include the Jira ticket key in the PR title (e.g., "OSAC-12345: fix subnet race condition")
 - **Use the `create-pr` skill** (`/create-pr`) to run repo-specific validation, push, and create the PR
 

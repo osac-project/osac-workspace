@@ -136,20 +136,16 @@ PARENT_DIR=$(dirname "$WORKSPACE_ROOT")
 for repo in <selected repos>; do
   path="${PARENT_DIR}/${repo}"
   if [ -d "$path" ]; then
-    # Detect which remote points to osac-project (bootstrap.sh uses origin, manual setups use upstream)
-    OSAC_REMOTE=""
-    for remote in origin upstream; do
-      url=$(git -C "$path" remote get-url "$remote" 2>/dev/null || true)
-      if echo "$url" | grep -qE "osac-project/${repo}(\.git)?$"; then
-        OSAC_REMOTE="$remote"
-        break
-      fi
-    done
-    if [ -z "$OSAC_REMOTE" ]; then
+    UPSTREAM_REMOTE=""
+    PUSH_REMOTE=""
+    _resolve_out=$("${WORKSPACE_ROOT}/tools/resolve-remotes.sh" "$path") || {
       echo "ERROR: ${repo} has no remote pointing to osac-project/${repo}."
-      echo "  Run: git -C $path remote add origin https://github.com/osac-project/${repo}.git"
+      echo "  Add one (any name works): git -C \"$path\" remote add <name> https://github.com/osac-project/${repo}.git"
       # Stop or prompt user
-    fi
+      continue
+    }
+    eval "$_resolve_out"
+    OSAC_REMOTE="$UPSTREAM_REMOTE"
   fi
 done
 ```

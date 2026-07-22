@@ -135,8 +135,10 @@ Example: `OSAC-356: fix VM namespace lookup when subnetRef is set`
 
 ## Step 7: Push and Create PR
 
+Resolve remotes first: `eval $(tools/resolve-remotes.sh <repo-path>)`
+
 ```bash
-git push -u fork <branch-name>
+git push -u "$PUSH_REMOTE" <branch-name>
 
 gh pr create \
   --repo osac-project/<repo-name> \

@@ -343,7 +343,9 @@ cluster-tool boot --flavor vmaas --name dev --pull-secret values/vmaas-ci/pull-s
 export KUBECONFIG=~/.kube/dev.kubeconfig
 
 cd <path-to-osac-installer>
-git fetch origin main && git rebase origin/main
+WORKSPACE_ROOT=$(cd .. && git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+eval "$("${WORKSPACE_ROOT}/tools/resolve-remotes.sh" .)" || { echo "Failed to resolve remotes"; exit 1; }
+git fetch "$UPSTREAM_REMOTE" main && git rebase "$UPSTREAM_REMOTE/main"
 
 env \
     VALUES_FILE=values/vmaas-ci/values.yaml \
@@ -408,12 +410,14 @@ ssh root@<server> "free -g"             # Enough RAM?
 
 ### Refresh fails with "helm upgrade" error
 
-Make sure osac-installer is up to date with origin/main:
+Make sure osac-installer is up to date with the upstream remote:
 
 ```bash
 cd <osac-installer>
-git fetch origin main
-git rebase origin/main
+WORKSPACE_ROOT=$(cd .. && git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+eval "$("${WORKSPACE_ROOT}/tools/resolve-remotes.sh" .)" || { echo "Failed to resolve remotes"; exit 1; }
+git fetch "$UPSTREAM_REMOTE" main
+git rebase "$UPSTREAM_REMOTE/main"
 git submodule update --init --recursive
 ```
 

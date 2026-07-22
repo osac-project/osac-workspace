@@ -2,9 +2,10 @@
 name: osac-release
 description: >
   Publish new OSAC Helm chart versions across all component repos and the
-  umbrella chart. Auto-increments patch versions by default, tags origin/main,
+  umbrella chart. Auto-increments patch versions by default, tags upstream main,
   monitors CI workflows, verifies OCI registry publication, and publishes the
-  osac-installer umbrella chart with the new component versions. USE WHEN user
+  osac-installer umbrella chart with the new component versions. Resolves
+  upstream remote dynamically via tools/resolve-remotes.sh. USE WHEN user
   says "osac-release", "osac release", "publish osac", "bump osac versions",
   "publish helm charts", or wants to release new OSAC chart versions.
 triggers:
@@ -90,11 +91,10 @@ Discovery steps:
 1. Determine workspace root: `git rev-parse --show-toplevel` from `osac-workspace/`
 2. For each component, check `$(dirname $WORKSPACE_ROOT)/<repo-name>/`
 3. If not found, prompt user via AskUserQuestion for the repo path
-4. Detect the osac-project remote: check both `origin` and `upstream` URLs to
-   find which remote points to `osac-project/<repo-name>(.git)?$`. Store this
-   as `OSAC_REMOTE` for each repo (`origin` for bootstrap.sh setups,
-   `upstream` for manual setups). All git commands in subsequent steps use
-   `$OSAC_REMOTE` instead of a hardcoded remote name.
+4. Detect the osac-project remote for each repo using
+   `tools/resolve-remotes.sh`. Store the result as `OSAC_REMOTE` per repo.
+   All git commands in subsequent steps use `$OSAC_REMOTE` instead of a
+   hardcoded remote name.
 
 ## Workflow
 
@@ -112,7 +112,7 @@ Execute steps in order. Read the referenced file for each phase:
 |-------|--------|
 | `gh` or `helm` not found | Error with install instructions |
 | Repo not found at expected path | Ask user for explicit path |
-| No osac-project remote | Error: neither `origin` nor `upstream` points to `osac-project/<repo>` |
+| No osac-project remote | Error: no remote points to `osac-project/<repo>` (checked all remotes by URL) |
 | Uncommitted changes in repo | Warn (non-blocking) -- tags are on `$OSAC_REMOTE/main` |
 | Tag already exists on same commit | Skip tagging, proceed to monitoring |
 | Tag already exists on different commit | Ask: (a) delete and re-tag, (b) skip, (c) abort |

@@ -38,9 +38,9 @@ cd osac-workspace
 ./bootstrap.sh --no-fork
 ```
 
-The bootstrap script clones all OSAC repos into the workspace. Each repo is an independent Git repository on its `main` branch with remotes configured as:
-- `origin` = osac-project (upstream source, PR target)
-- `fork` = your GitHub fork (push target for feature branches)
+The bootstrap script clones all OSAC repos into the workspace. Each repo is an independent Git repository on its `main` branch. By default, remotes are named `origin` (upstream) and `fork` (push target). Use `--fork-name <name>` to choose a different push remote name (e.g., `--fork-name origin` for the conventional layout where `origin` is your fork and `upstream` is the project repo).
+
+`tools/resolve-remotes.sh` detects remotes by URL, so all skills and hooks work regardless of naming.
 
 Use `--no-fork` if you only need read-only access or are running in CI.
 

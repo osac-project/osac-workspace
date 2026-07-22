@@ -14,7 +14,9 @@ You need the osac-installer repo cloned, submodules initialized, and up to date:
 git clone https://github.com/osac-project/osac-installer.git
 cd osac-installer
 git submodule update --init --recursive
-git fetch origin main && git rebase origin/main
+WORKSPACE_ROOT=$(cd .. && git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")
+eval "$("${WORKSPACE_ROOT}/tools/resolve-remotes.sh" .)" || { echo "Failed to resolve remotes"; exit 1; }
+git fetch "$UPSTREAM_REMOTE" main && git rebase "$UPSTREAM_REMOTE/main"
 ```
 
 The refresh script also requires:
