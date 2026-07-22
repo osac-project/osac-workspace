@@ -301,10 +301,10 @@ either degrades to a printed `skip`).
 
 ## Also applies (enforced automatically, not just for workflows)
 
-Branch from latest `origin/main`, rebase before pushing with
-`--force-with-lease`, and add `Assisted-by:` trailers to AI-assisted
-commits (never `Co-Authored-By` for AI tools). See root `AGENTS.md` for
-the full fork/branch/attribution conventions.
+Branch from latest upstream main (resolve with `tools/resolve-remotes.sh`),
+rebase before pushing with `--force-with-lease`, and add `Assisted-by:`
+trailers to AI-assisted commits (never `Co-Authored-By` for AI tools). See
+root `AGENTS.md` for the full fork/branch/attribution conventions.
 
 ## Additional resources
 
