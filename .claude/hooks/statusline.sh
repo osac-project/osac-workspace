@@ -3,6 +3,12 @@
 
 input=$(cat)
 
+# Hooks may run under a minimal/non-interactive PATH (e.g. cmux panes, IDE
+# terminals) that never sourced the interactive shell config, so tools
+# installed via bun/npm/local bin dirs can silently fail to resolve here even
+# though they work fine in a normal terminal.
+export PATH="${HOME}/.bun/bin:${HOME}/.local/bin:${PATH}"
+
 # Run the user's own global statusline first. This project's statusLine
 # setting fully replaces (not merges with) the user's global one, so recover
 # whatever they actually configured in ~/.claude/settings.json and re-invoke
@@ -41,7 +47,13 @@ repo_status() {
   fi
 }
 
-WORKSPACE_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+# Use workspace.project_dir from the JSON payload rather than deriving from
+# $0/cwd: Claude Code runs statusLine commands with cwd set to the session's
+# *current* directory, which drifts as the agent cd's around this multi-repo
+# workspace and differs from where the session was actually launched (see
+# https://code.claude.com/docs/en/statusline.md#available-data). Resolving via
+# $0 broke intermittently whenever cwd wasn't exactly the workspace root.
+WORKSPACE_DIR=$(printf '%s' "$input" | jq -r '.workspace.project_dir // empty' 2>/dev/null)
 AI_DIR="${HOME}/.ai-workflows"
 
 ws=$(repo_status "$WORKSPACE_DIR" "workspace")

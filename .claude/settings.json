@@ -28,7 +28,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash .claude/hooks/update-ai-context.sh",
+            "command": "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/update-ai-context.sh\"",
             "timeout": 20
           }
         ]
@@ -37,7 +37,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "bash .claude/hooks/statusline.sh"
+    "command": "input=$(cat); dir=$(printf '%s' \"$input\" | jq -r '.workspace.project_dir'); printf '%s' \"$input\" | bash \"$dir/.claude/hooks/statusline.sh\""
   },
   "enabledPlugins": {}
 }

@@ -2,7 +2,10 @@
 # SessionStart hook: fetch+rebase osac-workspace (if on main) and ai-workflows
 # so the AI agent always has the latest CLAUDE.md, rules, and skills.
 
-WORKSPACE_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+# CLAUDE_PROJECT_DIR is the documented, invocation-independent way to locate
+# the project root from a hook (https://code.claude.com/docs/en/hooks). Fall
+# back to the old $0-relative derivation only if it's somehow unset.
+WORKSPACE_DIR="${CLAUDE_PROJECT_DIR:-$(cd "$(dirname "$0")/../.." && pwd)}"
 
 fetch_and_rebase() {
   local dir="$1" name="$2" only_on_main="${3:-false}"
