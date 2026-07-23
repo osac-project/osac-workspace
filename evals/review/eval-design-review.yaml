@@ -1,5 +1,4 @@
 # Harness-ready config for design review evals.
-# Judges and thresholds: added when harness scoring is configured.
 
 name: design-review
 description: Evaluate design-review skill against human-validated design review baselines
@@ -16,8 +15,8 @@ runner:
   type: claude-code
 
 models:
-  skill: opus-4.6
-  judge: opus-4.6
+  skill: claude-opus-4-6
+  judge: claude-sonnet-4-6
 
 mlflow:
   experiment: osac-review-eval
@@ -45,15 +44,37 @@ dataset:
     - annotations.yaml: Expected verdict, scores, critical findings
 
 outputs:
-  - path: artifacts/review-output.md
+  - path: artifacts
     schema: |
-      Structured review markdown with rubric table, verdict PASS/FAIL,
-      and findings sections matching design-review skill output format.
+      Directory containing review-output.md: structured review markdown
+      with rubric table, verdict PASS/FAIL, and findings sections matching
+      design-review skill output format. Collected as a directory (not the
+      file directly) so the harness's load_case_record() can populate
+      outputs["files"] and the artifacts_content convenience key.
 
 traces:
   stdout: true
   stderr: true
   metrics: true
 
-# judges: TBD
-# thresholds: TBD
+judges:
+  - name: rubric_scoring
+    module: evals.review.lib.judges
+    function: rubric_scoring
+
+  - name: critical_findings_recall
+    if: "annotations.get('critical_findings')"
+    module: evals.review.lib.judges
+    function: critical_findings_recall
+
+  - name: qualitative_finding_quality
+    if: "not annotations.get('skip_quality')"
+    prompt_file: evals/review/judges/finding-quality.md
+
+thresholds:
+  rubric_scoring:
+    min_pass_rate: 1.0
+  critical_findings_recall:
+    min_pass_rate: 1.0
+  qualitative_finding_quality:
+    min_mean: 3.5

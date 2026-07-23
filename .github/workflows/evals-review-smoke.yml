@@ -1,0 +1,51 @@
+# Manual dry-run smoke for planning review eval harness (no LLM, no API keys).
+# Trigger: Actions → Evals review smoke → Run workflow
+# Tracked on OSAC-2266 (workflow_dispatch); does not run on pull_request.
+
+name: Evals review smoke
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: evals-review-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dry-run-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+
+      # bootstrap.sh --no-fork clones all ~12 workspace component repos
+      # (only enhancement-proposals/ is actually needed for this smoke check)
+      # and never invokes the gh CLI in this mode, so no token is needed here.
+      # Accepted coupling for now — see AGENTS.md's Repository Structure list;
+      # a narrower eval-only bootstrap path would need its own script change.
+      - name: Bootstrap workspace (read-only clones)
+        run: ./bootstrap.sh --no-fork
+
+      - name: Bootstrap agent-eval-harness
+        run: evals/review/setup-harness.sh
+
+      - name: Dry-run PRD and design smoke
+        run: |
+          evals/review/run-eval.sh --type prd --case _harness-smoke --skip-execute --skip-score
+          evals/review/run-eval.sh --type design --case _harness-smoke --skip-execute --skip-score
+
+      # Exercises validate_cases.py and the judges' own check-execution path
+      # (test_judges.py imports the harness cloned by setup-harness.sh above
+      # directly from source — no LLM calls, ANTHROPIC_API_KEY is stubbed).
+      - name: Run eval harness unit tests
+        run: |
+          pip install --quiet -r evals/review/lib/requirements.txt
+          python3 -m pytest evals/review/lib/ -v

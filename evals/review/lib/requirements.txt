@@ -1,0 +1,11 @@
+# Deps for running evals/review/lib/*.py tests (test_validate_cases.py,
+# test_judges.py, test_judges_lib.py). Exact-pinned for reproducible CI runs
+# (not the harness's own venv, which setup-harness.sh manages separately).
+# No hash-lock file: this is a workflow_dispatch-only smoke workflow with no
+# secrets/deploy step and only 3 well-known test deps — a pip-compile-style
+# hash-locked constraints file would need its own maintenance workflow this
+# repo doesn't otherwise have for Python deps, disproportionate to the risk.
+# Bump these deliberately (verify `pytest evals/review/lib/ -v` still passes).
+pytest==9.1.1
+pyyaml==6.0.3
+jinja2==3.1.6

@@ -1,8 +1,12 @@
 # Pinned agent-eval-harness checkout (see harness.lock + setup-harness.sh)
 .harness/
 
-# Harness run output
-results/
+# Harness run output — except the committed baseline summary (see
+# evals/README.md "Gitignored paths and baseline" and
+# evals/review/docs/measurement-taxonomy.md)
+results/*
+!results/baseline/
+!results/baseline/**
 
 # Per-case review output from skill execution
 artifacts/

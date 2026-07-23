@@ -98,8 +98,8 @@ Prerequisite checks run in two places:
 - `results/` — harness run output
 - `artifacts/` — per-case skill output during runs
 
-Committed baseline summaries (golden-set scores, rubric pins) belong in
-**OSAC-2267**, not this scaffold story.
+Committed baseline summaries (golden-set scores, rubric pins) are not part of
+this initial scaffold — they land once golden cases and a baseline run exist.
 
 ## Models
 
@@ -108,18 +108,49 @@ Bugfix eval model policy remains in external `osac-bugfix-eval`.
 
 | Role | Pinned model | Notes |
 |------|--------------|-------|
-| Skill (`prd-review`, `design-review`) | `opus-4.6` | Matches team default for review evals (OSAC-2266) |
-| Judge (LLM judges) | `opus-4.6` | Same pin when LLM judges are configured; inline `check` judges are model-agnostic |
+| Skill (`prd-review`, `design-review`) | `claude-opus-4-6` | Matches team default for review evals |
+| Judge (`models.judge`, LLM judges) | `claude-sonnet-4-6` | Same model for every LLM judge role — no per-judge override; inline/code `check` judges are model-agnostic |
 
-**Rationale:** align planning review evals with production review quality expectations
-and OSAC-2266 acceptance criteria. Harness template defaults may differ; this repo pins
-`opus-4.6` in eval YAML for skill and judge roles.
+**Rationale:** align planning review evals with production review quality expectations.
+Harness template defaults may differ; this repo pins the fully-qualified slugs used by
+`agent-eval-harness`'s own `eval.yaml` template and test suite (the short-form `opus-4.6`
+previously pinned here was a non-canonical slug). Skill and judge intentionally use
+different models — see the local design decision record for the full rationale
+(self-preference vs. family-bias distinction, calibration via Cohen's κ as the primary
+trust mechanism, and why a per-judge override was tried and then dropped in favor of one
+config line).
 
-Eval YAML pins `opus-4.6` for both roles. The baseline report records
-pinned models alongside `rubric_version`.
+Eval YAML pins `claude-opus-4-6` for the skill role and `claude-sonnet-4-6` for the
+judge role. The baseline report records pinned models alongside `rubric_version`.
 
 **Bump policy:** intentional model changes require YAML update and a new baseline run.
 Ad-hoc override: harness `/eval-run --model` or edit eval YAML locally (not committed).
+
+## Production EP review vs planning eval harness
+
+Two related paths measure review skills; they are **not** the same invocation today.
+
+| Path | When | How skills run | Role in the agentic-SDLC metrics program |
+|------|------|----------------|-------------------------------------------|
+| **Production EP review** | Live `enhancement-proposals` PRs | **agentic-ci** (`run_skill` — see EP review automation, tracked in **OSAC-1773**) | Operational gate + Org Pulse visibility |
+| **Planning eval harness** | Local / manual CI smoke | **agent-eval-harness** script chain + `runner.type: claude-code` (`run-eval.sh`) | Phase 1 regression on **human-validated** golden cases |
+
+(The "agentic-SDLC metrics program" is Feature **OSAC-959** — create metrics and
+methods to evaluate the success of the agentic-SDLC process over time.)
+
+**Phase 1 program decision:** the eval harness is the source of truth for **golden-set regression** and baseline (**OSAC-2267**). EP bot pass/fail is **not** the Phase 1 eval gate (see `measurement-taxonomy.md` E2E phasing).
+
+**Convergence:** document parity gaps explicitly; a future spike may align skill entrypoints if agentic-ci and harness expose the same skill IDs and artifact paths (`artifacts/review-output.md`). Until then, do not assume production CI and `run-eval.sh` share one code path.
+
+## CI smoke (manual)
+
+GitHub Actions workflow **[`.github/workflows/evals-review-smoke.yml`](../.github/workflows/evals-review-smoke.yml)** runs on **`workflow_dispatch` only** (no per-PR LLM cost):
+
+1. `./bootstrap.sh --no-fork`
+2. `evals/review/setup-harness.sh`
+3. `run-eval.sh` for prd + design `_harness-smoke` with `--skip-execute --skip-score`
+
+Full scored evals remain **local** or a separate manual workflow until secrets and cost policy are agreed (**OSAC-2266**).
 
 ## What we do not do
 
@@ -148,6 +179,14 @@ human-validated reference cases.
 | `evals/review/cases/` | Test cases (`prd/`, `design/`) |
 | `evals/review/docs/` | Measurement taxonomy and case schema |
 | `evals/review/results/` | Run output (gitignored) |
+| `evals/review/lib/` | `validate_cases.py`, `judges.py` (shared `rubric_scoring`/`critical_findings_recall` logic used by both eval configs via `module`/`function` judges), and their pytest suites |
+
+Run the `evals/review/lib/` pytest suites locally (no LLM calls):
+
+```bash
+pip install -r evals/review/lib/requirements.txt
+python3 -m pytest evals/review/lib/ -v
+```
 
 See [`evals/review/README.md`](review/README.md) and
 [`evals/review/docs/`](review/docs/) for case layout and metrics.
@@ -160,10 +199,15 @@ or scoring:
 ```bash
 evals/review/setup-harness.sh
 evals/review/run-eval.sh --type prd --case _harness-smoke --skip-execute --skip-score
+evals/review/run-eval.sh --type design --case _harness-smoke --skip-execute --skip-score
 ```
 
-Full LLM eval runs, harness judges, and baseline reporting are follow-on work
-(OSAC-2264 judges, golden cases, **OSAC-2267** baseline).
+Same steps run in CI via **Actions → Evals review smoke** (`workflow_dispatch`) —
+see [CI smoke (manual)](#ci-smoke-manual) above for the workflow itself.
+
+Judges and `validate_cases.py` are configured in eval YAML and `evals/review/lib/`.
+Golden cases live under `evals/review/cases/`; a committed baseline lands under
+`evals/review/results/baseline/` once curated.
 
 ## Documentation
 
