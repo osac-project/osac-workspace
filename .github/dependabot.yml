@@ -4,3 +4,15 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    # Consolidate all action bumps into one PR per week instead of one per
+    # action — this repo only has a handful of pinned actions, but ungrouped
+    # updates would still mean up to open-pull-requests-limit (default 5)
+    # separate PRs competing for review attention.
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    labels:
+      - "infrastructure"
+    commit-message:
+      prefix: "NO-ISSUE"
