@@ -247,7 +247,11 @@ rules:
     enabled: auto
     severity: error
     allowlist:
-      - "bash .claude/hooks/update-ai-context.sh"
+      # Was "bash .claude/hooks/update-ai-context.sh" — updated to an
+      # absolute path via CLAUDE_PROJECT_DIR so the hook still resolves when
+      # invoked with cwd elsewhere than the workspace root. Allowlist match
+      # is a strict exact string, so this had to move with the command.
+      - "bash \"${CLAUDE_PROJECT_DIR}/.claude/hooks/update-ai-context.sh\""
 
   # hooks.json must be valid JSON with proper hook configuration structure
   hooks-json-valid:
