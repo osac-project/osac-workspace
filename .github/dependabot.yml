@@ -4,14 +4,22 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    # Consolidate all action bumps into one PR per week instead of one per
-    # action — this repo only has a handful of pinned actions, but ungrouped
-    # updates would still mean up to open-pull-requests-limit (default 5)
-    # separate PRs competing for review attention.
+    # Consolidate minor/patch bumps into one low-risk PR per week instead of
+    # one per action. Deliberately excludes major bumps from the group (via
+    # update-types, not a second patterns-based group — GitHub's own docs
+    # flag that combining patterns with two separate major/minor groups can
+    # fail to group correctly): a major bump can carry real breaking changes
+    # (e.g. actions/checkout v7 added new restrictions on fork PR checkouts
+    # for pull_request_target/workflow_run triggers), so it should land as
+    # its own PR for individual review rather than riding along with routine
+    # updates in the same grouped diff.
     groups:
-      github-actions:
+      github-actions-minor-patch:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
     labels:
       - "infrastructure"
     commit-message:
