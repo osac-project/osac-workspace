@@ -3,6 +3,11 @@
 
 input=$(cat)
 
+# workspace.project_dir, passed down by the settings.json statusLine command
+# (which already extracted it from the JSON payload to build the absolute
+# path it needed to invoke this script in the first place).
+project_dir="$1"
+
 # Run the user's own global statusline first. This project's statusLine
 # setting fully replaces (not merges with) the user's global one, so recover
 # whatever they actually configured in ~/.claude/settings.json and re-invoke
@@ -41,15 +46,13 @@ repo_status() {
   fi
 }
 
-# $1 is workspace.project_dir, passed down by the settings.json statusLine
-# command (which already extracted it from the JSON payload to build the
-# absolute path needed to invoke this script). Fall back to re-deriving it
-# from $input here too, for direct/manual invocation without that argument.
-# Deriving from $0/cwd doesn't work: Claude Code runs statusLine commands with
-# cwd set to the session's *current* directory, which drifts as the agent
-# cd's around this multi-repo workspace and differs from where the session
-# was actually launched (see https://code.claude.com/docs/en/statusline.md#available-data).
-WORKSPACE_DIR="${1:-$(printf '%s' "$input" | jq -r '.workspace.project_dir // empty' 2>/dev/null)}"
+# Fall back to re-deriving project_dir from $input when this script is
+# invoked directly/manually without the argument. Deriving from $0/cwd
+# doesn't work: Claude Code runs statusLine commands with cwd set to the
+# session's *current* directory, which drifts as the agent cd's around this
+# multi-repo workspace and differs from where the session was actually
+# launched (see https://code.claude.com/docs/en/statusline.md#available-data).
+WORKSPACE_DIR="${project_dir:-$(printf '%s' "$input" | jq -r '.workspace.project_dir // empty' 2>/dev/null)}"
 AI_DIR="${HOME}/.ai-workflows"
 
 ws=$(repo_status "$WORKSPACE_DIR" "workspace")
