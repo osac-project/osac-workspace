@@ -61,9 +61,44 @@ Run through this for every new or edited workflow file:
 - [ ] **Extract bash logic repeated across steps/jobs into a checked-in,
       `chmod +x`'d script** under `.github/scripts/` instead of copy-pasting -
       see [reference.md](reference.md#shared-scripts).
+- [ ] **Add `concurrency` with `cancel-in-progress: true`** on PR-triggered
+      workflows so rapid pushes don't leave redundant jobs running:
+      ```yaml
+      concurrency:
+        group: <workflow-name>-${{ github.event.pull_request.number || github.ref }}
+        cancel-in-progress: true
+      ```
+      zizmor flags this as `concurrency-limits` if missing.
+- [ ] **A PR-triggered job that checks out PR code and runs a script from
+      that checkout is self-enforcing, not tamper-proof.** A contributor can
+      modify the script in the same PR to always exit 0. If the policy must
+      withstand adversarial PRs, run a trusted copy from the base branch
+      (e.g. `ref: ${{ github.event.pull_request.base.sha }}`) or protect the
+      script/workflow paths with CODEOWNERS so changes require maintainer
+      approval (CODEOWNERS alone only requests review — enable branch
+      protection with "Require review from Code Owners" to enforce it).
+      For internal repos where all contributors are trusted, the simpler
+      self-enforcing pattern is acceptable — document the trade-off.
+      Trusted-copy of the script is necessary but not sufficient: a
+      same-repo `pull_request` can still alter or remove the workflow step
+      itself. For adversarial threat models, make the check a required
+      status check and/or invoke it from a protected reusable workflow.
+      When the base branch lacks the trusted script, fail closed — do not
+      fall back to the PR copy (a `::warning::` fallback abandons the
+      security guarantee).
 - [ ] **Validate before committing**: `actionlint` (0 errors) and `bash -n`
       on any script, then actually test the regex/script logic locally (see
       Verification below) - don't just eyeball it.
+- [ ] **When a lint script strips inline comments for detection, check
+      exemption markers against the *raw* line** — stripping removes the
+      marker that grants the exemption. A comment-boundary regex
+      (`(^|[[:space:]])#`) is only a best-effort heuristic and can still
+      match inside YAML quoted strings (e.g. `"value # not-a-comment"`).
+      For security-sensitive exemptions, require YAML-aware parsing so
+      real comment boundaries are distinguished from string content.
+- [ ] **`[:space:]` inside a POSIX bracket expression is valid ERE.**
+      `[]},[:space:]]` means `]`, `}`, `,`, or whitespace — CodeRabbit
+      falsely flags this. Test empirically before "fixing."
 - [ ] If a Sigstore/cosign signing requirement is flagged and it's a bigger
       effort than the current change, don't silently skip it - tell the user
       it's out of scope and ask if it should be a follow-up.
@@ -117,7 +152,13 @@ Run through this for every new or edited workflow file:
       matched values). Never point downstream reporting at raw reports;
       produce a sanitized copy for summaries/issue bodies.
 - [ ] **A per-item batch failure must abort, not skip-and-continue**, when a
-      later step trusts the entire result. See
+      later step trusts the entire result (e.g. a `.redaction-complete`
+      marker / artifact upload assumes every file was actually redacted).
+      In bash, `find … | xargs sed … || true` is a common false friend:
+      `|| true` hides real sed failures. Prefer `xargs -r` (GNU; skip the
+      command on empty input) or `find -exec sed … {} +` (succeeds on zero
+      matches, fails on sed errors) — never mask the pipeline with
+      `|| true`. Propagate Python I/O errors with a nonzero exit. See
       [reference.md](reference.md#fail-loud-on-per-item-batch-failures).
 - [ ] **Track detection and remediation as separate outcomes**
       (e.g. `PURGE_OK` alongside `LEAKS_FOUND`). See
@@ -143,12 +184,16 @@ Run through this for every new or edited workflow file:
 - [ ] **Redact every encoding of a secret.** Base64-encoded payloads
       survive plaintext JSON redaction. Decode each quoted candidate
       (standard + URL-safe) and check for the key; when found, replace the
-      original encoded blob with a redaction marker. Prefer JSON parsing
-      for structured values; if using regex, `[^"]+` is a starting point
-      for double-quoted JSON but misses escaped quotes (`\"`). Avoid
-      overly narrow classes like `[A-Za-z0-9+/=]` that miss punctuation.
-      Adapt the approach for other contexts (single-quoted, URL-embedded,
-      etc.). See
+      original encoded blob with a redaction marker. Use strict decode
+      (`validate=True`, and `altchars=b"-_"` / equivalent for URL-safe) —
+      normalize `=` padding first so unpadded URL-safe tokens still decode.
+      Permissive `validate=False` can silently strip `-`/`_` and miss the
+      needle. Cover padded and unpadded fixtures in tests. Prefer JSON
+      parsing for structured values; if using regex,
+      `[^"]+` is a starting point for double-quoted JSON but misses
+      escaped quotes (`\"`). Avoid overly narrow classes like
+      `[A-Za-z0-9+/=]` that miss punctuation. Adapt the approach for
+      other contexts (single-quoted, URL-embedded, etc.). See
       [reference.md](reference.md#dont-re-echo-redacted-diagnostics).
 - [ ] **A same-file `if:` conditional is not a security boundary against ref
       selection.** For `workflow_dispatch` (or anything else where the
