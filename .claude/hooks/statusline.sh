@@ -6,7 +6,7 @@ input=$(cat)
 # workspace.project_dir, passed down by the settings.json statusLine command
 # (which already extracted it from the JSON payload to build the absolute
 # path it needed to invoke this script in the first place).
-project_dir="$1"
+project_dir="${1:-}"
 
 # Run the user's own global statusline first. This project's statusLine
 # setting fully replaces (not merges with) the user's global one, so recover
