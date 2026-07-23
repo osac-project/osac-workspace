@@ -37,7 +37,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "input=$(cat); dir=$(printf '%s' \"$input\" | jq -r '.workspace.project_dir'); printf '%s' \"$input\" | bash \"$dir/.claude/hooks/statusline.sh\""
+    "command": "input=$(cat); dir=$(printf '%s' \"$input\" | jq -r '.workspace.project_dir'); printf '%s' \"$input\" | bash \"$dir/.claude/hooks/statusline.sh\" \"$dir\""
   },
   "enabledPlugins": {}
 }
