@@ -15,8 +15,8 @@ runner:
   type: claude-code
 
 models:
-  skill: opus-4.6
-  judge: opus-4.6
+  skill: claude-opus-4-6
+  judge: claude-sonnet-4-6
 
 mlflow:
   experiment: osac-review-eval

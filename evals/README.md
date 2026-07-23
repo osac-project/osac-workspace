@@ -108,15 +108,20 @@ Bugfix eval model policy remains in external `osac-bugfix-eval`.
 
 | Role | Pinned model | Notes |
 |------|--------------|-------|
-| Skill (`prd-review`, `design-review`) | `opus-4.6` | Matches team default for review evals (OSAC-2266) |
-| Judge (LLM judges) | `opus-4.6` | Same pin when LLM judges are configured; inline `check` judges are model-agnostic |
+| Skill (`prd-review`, `design-review`) | `claude-opus-4-6` | Matches team default for review evals (OSAC-2266) |
+| Judge (`models.judge`, LLM judges) | `claude-sonnet-4-6` | Same model for every LLM judge role — no per-judge override; inline/code `check` judges are model-agnostic |
 
 **Rationale:** align planning review evals with production review quality expectations
 and OSAC-2266 acceptance criteria. Harness template defaults may differ; this repo pins
-`opus-4.6` in eval YAML for skill and judge roles.
+the fully-qualified slugs used by `agent-eval-harness`'s own `eval.yaml` template and test
+suite (corrected 2026-07-23; the short-form `opus-4.6` previously pinned here was a
+non-canonical slug). Skill and judge intentionally use different models — see the local
+design decision record for the full rationale (self-preference vs. family-bias
+distinction, calibration via Cohen's κ as the primary trust mechanism, and why a
+per-judge override was tried and then dropped in favor of one config line).
 
-Eval YAML pins `opus-4.6` for both roles. The baseline report records
-pinned models alongside `rubric_version`.
+Eval YAML pins `claude-opus-4-6` for the skill role and `claude-sonnet-4-6` for the
+judge role. The baseline report records pinned models alongside `rubric_version`.
 
 **Bump policy:** intentional model changes require YAML update and a new baseline run.
 Ad-hoc override: harness `/eval-run --model` or edit eval YAML locally (not committed).
