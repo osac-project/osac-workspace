@@ -61,6 +61,16 @@ Use `--no-fork` if you only need read-only access or are running in CI.
 
 [^1]: Cloned into a subdirectory as `osac-docs`
 
+## What is Enclave?
+
+[Enclave](https://github.com/rh-ecosystem-edge/enclave) (Red Hat Sovereign Enclave, RHSE) is an optionally disconnected infrastructure platform that provisions and maintains OpenShift clusters on bare metal hardware. It's a separate project from OSAC, but OSAC depends on it: Enclave provisions the hub cluster and prerequisites (AAP, cert-manager, storage) that OSAC's components run on, which makes it especially relevant for **disconnected/air-gapped** OSAC deployments.
+
+OSAC-specific details live in the [`enclave`](https://github.com/rh-ecosystem-edge/enclave) repo:
+
+- **[OSAC Day-2 Deployment Guide](https://github.com/rh-ecosystem-edge/enclave/blob/main/docs/OSAC_DEPLOYMENT.md)**: deploys OSAC as a sequence of Enclave addon plugins (`trust-manager` → `rhbk` → `aap` → `osac`) on an existing Enclave cluster; covers prerequisites, configuration, BYO database, service profiles, and troubleshooting
+- **[`plugins/osac`](https://github.com/rh-ecosystem-edge/enclave/tree/main/plugins/osac)**: the Enclave plugin definition that installs the OSAC Helm chart (`oci://ghcr.io/osac-project/charts/osac`) and creates its own AAP instance in the `osac` namespace
+- **[`config/plugins/osac.example.yaml`](https://github.com/rh-ecosystem-edge/enclave/blob/main/config/plugins/osac.example.yaml)**: template for the OSAC plugin config (AAP license, chart version, service profiles, BYO database, image overrides, and optional Netris network backend integration)
+
 ## What's Included
 
 This workspace provides a pre-configured AI-assisted development environment:
