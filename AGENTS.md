@@ -92,7 +92,7 @@ make deploy IMG=<registry>/osac-operator:tag
 
 The workspace runs these GitHub Actions workflows:
 - `pr-dashboard.yml` — generates a PR dashboard (runs on schedule, deploys to GitHub Pages via `tools/pr-notify/generate.py`)
-- `skillsaw.yml` — lints AI skills on pull request
+- `skillsaw.yml` — lints AI skills on PRs
 - `skillsaw-review.yml` — posts inline PR comments from skillsaw lint
 - `claude-hooks-smoke.yml` — validates Claude Code hooks
 
@@ -337,31 +337,11 @@ with a field-by-field mapping table and a justification for any deviation.
 For existing resources, the @temp-api file may contain fields the UI needs but the
 backend has not yet returned — these are real requirements, not speculation.
 
-### API coverage audit (one-time and on-demand)
+### API coverage audit
 
-To surface the full backlog of existing API gaps against the current UI, run:
-
-```bash
-cd osac-ux && node scripts/gen-api-diff.mjs
-```
-
-This compares all live UI routes against the backend OpenAPI spec and lists
-uncovered or mismatched fields. Use the output as input when scoping EP work,
-not as a file to commit or reference statically.
-
-### Known deviations — flag these in the EP, do not copy from @temp-api
-
-| @temp-api pattern | Correct fulfillment-service design |
-|---|---|
-| Sub-resource actions: `POST .../attach`, `POST .../restore` | Standalone `*_attachments` resource (pattern: `public_ip_attachments`) |
-| `storageClass: 'ssd' \| 'nvme' \| 'standard'` string union | `storage_tier_id: string` reference to StorageTier resource |
-| `spec.storageClassName`, `spec.storageBackend` in StorageTier | Private API only — omit from public proto |
-| `status.secretAccessKey?: string` on create response | Separate `Create*Response` proto message |
-| `AiEnvironment.spec.rhoaiVersion`, `gatewayEndpoint` | RHOAI operator fields — verify these belong in public API before adding |
+Run `cd osac-ux && node scripts/gen-api-diff.mjs` to surface API gaps against the current UI.
 
 ## Common Fix Locations (fulfillment-service)
-
-Use this table to go directly to the right file for common bug patterns instead of grepping from scratch:
 
 | Bug pattern | File(s) to check |
 |-------------|-----------------|
