@@ -48,7 +48,7 @@ Note: `fulfillment-api` and `fulfillment-common` were merged into `fulfillment-s
 | [`fulfillment-service`](https://github.com/osac-project/fulfillment-service) | gRPC server + REST gateway, PostgreSQL, integrated API definitions | Yes |
 | [`osac-operator`](https://github.com/osac-project/osac-operator) | Kubernetes operator for OpenShift clusters via Hosted Control Planes | Yes |
 | [`osac-aap`](https://github.com/osac-project/osac-aap) | Ansible Automation Platform roles for infrastructure provisioning | — |
-| [`osac-installer`](https://github.com/osac-project/osac-installer) | Installation manifests and prerequisites | Yes |
+| [`osac-installer`](https://github.com/osac-project/osac-installer) | Helm charts, Kustomize overlays, and installation prerequisites | Yes |
 | [`osac-test-infra`](https://github.com/osac-project/osac-test-infra) | Integration testing infrastructure | — |
 | [`osac-ui`](https://github.com/osac-project/osac-ui) | OSAC UI web console | Yes |
 | [`osac-ux`](https://github.com/osac-project/osac-ux) | React 19 + PatternFly 6 UI console — read-only UI reference | Yes (`osac-ux/AGENTS.md`) |
@@ -406,7 +406,7 @@ CLAUDE.md                  # Claude Code project instructions
 .design/context/           # Feature dimensions and review patterns
 skills/                    # AI skills (PRD/design workflows, Jira, bug fix, demo recording)
 tools/pr-notify/           # PR dashboard generator
-docs/                      # PR dashboard static site + architecture docs
+docs/pr-dashboard/         # Static site for PR dashboard (GitHub Pages)
 osac-docs/                 # Architecture docs and guides
 enhancement-proposals/     # Design documents and RFCs
 presentations/             # Slide decks and demo materials
