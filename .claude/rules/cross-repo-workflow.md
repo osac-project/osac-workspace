@@ -12,7 +12,7 @@ Each component repo has its own CLAUDE.md. **Always read it before making change
 | `osac-installer/CLAUDE.md` | Installation manifests, Helm charts, prerequisites |
 | `osac-test-infra/CLAUDE.md` | E2E tests, pytest fixtures, gRPC/K8s clients |
 | `osac-ui/CLAUDE.md` | Web console, React, PatternFly 6 |
-| `bare-metal-fulfillment-operator/CLAUDE.md` | Bare metal fulfillment operator |
+| `bare-metal-fulfillment-operator/CLAUDE.md` | Bare-metal fulfillment operator |
 
 ## Git Worktrees
 

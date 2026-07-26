@@ -92,7 +92,7 @@ make deploy IMG=<registry>/osac-operator:tag
 
 The workspace runs these GitHub Actions workflows:
 - `pr-dashboard.yml` — generates a PR dashboard (runs on schedule, deploys to GitHub Pages via `tools/pr-notify/generate.py`)
-- `skillsaw.yml` — lints AI skills on push
+- `skillsaw.yml` — lints AI skills on pull request
 - `skillsaw-review.yml` — posts inline PR comments from skillsaw lint
 - `claude-hooks-smoke.yml` — validates Claude Code hooks
 
