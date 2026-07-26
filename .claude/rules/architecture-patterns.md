@@ -26,7 +26,13 @@ Networking Resources:
 
 Public IP Resources:
   PublicIPPool (platform-defined, IP address ranges)
-  └── PublicIP (allocated from pool, optionally attached to ComputeInstance)
+  ├── PublicIP (allocated from pool)
+  └── PublicIPAttachment (binds PublicIP to ComputeInstance)
+
+External IP Resources:
+  ExternalIPPool (platform-defined, external IP ranges)
+  ├── ExternalIP (allocated from pool)
+  └── ExternalIPAttachment (binds ExternalIP to ComputeInstance)
 
 Tenant Resources:
   Tenant → namespace and resource isolation

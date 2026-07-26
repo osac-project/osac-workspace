@@ -8,8 +8,11 @@ Each component repo has its own CLAUDE.md. **Always read it before making change
 |-----------|-------|
 | `fulfillment-service/CLAUDE.md` | Build, test, server patterns, database layer |
 | `osac-operator/CLAUDE.md` | Operator build, CRDs, deployment |
-| `osac-aap/CLAUDE.md` | Ansible roles, network provisioning |
-| `osac-installer/CLAUDE.md` | Installation manifests, prerequisites, demo scripts |
+| `osac-aap/CLAUDE.md` | Ansible roles, infrastructure provisioning |
+| `osac-installer/CLAUDE.md` | Installation manifests, Helm charts, prerequisites |
+| `osac-test-infra/CLAUDE.md` | E2E tests, pytest fixtures, gRPC/K8s clients |
+| `osac-ui/CLAUDE.md` | Web console, React, PatternFly 6 |
+| `bare-metal-fulfillment-operator/CLAUDE.md` | Bare metal fulfillment operator |
 
 ## Git Worktrees
 

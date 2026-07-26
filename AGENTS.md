@@ -47,7 +47,7 @@ Note: `fulfillment-api` and `fulfillment-common` were merged into `fulfillment-s
 |-----------|-------------|-----------|
 | [`fulfillment-service`](https://github.com/osac-project/fulfillment-service) | gRPC server + REST gateway, PostgreSQL, integrated API definitions | Yes |
 | [`osac-operator`](https://github.com/osac-project/osac-operator) | Kubernetes operator for OpenShift clusters via Hosted Control Planes | Yes |
-| [`osac-aap`](https://github.com/osac-project/osac-aap) | Ansible Automation Platform roles for network provisioning | — |
+| [`osac-aap`](https://github.com/osac-project/osac-aap) | Ansible Automation Platform roles for infrastructure provisioning | — |
 | [`osac-installer`](https://github.com/osac-project/osac-installer) | Installation manifests and prerequisites | Yes |
 | [`osac-test-infra`](https://github.com/osac-project/osac-test-infra) | Integration testing infrastructure | — |
 | [`osac-ui`](https://github.com/osac-project/osac-ui) | OSAC UI web console | Yes |
@@ -65,9 +65,9 @@ This workspace has no build step of its own. Each component repo documents build
 |------------------------|------------------------------------|--------------------------|----------------------------|
 | `fulfillment-service/` | `go build`                         | `ginkgo run -r internal` | `uv run dev.py lint`       |
 | `osac-operator/`       | `make build`                       | `make test`              | `make lint`                |
-| `osac-aap/`            | —                                  | —                        | `ansible-lint`             |
-| `osac-installer/`      | `kustomize build overlays/<name>`  | —                        | `yamllint --strict .`      |
-| `osac-test-infra/`     | —                                  | —                        | `pre-commit run --all-files` |
+| `osac-aap/`            | —                                  | `make test`              | `uv run ansible-lint`      |
+| `osac-installer/`      | `kustomize build overlays/<name>`  | —                        | `helm lint charts/osac/`   |
+| `osac-test-infra/`     | —                                  | —                        | `make lint`                |
 | `osac-ui/`             | `pnpm build`                       | `pnpm test`              | `pnpm lint`                |
 
 ### Quick Reference
@@ -90,8 +90,11 @@ make deploy IMG=<registry>/osac-operator:tag
 
 ### CI
 
-The workspace itself runs one GitHub Actions workflow:
+The workspace runs these GitHub Actions workflows:
 - `pr-dashboard.yml` — generates a PR dashboard (runs on schedule, deploys to GitHub Pages via `tools/pr-notify/generate.py`)
+- `skillsaw.yml` — lints AI skills on push
+- `skillsaw-review.yml` — posts inline PR comments from skillsaw lint
+- `claude-hooks-smoke.yml` — validates Claude Code hooks
 
 Component repos have their own CI pipelines.
 
@@ -117,7 +120,7 @@ Link PRs in descriptions: "Depends on fulfillment-service#123".
 
 ## Deployment Coordination
 
-`osac-installer/setup.sh` pins component versions (AAP collections, fulfillment-service images) via submodule refs. When making changes that cross component boundaries, always update `osac-installer` to match:
+`osac-installer/scripts/setup.sh` pins component versions (AAP collections, fulfillment-service images) via submodule refs. When making changes that cross component boundaries, always update `osac-installer` to match:
 
 - **Proto field additions** in `fulfillment-service` → update CI overlays in `osac-installer` to use the new image version
 - **New AAP roles or collections** in `osac-aap` → bump the submodule ref in `osac-installer`
@@ -270,8 +273,8 @@ Put `CRITICAL` / `IMPORTANT` rules in the first 20% of `SKILL.md` (skillsaw `con
 ```text
 fulfillment-service    gRPC/REST API server, PostgreSQL, resource lifecycle
 osac-operator          Kubernetes operator, provisions via AAP + Hosted Control Planes
-osac-aap               Ansible playbooks for VM and network provisioning
-osac-installer         Kustomize overlays, deploys all components to OpenShift
+osac-aap               Ansible playbooks for infrastructure provisioning
+osac-installer         Helm charts + Kustomize overlays, deploys all components to OpenShift
 osac-test-infra        E2E test playbooks against fulfillment-service gRPC API
 osac-ui                Web console (React, PatternFly 6, pnpm workspace)
 enhancement-proposals  Design documents and RFCs
@@ -288,7 +291,11 @@ VirtualNetwork → L2 network with CIDR (child of NetworkClass)
   └── SecurityGroup → firewall rules
 ComputeInstance → KubeVirt VM, attached to Subnets + SecurityGroups
 PublicIPPool → IP address ranges
-  └── PublicIP → allocated from pool, attached to ComputeInstance
+  ├── PublicIP → allocated from pool
+  └── PublicIPAttachment → binds PublicIP to ComputeInstance
+ExternalIPPool → external IP address ranges
+  ├── ExternalIP → allocated from pool
+  └── ExternalIPAttachment → binds ExternalIP to ComputeInstance
 ```
 
 ### Operator Architecture (osac-operator)
@@ -297,7 +304,7 @@ The osac-operator uses controller-runtime to reconcile OSAC custom resources on 
 
 - **All controllers follow the same reconciliation pattern**: finalizer → status update → provisioning/deprovisioning lifecycle
 - **Shared provisioning lifecycle**: Controllers use `provisioning.RunProvisioningLifecycle()` for provision and manual deprovision handling
-- **CRD types**: ClusterOrder, ComputeInstance, Tenant, VirtualNetwork, Subnet, SecurityGroup, PublicIPPool, PublicIP
+- **CRD types**: ClusterOrder, ComputeInstance, ExternalIP, ExternalIPAttachment, ExternalIPPool, Job, PublicIP, PublicIPAttachment, PublicIPPool, SecurityGroup, Subnet, Tenant, VirtualNetwork
 - **Multi-cluster support**: Controllers use `multicluster-runtime` for management/workload cluster separation
 - **Management-state annotation**: All controllers should check `osac.openshift.io/management-state` and skip reconciliation when set to `Unmanaged`
 - **Namespace isolation**: Networking controllers filter to a configured namespace via `NetworkingNamespacePredicate`
@@ -369,7 +376,7 @@ kubectl annotate ingresses.config/cluster ingress.operator.openshift.io/default-
 kubectl apply -k fulfillment-service/manifests
 export token=$(kubectl create token -n osac client)
 export route=$(kubectl get route -n osac fulfillment-api -o json | jq -r '.spec.host')
-grpcurl -insecure -H "Authorization: Bearer ${token}" ${route}:443 fulfillment.v1.VirtualNetworks/List
+grpcurl -insecure -H "Authorization: Bearer ${token}" ${route}:443 osac.public.v1.VirtualNetworks/List
 ```
 
 ## Reference Documentation
@@ -399,6 +406,11 @@ CLAUDE.md                  # Claude Code project instructions
 .design/context/           # Feature dimensions and review patterns
 skills/                    # AI skills (PRD/design workflows, Jira, bug fix, demo recording)
 tools/pr-notify/           # PR dashboard generator
-docs/pr-dashboard/         # Static site for PR dashboard (GitHub Pages)
-.github/workflows/         # CI (pr-dashboard.yml)
+docs/                      # PR dashboard static site + architecture docs
+osac-docs/                 # Architecture docs and guides
+enhancement-proposals/     # Design documents and RFCs
+presentations/             # Slide decks and demo materials
+evals/                     # AI skill evaluation data
+kind-dev/                  # Local Kind cluster dev configs
+.github/workflows/         # CI (pr-dashboard, skillsaw, hooks smoke)
 ```
