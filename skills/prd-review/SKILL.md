@@ -279,7 +279,7 @@ offending text and show what a user-focused rewrite would look like.}
 
 - Score based on what's in the PRD, not what you think should be there — if information is genuinely unavailable, "TBD" markers are acceptable
 - The WHAT criterion uses `osac-dimensions.md` to check persona and dimension coverage — but features that don't touch networking shouldn't be penalized for not addressing networking
-- Compare against the PRD template at `enhancement-proposals/guidelines/prd_template.md` (project override) for structural compliance. If no project override exists, fall back to `.ai-workflows/prd/templates/prd.md`
+- Compare against the PRD template at `enhancement-proposals/guidelines/prd_template.md` for structural compliance
 - See `enhancement-proposals/guidelines/prd_guide.md` for the author-facing guidance this rubric is calibrated against
 - A PRD that names specific controllers, playbooks, env vars, or internal conditions has design leakage. This is the most common failure mode — score it under User-Facing Focus
 - If the PRD was produced by `/prd:draft`, check that clarification locked decisions are reflected
