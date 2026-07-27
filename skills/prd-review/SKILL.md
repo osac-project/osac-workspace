@@ -31,7 +31,7 @@ hard pass/fail thresholds — no weighted averages that mask problems.
 Detect what's being reviewed:
 
 1. **PR URL or number** → Fetch the PRD content from the PR diff
-2. **Local file path** → Read the PRD from disk (e.g., `enhancement-proposals/enhancements/<slug>/prd.md` or `.artifacts/prd/*/03-prd.md` for pre-publish drafts)
+2. **Local file path** → Read the PRD from disk (e.g., `enhancement-proposals/enhancements/<slug>/prd.md`, `.artifacts/prd/*/03-prd.md` for pre-publish drafts, or `internal-proposals/<slug>/prd.md` for internal-only proposals — see `internal-proposals/README.md`'s rubric caveat before treating that score as a gate)
 3. **No input** → Ask: "Which PRD should I review? Provide a PR number, file path, or Jira issue key."
 
 ### Fetching from PR

@@ -141,6 +141,52 @@ When publishing PRDs and design documents to the enhancement-proposals repo:
 
 Push to the `fork` remote in the enhancement-proposals repo, not `origin`. PRs go from `fork/<branch>` to `origin/main`.
 
+### Internal-Only Proposals (Not an OSAC Feature)
+
+`enhancement-proposals` is scoped to OSAC product/tenant-facing features (see
+that repo's README, "Is my proposed change an enhancement?"). Work that is
+internal engineering process or tooling — no tenant-facing surface, no CRD/API
+footprint, consumed by internal engineering roles rather than OSAC's four
+canonical personas — does not belong there, even when tracked under the same
+Jira project/component (e.g. `agentic-sdlc`). Publish those PRD/design docs to
+[`internal-proposals/`](internal-proposals/README.md) in this repo instead,
+using the same `<jira-key>-<feature-slug>/{prd,design}.md` layout, reviewed via
+normal `osac-workspace` PRs — not the EP repo's 3-reviewer consensus process.
+See `internal-proposals/README.md` for the full location decision and a
+rubric-calibration caveat for self-reviewing these with `prd-review`/`design-review`.
+
+**Mechanical signal, checked during `/prd:ingest` / `/design:ingest`:** the
+Jira issue's `Labels` field (already captured verbatim in `01-requirements.md`
+— no extra fetch needed) is the fast first-pass check. If it includes
+`osac-agentic-sdlc`, propose routing to `internal-proposals/` and confirm with
+the user before drafting. Treat this as a strong default, not an
+unconditional override — the label means "part of the agentic-SDLC
+initiative," not "definitely non-tenant-facing." If the ticket actually
+describes a tenant-facing capability despite the label, use
+`enhancement-proposals`. No label present → default remains
+`enhancement-proposals`, unchanged from today.
+
+**Publish-time override:** `/prd:publish` and `/design:publish`'s "Resolve
+Docs Repo" step assumes a separately checked-out docs repo and caches that
+answer in `.artifacts/prd/config.json` — a single file shared by both
+workflows, scoped to `enhancement-proposals`. `internal-proposals/` is not a
+separate docs repo; it's part of `osac-workspace` itself. For a proposal
+routed here, skip that step's docs-repo/config.json flow entirely and
+instead:
+
+1. Copy the finalized artifact (`.artifacts/{prd,design}/{issue-number}/03-{prd,design}.md`)
+   to `internal-proposals/{jira-key}-{feature-slug}/{prd,design}.md` directly
+   in this repo's working tree — no `docs_repo_path` involved.
+2. Follow `osac-workspace`'s own [Git Workflow](#git-workflow) instead of the
+   skill's docs-repo git steps: `git commit -s`, push to this repo's `fork`
+   remote, open the PR from `fork/<branch>` against `osac-workspace`'s
+   `origin/main` — not the `enhancement-proposals` repo's fork/origin (the
+   "Fork-Based Workflow" section immediately above this one is scoped to
+   that repo, not this one).
+3. Do not create or update `.artifacts/prd/config.json` for this path — it's
+   scoped to the `enhancement-proposals` flow and should stay unset (or
+   unchanged) for the next proposal that actually needs it.
+
 ### Feature Dimensions Context
 
 Both PRD and design ingest phases must read all files in `.design/context/`:

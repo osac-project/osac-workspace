@@ -1,0 +1,57 @@
+name: Internal Proposals Naming
+
+# Validates internal-proposals/ directory and file naming (see
+# internal-proposals/README.md) for paths new to a PR. Adapted from
+# enhancement-proposals' check-ep-naming pre-commit hook — this repo has no
+# pre-commit framework, so it runs as a plain, path-scoped workflow instead.
+
+on:
+  pull_request:
+    paths:
+      - 'internal-proposals/**'
+
+concurrency:
+  group: internal-proposals-naming-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check-naming:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Run unit tests
+        working-directory: tools
+        run: python3 -m unittest test_check_internal_proposals_naming -v
+
+      - name: List changed internal-proposals/ paths
+        id: diff
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          git diff --name-only "${BASE_SHA}" HEAD -- internal-proposals/ > changed-paths.txt
+          cat changed-paths.txt
+
+      - name: Validate naming convention
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          LIVE_BASE_REF: origin/${{ github.event.pull_request.base.ref }}
+        run: |
+          if [ -s changed-paths.txt ]; then
+            paths=()
+            while IFS= read -r line; do
+              paths+=("$line")
+            done < changed-paths.txt
+            python3 tools/check_internal_proposals_naming.py "${paths[@]}"
+          else
+            echo "No changed internal-proposals/ paths to validate."
+          fi
