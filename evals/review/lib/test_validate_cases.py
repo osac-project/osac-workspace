@@ -140,6 +140,28 @@ def test_missing_document_path_field(tmp_path: Path, workspace_root: Path):
     assert any("document_path" in e for e in errors)
 
 
+def test_integer_document_path_reports_error_without_raising(tmp_path: Path, workspace_root: Path):
+    case_dir = tmp_path / "cases" / "example"
+    _write_case(case_dir, input_yaml="document_path: 123\nskill: prd-review\ncase_id: example\n",
+                annotations_yaml=VALID_ANNOTATIONS)
+
+    valid, errors = validate_case(case_dir, workspace_root)
+
+    assert valid is False
+    assert any("document_path" in e and "must be a string" in e for e in errors)
+
+
+def test_list_document_path_reports_error_without_raising(tmp_path: Path, workspace_root: Path):
+    case_dir = tmp_path / "cases" / "example"
+    _write_case(case_dir, input_yaml="document_path: [doc.md]\nskill: prd-review\ncase_id: example\n",
+                annotations_yaml=VALID_ANNOTATIONS)
+
+    valid, errors = validate_case(case_dir, workspace_root)
+
+    assert valid is False
+    assert any("document_path" in e and "must be a string" in e for e in errors)
+
+
 def test_expected_scores_value_above_range(tmp_path: Path, workspace_root: Path):
     case_dir = tmp_path / "cases" / "example"
     _write_case(case_dir, input_yaml=VALID_INPUT, annotations_yaml=(

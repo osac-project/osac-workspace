@@ -75,6 +75,12 @@ def _validate_document_path(input_data: dict, case_dir: Path,
     if not document_path:
         errors.append(f"{case_dir}: input.yaml missing document_path")
         return
+    if not isinstance(document_path, str):
+        errors.append(
+            f"{case_dir}: input.yaml document_path must be a string, "
+            f"got {document_path!r}"
+        )
+        return
 
     # Pathlib's `/` operator drops the left operand when the right is
     # absolute, so an absolute document_path naturally fails the
