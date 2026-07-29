@@ -6,6 +6,7 @@ Both the `boot` command and the refresh script require a **pull secret** and an 
 
 | Deployment type | Pull secret path | AAP license path |
 |----------------|-----------------|-----------------|
+| SNO (bare) | `values/vmaas-ci/pull-secret.json` | Not needed (but required when installing VMaaS or CaaS via refresh — see their rows) |
 | VMaaS | `values/vmaas-ci/pull-secret.json` | `values/vmaas-ci/license.zip` |
 | CaaS | `values/caas-ci/pull-secret.json` | `values/caas-ci/license.zip` |
 

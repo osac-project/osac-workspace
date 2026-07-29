@@ -91,8 +91,8 @@ ssh root@server.example.com
 git clone https://github.com/osac-project/cluster-tool.git
 cd cluster-tool
 ./cluster-tool connect local --host local --data-path /home/cluster-tool
-./cluster-tool pull quay.io/rh-ee-ovishlit/cluster-flavors:vmaas
-./cluster-tool boot --flavor vmaas --name dev --pull-secret /path/to/pull-secret.json
+./cluster-tool pull quay.io/osac-project/cluster-flavors:vmaas-4-22
+./cluster-tool boot --flavor vmaas-4-22 --name dev --pull-secret /path/to/pull-secret.json
 export KUBECONFIG=~/.kube/dev.kubeconfig
 ```
 
@@ -169,22 +169,37 @@ A flavor is a reusable snapshot — golden disk images with OpenShift + OSAC com
 
 ### Which flavor do I need?
 
-| OSAC deployment type | Flavor | OCI image |
-|---------------------|--------|-----------|
-| **VMaaS** (compute instances, VMs) | `vmaas` | `quay.io/rh-ee-ovishlit/cluster-flavors:vmaas` |
-| **CaaS** (hosted clusters) | `caas` | `quay.io/rh-ee-ovishlit/cluster-flavors:caas` |
+There are three flavor types. **Not all types are available for every OCP version.**
 
-**VMaaS** includes: OpenShift SNO + LVMS + CNV + cert-manager + Keycloak + AAP + OSAC (VM provisioning).
+| Type | What it includes | Example tag |
+|------|-----------------|-------------|
+| **SNO** (bare) | OpenShift SNO only — no OSAC components. Use to test installation from scratch — install VMaaS or CaaS via refresh (Step 5). | `sno-4-22` |
+| **VMaaS** (compute instances, VMs) | OpenShift SNO + LVMS + CNV + cert-manager + Keycloak + AAP + OSAC (VM provisioning) | `vmaas-4-22` |
+| **CaaS** (hosted clusters) | OpenShift SNO + LVMS + MetalLB + MCE + cert-manager + Keycloak + AAP + OSAC (cluster provisioning) | `caas-4-22` |
 
-**CaaS** includes: OpenShift SNO + LVMS + MetalLB + MCE + cert-manager + Keycloak + AAP + OSAC (cluster provisioning).
+### Version selection
+
+Image tags follow the format `<type>-<ocp-version>` (e.g., `vmaas-4-22`, `sno-4-21`). A version **must** be specified — there is no "latest" default. Unversioned tags (`vmaas`, `caas`) may exist but can be stale; always use versioned tags.
+
+To discover available tags:
+
+```bash
+skopeo list-tags docker://quay.io/osac-project/cluster-flavors
+```
+
+**When the user doesn't specify a version:** run the `skopeo list-tags` command above to see what's available. Determine the flavor type from the user's task context (CaaS features → `caas-*`, VMaaS features → `vmaas-*`, plain cluster → `sno-*`). Find the latest OCP version available and check whether it exists for the user's needed type. If it does not exist for that type, warn the user explicitly (e.g., "CaaS is not available for 4.21 — only SNO exists at that version") and show which versions do have their type. Never assume a tag exists — always verify via the `skopeo` output.
 
 ### Pull the flavor
 
+All flavors are pulled from `quay.io/osac-project/cluster-flavors`. Replace `<tag>` with the versioned tag from the table above (e.g., `vmaas-4-22`):
+
 ```bash
-cluster-tool pull quay.io/rh-ee-ovishlit/cluster-flavors:vmaas --server <alias>
+cluster-tool pull quay.io/osac-project/cluster-flavors:<tag> --server <alias>
 ```
 
-This downloads ~60-90 GB from Quay.io. Takes ~10-15 minutes depending on network speed. You only need to do this once per server per flavor — the flavor is stored locally on the server.
+This downloads ~15-40 GB from Quay.io (SNO ~15 GB, CaaS ~25 GB, VMaaS ~40 GB). Takes ~10-15 minutes depending on network speed. You only need to do this once per server per flavor — the flavor is stored locally on the server.
+
+The local flavor name is the tag (e.g., pulling `:vmaas-4-22` creates a local flavor named `vmaas-4-22`).
 
 ### Check available flavors
 
@@ -200,10 +215,10 @@ cluster-tool flavors --server <alias>     # On specific server
 **Read [pull-secret-and-license.md](references/pull-secret-and-license.md)** if pull secret and AAP license paths are not already set up.
 
 ```bash
-cluster-tool boot --flavor vmaas --name <name> --pull-secret <path-to-pull-secret.json> --server <alias>
+cluster-tool boot --flavor <flavor> --name <name> --pull-secret <path-to-pull-secret.json> --server <alias>
 ```
 
-- **`--flavor`** — which snapshot to boot from (must be pulled first)
+- **`--flavor`** — which snapshot to boot from (must be pulled first). Use the local flavor name — this is the tag you used when pulling (e.g., `vmaas-4-22`).
 - **`--name`** — short identifier, **max 8 characters** (e.g., `dev`, `test1`, `pr-42`). Linux bridge names are `br-{name[:8]}`, so longer names cause collisions.
 - **`--pull-secret`** — **(mandatory)** path to a pull secret JSON file for authenticated registry access. See [pull-secret-and-license.md](references/pull-secret-and-license.md).
 - **`--server`** — which server to boot on (omit to use default)
@@ -211,7 +226,7 @@ cluster-tool boot --flavor vmaas --name <name> --pull-secret <path-to-pull-secre
 **Example:**
 
 ```bash
-cluster-tool boot --flavor vmaas --name dev --pull-secret values/vmaas-ci/pull-secret.json --server myserver
+cluster-tool boot --flavor vmaas-4-22 --name dev --pull-secret values/vmaas-ci/pull-secret.json --server myserver
 ```
 
 Takes ~10 minutes. What happens:
@@ -241,8 +256,8 @@ If any step fails, all resources are rolled back automatically. No orphaned VMs 
 Multiple boot/destroy commands can run in parallel safely — cluster-tool uses file locking internally.
 
 ```bash
-cluster-tool boot --flavor vmaas --name test1 --pull-secret values/vmaas-ci/pull-secret.json --server myserver &
-cluster-tool boot --flavor vmaas --name test2 --pull-secret values/vmaas-ci/pull-secret.json --server myserver &
+cluster-tool boot --flavor vmaas-4-22 --name test1 --pull-secret values/vmaas-ci/pull-secret.json --server myserver &
+cluster-tool boot --flavor vmaas-4-22 --name test2 --pull-secret values/vmaas-ci/pull-secret.json --server myserver &
 wait
 ```
 
@@ -319,10 +334,10 @@ sudo cluster-tool setup client
 cluster-tool connect myserver --host root@server.example.com --data-path /home/cluster-tool
 
 # 4. Pull flavor (~10-15 min)
-cluster-tool pull quay.io/rh-ee-ovishlit/cluster-flavors:vmaas --server myserver
+cluster-tool pull quay.io/osac-project/cluster-flavors:vmaas-4-22 --server myserver
 
 # 5. Boot (~5 min)
-cluster-tool boot --flavor vmaas --name dev --pull-secret values/vmaas-ci/pull-secret.json --server myserver
+cluster-tool boot --flavor vmaas-4-22 --name dev --pull-secret values/vmaas-ci/pull-secret.json --server myserver
 
 # 6. Use it
 export KUBECONFIG=~/.kube/dev.kubeconfig
@@ -332,14 +347,14 @@ oc get nodes
 ### Subsequent boots (flavor already pulled)
 
 ```bash
-cluster-tool boot --flavor vmaas --name dev --pull-secret values/vmaas-ci/pull-secret.json --server myserver
+cluster-tool boot --flavor vmaas-4-22 --name dev --pull-secret values/vmaas-ci/pull-secret.json --server myserver
 export KUBECONFIG=~/.kube/dev.kubeconfig
 ```
 
 ### Full workflow with refresh
 
 ```bash
-cluster-tool boot --flavor vmaas --name dev --pull-secret values/vmaas-ci/pull-secret.json --server myserver
+cluster-tool boot --flavor vmaas-4-22 --name dev --pull-secret values/vmaas-ci/pull-secret.json --server myserver
 export KUBECONFIG=~/.kube/dev.kubeconfig
 
 cd <path-to-osac-installer>
@@ -378,7 +393,7 @@ See [refresh.md](references/refresh.md) for CaaS refresh, PR image overrides, an
 Boot does NOT auto-pull. You must pull the flavor first:
 
 ```bash
-cluster-tool pull quay.io/rh-ee-ovishlit/cluster-flavors:<flavor-name> --server <alias>
+cluster-tool pull quay.io/osac-project/cluster-flavors:<tag> --server <alias>
 ```
 
 ### DNS not resolving (can't reach API or console)
