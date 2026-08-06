@@ -42,11 +42,11 @@ Their answers, condensed:
   fast — "very rare circumstances" justify digging up a year-old PRD, so
   there's little upside to paying that cost.
 - **Protecting instruction/spec files from the agents they constrain:**
-  "Since YOLO does not work, the human is accountable for any content. You
-  need to review the generated content and approve it. The above statement
-  should cover the strategy and all the rest just becomes implementation
-  details." They explicitly avoid `CODEOWNERS` at their team's current size
-  (~15 people), but noted they'd likely answer differently at OSAC's scale.
+  their stance, condensed — the human stays accountable for any generated
+  content, and reviewing/approving it before it merges is the actual
+  mechanism; everything else is implementation detail. They explicitly
+  avoid `CODEOWNERS` at their team's current size (~15 people), but noted
+  they'd likely answer differently at OSAC's scale.
 - **What they actually run:** three separate repos — product code, AI
   workflows (skills), and design docs (PRD/design/test-plan, kept private
   since it references their Jira instance heavily) — reporting that this
@@ -194,11 +194,14 @@ with skills. Decide the content boundary first; let that pick the name.
   decided placement for `osac-workspace`'s cross-repo `reference/` docs,
   which describe the multi-repo ecosystem as a whole rather than any one
   component.
-- **Open follow-up — protection strategy for the new skills repo.** Baseline
-  is mandatory human review/approval of any change, same as everywhere else
-  — per Flight Control's stance, that's the real strategy, and the rest is
-  implementation detail. OSAC already has a per-component `OWNERS` file
-  convention (Prow-style `approvers`/`reviewers` YAML — `osac/OWNERS`,
+- **Open follow-up — protection strategy for the new skills repo.** OSAC's
+  baseline expectation here is the same one used everywhere else in this
+  ecosystem: a human reviews and approves a change before it merges —
+  that's the actual strategy, not a new practice invented for this repo.
+  Flight Control's answer corroborates that this expectation holds up at
+  their scale too, but it's evidence for the approach, not the source of
+  it. OSAC already has a per-component `OWNERS` file convention (Prow-style
+  `approvers`/`reviewers` YAML — `osac/OWNERS`,
   `osac/fulfillment-service/OWNERS`, `osac-workspace/OWNERS`, etc.), so
   adding one for the new skills repo is just following existing practice,
   not introducing anything new. **But it's worth being precise that this
