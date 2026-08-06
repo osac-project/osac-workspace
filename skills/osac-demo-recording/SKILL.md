@@ -1,6 +1,8 @@
 ---
 name: osac-demo-recording
 description: Use when creating asciinema recordings of OSAC REST/gRPC API workflows for documentation or demos
+metadata:
+  version: "0.1.0"
 ---
 
 # OSAC Demo Recording

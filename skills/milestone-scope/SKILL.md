@@ -1,6 +1,8 @@
 ---
 name: milestone-scope
 description: "Scope and readiness assessment for an OSAC milestone — features grouped by use case, epic breakdown with statuses, and gap analysis. Use when asked to report on a version, milestone, or release scope."
+metadata:
+  version: "0.1.0"
 ---
 
 # Milestone Scope

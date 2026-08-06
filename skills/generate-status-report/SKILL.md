@@ -1,6 +1,8 @@
 ---
 name: generate-status-report
 description: "Generate project status reports from Jira issues using jira-cli. When an agent needs to: (1) Create a status report for a project, (2) Summarize project progress or updates, (3) Generate weekly/daily reports from Jira, or (4) Analyze project blockers and completion. Queries Jira issues, categorizes by status/priority, and creates formatted reports."
+metadata:
+  version: "0.1.0"
 ---
 
 # Generate Status Report

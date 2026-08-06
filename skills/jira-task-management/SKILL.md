@@ -1,6 +1,8 @@
 ---
 name: jira-task-management
 description: Manage Jira issues on Red Hat Jira (redhat.atlassian.net) using jira-cli. Use this skill whenever the user mentions Jira tickets, issues, bugs, tasks, epics, sprints, or wants to create/update/search work items. Also use when the user references issue keys like OSAC-*, NVIDIA-*, RHEL-*, asks about task status, or wants to track work.
+metadata:
+  version: "0.1.0"
 ---
 
 # Jira Task Management

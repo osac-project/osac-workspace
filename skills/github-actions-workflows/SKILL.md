@@ -4,6 +4,8 @@ description: Create or edit GitHub Actions workflow files (.github/workflows/*.y
 globs:
   - ".github/workflows/*.yaml"
   - ".github/workflows/*.yml"
+metadata:
+  version: "0.1.0"
 ---
 
 # GitHub Actions Workflows

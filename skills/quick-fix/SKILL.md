@@ -1,6 +1,8 @@
 ---
 name: quick-fix
 description: Unattended bug fix — creates a Jira bug, fixes it in the background, posts a PR, and moves the ticket to Code Review. Use when a bug is found during the current session and needs an immediate fix without interactive phases. For attended, phase-by-phase bug investigation, use /bugfix instead.
+metadata:
+  version: "0.1.0"
 ---
 
 # Quick Fix Workflow

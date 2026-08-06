@@ -9,6 +9,8 @@ description: |
   Also trigger when user says "review this design", "check this design document",
   "is this design ready", "review PR on enhancement-proposals", or references a PR
   on osac-project/enhancement-proposals.
+metadata:
+  version: "0.1.0"
 ---
 
 # OSAC Design Document Reviewer
