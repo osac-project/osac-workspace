@@ -2,7 +2,7 @@
 name: report-bug
 description: Report a bug in Jira without fixing it — creates a Bug ticket with proper description, links it to an epic, and assigns it. Use when the user says 'report a bug', 'file a bug', 'log a bug', 'open a bug ticket', or wants to track a bug without immediately writing a fix.
 metadata:
-  version: "0.1.1"
+  version: "0.1.2"
 ---
 
 # Report Bug
@@ -37,7 +37,7 @@ source of truth).
 
 ## Pre-Creation Check
 
-Describe from the user's perspective — what they did (CLI commands, API calls, UI actions), what they expected to happen, and what they saw happening (error messages, wrong behavior, missing data). Use product concepts (cluster, tenant, token), not code concepts (function names, file paths, database columns). Limit the ticket body to user-visible symptoms: what the user did, what they expected, and what they saw.
+Describe the bug from the user's perspective: what they did, what they expected to happen, and what they observed. Include relevant user-visible commands, API fields, resource names, and error messages, but use product concepts such as clusters, tenants, and tokens rather than internal implementation details such as function names, source files, database tables, or code paths. Do not include inferred root causes or proposed fixes.
 
 Before creating the ticket, verify you can answer these with user-facing information:
 
@@ -171,33 +171,26 @@ cat >"$BODY" <<'EOF'
 
 <describe the problem>
 
-**Root cause:**
-
-<the underlying technical reason, if known. If the cause is unknown, write "Unknown / under investigation" — do not put symptoms here; keep those in Description or Actual result.>
-
 **How reproducible:**
 
 <Always / Sometimes / Rare>
 
 **Steps to reproduce:**
 
-1. <create prerequisite resources — show the exact osac/oc command or YAML manifest>
-2. <trigger the bug — show the exact command>
-3. <observe the failure — show the verification command, e.g. oc get/describe/logs>
+- <step>
 
 **Expected result:**
 
-<what the user expected to see or experience — include expected command output if helpful>
+<what the user expected to see or experience>
 
 **Actual result:**
 
-<what the user actually sees (error messages, wrong output, missing data) — include actual command output showing the error>
+<what the user actually sees (error messages, wrong output, missing data)>
 
 **Environment:**
 
 - Cluster: <cluster type or sanitized identifier — avoid raw internal hostnames unless the user approves>
 - OCP version: <version if known>
-- Relevant component versions: <e.g. CNV, OVN-K>
 
 ---
 
@@ -217,7 +210,8 @@ KEY=$(jq -r '.key // empty' "$OUT")
 if [ -z "$KEY" ]; then
   cat "$ERR" >&2
   # Stop here — report the failure to the user and do not proceed with
-  # epic linking, attachments, or diagnostic comments.
+  # epic linking or attachments.
+  exit 1
 fi
 ```
 
@@ -257,36 +251,6 @@ EOF
 ```
 
 If the upload fails (missing `$JIRA_API_TOKEN`, auth error, or network issue), skip it and tell the user to attach files manually via the Jira link.
-
-### Adding diagnostic output as a comment
-
-If diagnostic output (command output, logs, resource descriptions) was gathered during the conversation, add it as a comment on the ticket. Every output block must be preceded by the command that produced it, with sensitive argument values redacted — never dump output without identifying the command. If no diagnostic output was collected, skip this section.
-
-Before posting, review and redact both each command and its output for secrets, credentials, tokens, API keys, PII, and internal hostnames. Replace sensitive values with `<REDACTED>` while preserving the command shape. If either cannot be safely sanitized, skip the comment entirely and ask the user to add diagnostics manually via the Jira link.
-
-Present the diagnostic comment content to the user and wait for explicit approval before posting. If the user declines, skip the comment.
-
-````bash
-DIAG_BODY=$(new_temp osac-diag-comment)
-add_temp "$DIAG_BODY"
-cat >"$DIAG_BODY" <<'DIAGEOF'
-## Diagnostic Output
-
-### <command 1, e.g.: oc describe pod -n namespace pod-name>
-```text
-<output with sensitive data redacted>
-```
-
-### <command 2, e.g.: oc get events -n namespace --sort-by='.lastTimestamp'>
-```text
-<output with sensitive data redacted>
-```
-DIAGEOF
-
-jira issue comment add $KEY --template "$DIAG_BODY" </dev/null
-````
-
-If the comment fails (auth error, network issue), skip it and tell the user to add diagnostics manually via the Jira link.
 
 ## Report
 
