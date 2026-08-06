@@ -4,6 +4,7 @@ Meta-workspace that bootstraps all OSAC (Open Sovereign AI Cloud) component repo
 
 ## Critical Rules
 
+- **Workspace architecture decisions** (topology, skill distribution, repo boundaries) are recorded in [`decisions/`](decisions/) — read before proposing changes to how `osac-workspace` itself is structured
 - **`osac-workspace/` is the project root** — all work happens from here; component docs are loaded via progressive disclosure
 - **Never skip tenant isolation metadata** (`osac.openshift.io/tenant`, `osac.openshift.io/owner-reference` annotations) in new resources
 - **Always `buf lint` before committing** proto changes; regenerate with `buf generate`
