@@ -143,10 +143,11 @@ Do not create bootstrap tasks.
 
 ## Apply bootstrap metadata
 
-Label + copied fix version when not backlog:
+Label + copied fix version (when not backlog) + copied team (when the epic
+doesn't already have one):
 
 ```bash
-apply_bootstrap_epic_metadata "$EPIC_KEY" "$KEY" "$BOOTSTRAP_FIX_VERSION"
+apply_bootstrap_epic_metadata "$EPIC_KEY" "$KEY" "$BOOTSTRAP_FIX_VERSION" "$TEAM"
 ```
 
 Run after parent verify succeeds — including when reusing an epic from duplicate search.

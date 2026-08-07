@@ -2,7 +2,7 @@
 name: osac-feature
 description: Create Feature issues in the OSAC Jira project. Use when the user wants to create a Feature, enhancement, or new capability request for OSAC.
 metadata:
-  version: "0.1.0"
+  version: "0.2.0"
 ---
 
 # OSAC Feature Creation
@@ -22,14 +22,15 @@ portable constructs only — macOS `/bin/bash` is 3.2 (no `mapfile`).
 ## Gather Inputs
 
 Collect from conversation context. Ask only if truly ambiguous — **except**
-for **Requires UI work** and **Fix version**, which must always be asked
-explicitly (never inferred from the description or summary).
+for **Team**, **Requires UI work**, and **Fix version**, which must always
+be asked explicitly (never inferred from the description or summary).
 
 | Input | Required | Default |
 |-------|----------|---------|
 | Feature summary | Yes | From conversation context |
 | Description | Yes | From conversation context |
 | Component | Yes | Infer from context: VMaaS, CaaS, BMaaS, Core, Storage, Connectivity&Fabric, UI, Infrastructure, Enclave |
+| Team | **Yes** | Ask user to pick from the known OSAC teams — see [bash-patterns.md](references/bash-patterns.md)'s `list_team_suggestions` |
 | Customer | No | If the feature is driven by a specific customer requirement, note the customer name |
 | Requires UI work | **Yes** | Ask: "Does this feature require UI work?" |
 | Fix version | **Yes** | Propose highest unreleased milestone from Jira (exclude `0.0`); user accepts, picks another, or chooses backlog |
@@ -85,6 +86,24 @@ Store the validated value in `FEATURE_SUMMARY`.
 Infer from conversation context. Valid values: VMaaS, CaaS, BMaaS, Core,
 Storage, Connectivity&Fabric, UI, Infrastructure, Enclave. Ask if ambiguous.
 Store in `COMPONENT`.
+
+### Team
+
+Ask explicitly — do not infer from the description or summary.
+
+1. Run `list_team_suggestions` (see [bash-patterns.md](references/bash-patterns.md)) to list known teams.
+2. Ask: "Which team owns this Feature? Options: <team list>"
+3. Normalize the answer via `validate_team` and store in `TEAM`:
+   - A valid team name from the suggestion list (case-insensitive match, canonicalized to the list's spelling)
+   - `invalid` for anything else, including empty input
+4. On `invalid`, ask again — Team has no default or skip option; every Feature must have one.
+5. If the desired team isn't listed, tell the user this skill's team list needs updating (`TEAM_NAME_TO_ID` in [bash-patterns.md](references/bash-patterns.md)) and ask a Jira admin for the team's ID.
+
+Only the Feature **chooses** Team at the confirm gate. The bootstrap epic and
+PRD/Design gate tasks receive a **copy** — see the propagation rules in
+[bash-patterns.md](references/bash-patterns.md) and
+[bootstrap-tasks.md](references/bootstrap-tasks.md). UX Design and UI Design
+gate tasks always get `OSAC-UI` regardless of the Feature's choice.
 
 ### Customer (optional)
 
@@ -144,6 +163,7 @@ Ready to create in Jira:
 
   Feature:     <FEATURE_SUMMARY>
   Component:   <COMPONENT>
+  Team:        <TEAM>
   Customer:    <name or none>
   UI work:     yes | no
   Fix version: <version> | backlog (unset)
@@ -151,11 +171,12 @@ Ready to create in Jira:
   Assignee:    <name or unassigned>
 
   Bootstrap epic:  <FEATURE_SUMMARY> - Bootstrap
-    Label: bootstrap; fix version copied from Feature (when not backlog)
+    Label: bootstrap; fix version copied from Feature (when not backlog); team copied from Feature
   Bootstrap tasks: PRD - <FEATURE_SUMMARY>, Design - <FEATURE_SUMMARY>
     [, UX Design - <FEATURE_SUMMARY>, UI Design - <FEATURE_SUMMARY> if UI work]
 
-  (Gate tasks do not receive fix version.)
+  (Gate tasks do not receive fix version. PRD/Design tasks get <TEAM>;
+   UX/UI Design tasks always get OSAC-UI regardless of <TEAM>.)
 
 Proceed? (yes/no)
 ```
@@ -169,9 +190,9 @@ Execute in order. **Read each reference file before its step** — do not skip.
 | Step | Read first | Action |
 |------|------------|--------|
 | 1 | [bash-patterns.md](references/bash-patterns.md) | Source helpers and safe-create temps |
-| 2 | [feature-body-template.md](references/feature-body-template.md) | Create Feature, set fix version, assign if requested |
+| 2 | [feature-body-template.md](references/feature-body-template.md) | Create Feature, set fix version and team, assign if requested |
 | 3 | [bootstrap-epic.md](references/bootstrap-epic.md) | Create or reuse bootstrap epic; verify parent linkage |
-| 4 | [bootstrap-tasks.md](references/bootstrap-tasks.md) | Create PRD, Design[, UX/UI Design] gate tasks |
+| 4 | [bootstrap-tasks.md](references/bootstrap-tasks.md) | Create PRD, Design[, UX/UI Design] gate tasks; apply team |
 
 ## Error Handling
 
@@ -182,7 +203,8 @@ Execute in order. **Read each reference file before its step** — do not skip.
 | Duplicate Feature found | Stop; report existing key(s); ask user whether to reuse or proceed anyway |
 | Empty `KEY` after Feature create | Stop; report `$ERR` and error JSON; do not bootstrap |
 | Fix version edit failed after Feature create | Non-fatal; report manual `jira issue edit --fix-version …`; continue bootstrap |
-| Bootstrap metadata failed (label or fix version copy) | Non-fatal; report manual edit commands; continue gate tasks |
+| Team field edit failed after Feature/epic/task create | Non-fatal; report manual Jira UI edit; continue bootstrap |
+| Bootstrap metadata failed (label, fix version, or team copy) | Non-fatal; report manual edit command (label/fix version) or Jira UI link (team, via `apply_team`); continue gate tasks |
 | Empty `EPIC_KEY` after epic create | Stop; report Feature key and errors; do not create tasks |
 | Epic parent edit slow | Wait up to 3 minutes; do not kill and retry |
 | Epic parent ≠ Feature after 30s re-check | Stop; report keys + manual `jira issue edit -P … </dev/null>`; do not create tasks |
@@ -206,16 +228,20 @@ Feature created:
 
 Jira:           https://redhat.atlassian.net/browse/<KEY>
 Component:      <component>
+Team:           <team>
 Fix version:    <version> | backlog (unset)
 Labels:         [osac-ux, osac-ui if UI work][, customer, customer:<name>] | none
 Bootstrap epic: https://redhat.atlassian.net/browse/<EPIC_KEY>
 Bootstrap label: bootstrap
 Epic fix version: <copied from Feature | not set (backlog)>
+Epic team:      <copied from Feature | already set (unchanged)>
 Bootstrap tasks:
   - PRD:        <TASK_PRD>
   - Design:     <TASK_DESIGN>
   [- UX Design:  <TASK_UX>         (osac-ux)   UI work only]
   [- UI Design:  <TASK_UI>         (osac-ui)   UI work only]
+  (PRD/Design get team <team>; UX/UI Design get team OSAC-UI — see above
+   for any team edit failures, which are non-fatal and reported live)
 Status:         New
 ```
 
@@ -250,6 +276,11 @@ See [feature-body-template.md](references/feature-body-template.md) for the Jira
 - Gate tasks track documentation milestones, not implementation work
 - **Fix version:** Feature chooses at confirm gate; bootstrap epic copies when set;
   gate tasks never receive `fixVersion`
+- **Team:** not writable via jira-cli (`customfield_10001`; see `apply_team()`
+  in [bash-patterns.md](references/bash-patterns.md)) — set with a direct REST
+  call instead. Feature chooses at confirm gate; bootstrap epic and PRD/Design
+  gate tasks receive a copy; UX Design and UI Design gate tasks always get
+  `OSAC-UI` regardless of the Feature's team
 - Existing bootstrap epics predating this convention are not backfilled — only
   epics created going forward get the `bootstrap` label and copied `fixVersion`
 - Temp files: source `tools/jira-safe-create.sh`; call `add_temp` in the parent shell after each `new_temp` — see `jira-task-management` Safe create pattern
