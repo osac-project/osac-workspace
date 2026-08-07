@@ -1,4 +1,4 @@
-name: PR Dashboard
+name: GitHub Pages
 
 on:
   schedule:
@@ -7,7 +7,8 @@ on:
     branches: [main]
     paths:
       - 'presentations/**'
-      - 'index.html'
+      - 'docs/pr-dashboard/**'
+      - 'tools/generate-site-index.py'
       - '.github/workflows/pr-dashboard.yml'
   workflow_dispatch:
 
@@ -21,7 +22,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  deploy-dashboard:
+  deploy-site:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -31,6 +32,10 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.13"
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
 
       - name: Generate all dashboards
         working-directory: tools/pr-notify
@@ -53,6 +58,16 @@ jobs:
             echo "::endgroup::"
           done
 
+      - name: Build presentations
+        run: |
+          npx @marp-team/marp-cli@4.4.0 --html --allow-local-files \
+            --theme-set presentations/themes/redhat.css \
+            --input-dir presentations/ \
+            --output presentations/
+
+      - name: Generate site index
+        run: python3 tools/generate-site-index.py presentations index.html
+
       - name: Assemble site
         run: |
           mkdir -p _site/presentations
@@ -64,7 +79,12 @@ jobs:
           cd tools/pr-notify && python generate_manifest.py --output ../../_site/dashboards.json
           cd ../..
           cp presentations/*.html _site/presentations/
-          cp -r presentations/assets _site/presentations/ 2>/dev/null || true
+          if [ -d presentations/assets ]; then
+            cp -r presentations/assets _site/presentations/
+          fi
+          if [ -d presentations/themes ]; then
+            cp -r presentations/themes _site/presentations/
+          fi
 
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

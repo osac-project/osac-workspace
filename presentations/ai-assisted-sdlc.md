@@ -2,6 +2,8 @@
 marp: true
 theme: redhat
 paginate: true
+title: AI-Assisted SDLC
+description: How OSAC uses Claude Code skills for the full development lifecycle — PRD, Design, Implementation, and E2E testing.
 ---
 
 <style>

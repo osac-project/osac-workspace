@@ -2,6 +2,8 @@
 marp: true
 theme: redhat
 paginate: true
+title: Enclave Configuration Wizard
+description: Handover documentation covering architecture, development setup, and testing for the Enclave Configuration Wizard.
 ---
 
 <!-- _class: title -->
