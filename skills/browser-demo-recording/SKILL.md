@@ -1,6 +1,8 @@
 ---
 name: browser-demo-recording
 description: Record browser-based UI demos using Playwright and edit the video with ffmpeg (speed up, trim, concatenate, add title cards). Use when creating demo recordings of web UIs — Enclave Wizard, osac-ui, OpenShift console, or any browser-based workflow.
+metadata:
+  version: "0.1.0"
 ---
 
 # Browser Demo Recording

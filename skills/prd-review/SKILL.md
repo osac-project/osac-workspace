@@ -9,6 +9,8 @@ description: |
   Also trigger when user says "review this PRD", "check this PRD",
   "is this PRD ready", "review the requirements doc", or references a PRD
   file or PR.
+metadata:
+  version: "0.1.0"
 ---
 
 # OSAC PRD Reviewer

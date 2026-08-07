@@ -1,7 +1,6 @@
 ---
 name: presentation
 description: Create Red Hat-branded Marp presentations (slide decks). Produces a self-contained Marp markdown deck using the shared redhat theme, renders to HTML and PPTX. Encodes the hard-won rules for image paths and PPTX export so layouts and assets survive conversion.
-version: 1.0.0
 user-invocable: true
 arguments: "[topic or outline]"
 triggers:
@@ -13,6 +12,8 @@ triggers:
   - marp deck
   - convert to google slides
   - export pptx
+metadata:
+  version: "1.0.0"
 ---
 
 # Presentation Skill

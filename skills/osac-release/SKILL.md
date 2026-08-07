@@ -22,6 +22,8 @@ allowed-tools:
   - Glob
   - Grep
   - AskUserQuestion
+metadata:
+  version: "0.1.0"
 ---
 
 # /osac-release -- OSAC Helm Chart Release Wizard

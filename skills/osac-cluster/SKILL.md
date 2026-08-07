@@ -2,6 +2,8 @@
 name: osac-cluster
 description: Boot, manage, or troubleshoot OSAC development clusters using cluster-tool.
 when_to_use: Use when the user needs an OSAC development cluster, wants to test locally, says "spawn a cluster", "boot a cluster", "I need a dev environment", asks about cluster-tool, or wants to run E2E tests on a real cluster. Also use when connecting to baremetal servers, pulling flavors, running refresh, or troubleshooting cluster issues.
+metadata:
+  version: "0.1.0"
 ---
 
 # OSAC Cluster — From Zero to Running Cluster
