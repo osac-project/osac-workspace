@@ -111,6 +111,7 @@ if ! [[ "${TASK_PRD}" =~ ^OSAC-[0-9]+$ ]]; then
   jq -r '.errorMessages[]? // .errors? // empty' "$OUT" 2>/dev/null >&2
   exit 1
 fi
+apply_team "$TASK_PRD" "$TEAM"
 fi
 ```
 
@@ -118,7 +119,13 @@ Repeat for Design, UX Design, and UI Design (change `TASK_SUMMARY` — always
 `<gate> - ${FEATURE_SUMMARY}` — and `GATE_NAME` to the bare gate word, plus
 body, labels, and target variable per the table). Use the same duplicate-check
 + reuse/skip pattern before each create block. Use the same empty-key guard
-before exiting — include every completed task key in the context line.
+before exiting — include every completed task key in the context line. Call
+`apply_team` right after the empty-key guard, same as the PRD task above —
+`"$TEAM"` for the Design task, hardcoded `"OSAC-UI"` for UX Design and UI
+Design regardless of `$TEAM` (see UX/UI Design task blocks below). Only
+newly-created tasks get this call — reused tasks (from the duplicate check
+above) are left as-is, matching this file's existing reuse behavior for
+labels and body.
 
 ## UX Design task
 
@@ -153,6 +160,7 @@ if ! [[ "${TASK_UX}" =~ ^OSAC-[0-9]+$ ]]; then
   jq -r '.errorMessages[]? // .errors? // empty' "$OUT" 2>/dev/null >&2
   exit 1
 fi
+apply_team "$TASK_UX" "OSAC-UI"
 fi
 ```
 
@@ -189,6 +197,7 @@ if ! [[ "${TASK_UI}" =~ ^OSAC-[0-9]+$ ]]; then
   jq -r '.errorMessages[]? // .errors? // empty' "$OUT" 2>/dev/null >&2
   exit 1
 fi
+apply_team "$TASK_UI" "OSAC-UI"
 fi
 ```
 
