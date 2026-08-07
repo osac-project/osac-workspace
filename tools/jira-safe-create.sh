@@ -31,7 +31,20 @@ new_temp() {
 
 # Configured Jira username, for skills that build `curl -K -` credentials
 # (`user = "$(jira_login):${JIRA_API_TOKEN}"`) to call the Jira REST API
-# directly for operations jira-cli itself can't perform.
+# directly for operations jira-cli itself can't perform. Returns 1 (and
+# prints nothing) if the config file is missing, unreadable, or has no
+# non-empty `login:` value — `grep | awk`'s own exit status is awk's, which
+# is 0 even when grep found nothing, so callers can't rely on it alone.
 jira_login() {
-  grep '^login:' ~/.config/.jira/.config.yml | awk '{print $2}'
+  local config=~/.config/.jira/.config.yml login
+  if [ ! -r "$config" ]; then
+    echo "jira_login: ${config} not found or unreadable — run 'jira init' first" >&2
+    return 1
+  fi
+  login=$(grep '^login:' "$config" | awk '{print $2}')
+  if [ -z "$login" ]; then
+    echo "jira_login: no 'login:' value in ${config}" >&2
+    return 1
+  fi
+  printf '%s\n' "$login"
 }

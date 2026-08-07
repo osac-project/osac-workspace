@@ -253,7 +253,7 @@ apply_team() {
   add_temp "$err"
   out=$(new_temp osac-jira-team-out)
   add_temp "$out"
-  if ! curl -s --fail --max-time 30 -K - -X PUT -H "Content-Type: application/json" \
+  if ! curl -s --fail-with-body --max-time 30 -K - -X PUT -H "Content-Type: application/json" \
     --data "{\"fields\":{\"customfield_10001\":\"${team_id}\"}}" \
     "https://redhat.atlassian.net/rest/api/3/issue/${key}" \
     >"$out" 2>"$err" <<EOF
@@ -262,6 +262,7 @@ EOF
   then
     echo "Team field edit failed for ${key} (${team_name}) — jira-cli has no write path for this field, so set it manually if the REST call above didn't succeed:" >&2
     echo "  https://redhat.atlassian.net/browse/${key}" >&2
+    cat "$out" >&2
     cat "$err" >&2
     return 1
   fi
@@ -296,6 +297,10 @@ apply_bootstrap_epic_metadata() {
   if ! raw=$(jira issue view "$epic_key" --raw 2>>"$err"); then
     echo "Could not read ${epic_key} for fix version/team check — set both manually if needed" >&2
     cat "$err" >&2
+    return 0
+  fi
+  if ! jq -e . >/dev/null 2>&1 <<<"$raw"; then
+    echo "Could not parse ${epic_key} JSON for fix version/team check — set both manually if needed" >&2
     return 0
   fi
 

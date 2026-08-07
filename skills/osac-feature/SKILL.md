@@ -204,7 +204,7 @@ Execute in order. **Read each reference file before its step** — do not skip.
 | Empty `KEY` after Feature create | Stop; report `$ERR` and error JSON; do not bootstrap |
 | Fix version edit failed after Feature create | Non-fatal; report manual `jira issue edit --fix-version …`; continue bootstrap |
 | Team field edit failed after Feature/epic/task create | Non-fatal; report manual Jira UI edit; continue bootstrap |
-| Bootstrap metadata failed (label, fix version, or team copy) | Non-fatal; report manual edit commands; continue gate tasks |
+| Bootstrap metadata failed (label, fix version, or team copy) | Non-fatal; report manual edit command (label/fix version) or Jira UI link (team, via `apply_team`); continue gate tasks |
 | Empty `EPIC_KEY` after epic create | Stop; report Feature key and errors; do not create tasks |
 | Epic parent edit slow | Wait up to 3 minutes; do not kill and retry |
 | Epic parent ≠ Feature after 30s re-check | Stop; report keys + manual `jira issue edit -P … </dev/null>`; do not create tasks |
