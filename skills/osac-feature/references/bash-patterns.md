@@ -168,15 +168,120 @@ apply_feature_fix_version() {
 }
 ```
 
+## Team helpers
+
+Jira's `Team` field (`customfield_10001` in this Jira instance, schema
+datatype `any`/`team`) has no working write path through `jira-cli` v1.7.0 —
+`--custom Team=<value>` falls through to jira-cli's plain-string handling,
+which Jira Cloud rejects for this field type (`jira-cli` issue
+[#637](https://github.com/ankitpokhrel/jira-cli/issues/637) reports this
+exact `customfield_10001` field returning a 400; the upstream fix,
+[jira-cli#927](https://github.com/ankitpokhrel/jira-cli/pull/927), is still
+open and unmerged). Team's write shape is also different from an ordinary
+custom field: Jira expects the team's ID (a UUID), not its display name, and
+neither `jira-cli` nor JQL can resolve a team name to its ID. This skill
+sets Team with a direct REST call instead, following the same `curl -K -`
+credential pattern `report-bug` already uses for attachment uploads (reads
+the Jira username from `~/.config/.jira/.config.yml` and the token from
+`$JIRA_API_TOKEN`, passed via stdin so neither appears in the process list).
+
+```bash
+# Hardcoded team name -> team ID (UUID), harvested read-only from existing
+# OSAC issues' Team field (jira-cli/JQL cannot resolve names to IDs; Jira's
+# Teams REST/GraphQL APIs need an org ID this skill doesn't have). Update
+# this table manually when Jira teams are renamed or added — ask a Jira
+# admin for the new team's ID. Indexed array (not associative) for bash 3.2
+# compatibility, matching this skill's existing portability requirement.
+TEAM_NAME_TO_ID=(
+  "OSAC-Connectivity & Fabric:a63c4ba4-a73c-41ea-a397-0a4020253953"
+  "OSAC-Core:ab57b451-a878-4901-aee7-6a0e40e6c594"
+  "OSAC-Infrastructure:683a4065-b74b-4e79-b57e-effdea29b508"
+  "OSAC-Storage:79daf97e-198e-43e4-b2a8-00925442bcd2"
+  "OSAC-UI:b2085ca5-d82c-4751-801f-45c921840840"
+  "OSAC-VMaaS:fb86f568-c9c8-4a18-9b55-7e270ac40278"
+  "Osac-Caas:b29325e5-601a-4d53-b84b-0170920db548"
+)
+
+# List known team names, one per line, for prompting the user.
+list_team_suggestions() {
+  local entry
+  for entry in "${TEAM_NAME_TO_ID[@]}"; do
+    echo "${entry%%:*}"
+  done
+}
+
+# Look up a team's ID by its exact canonical name. Returns 1 if not found.
+team_id_for_name() {
+  local name=$1 entry
+  for entry in "${TEAM_NAME_TO_ID[@]}"; do
+    if [ "${entry%%:*}" = "$name" ]; then
+      echo "${entry#*:}"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# Case-insensitively validate a raw user answer against TEAM_NAME_TO_ID.
+# Echoes the canonical team name, or "invalid" (including for empty input).
+# Unlike validate_fix_version, there is no "backlog"/skip sentinel — every
+# Feature must have a Team (AC-1).
+validate_team() {
+  local trimmed choice entry
+  trimmed=$(printf '%s' "$1" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+  choice=$(printf '%s' "$trimmed" | tr '[:upper:]' '[:lower:]')
+  for entry in "${TEAM_NAME_TO_ID[@]}"; do
+    if [ "$(printf '%s' "${entry%%:*}" | tr '[:upper:]' '[:lower:]')" = "$choice" ]; then
+      echo "${entry%%:*}"
+      return 0
+    fi
+  done
+  echo "invalid"
+}
+
+# Set the Team field via direct REST call — jira-cli has no write path for
+# this field (see prose above). Non-fatal: reports the failure and a link
+# to fix it manually, returns 1, does not exit. Caller passes a canonical
+# name from TEAM_NAME_TO_ID (already validated via validate_team).
+apply_team() {
+  local key=$1 team_name=$2 team_id err out
+  team_id=$(team_id_for_name "$team_name") || {
+    echo "Unknown team '${team_name}' for ${key} — set manually in Jira UI" >&2
+    return 1
+  }
+  err=$(new_temp osac-jira-team-err)
+  add_temp "$err"
+  out=$(new_temp osac-jira-team-out)
+  add_temp "$out"
+  if ! curl -s --fail --max-time 30 -K - -X PUT -H "Content-Type: application/json" \
+    --data "{\"fields\":{\"customfield_10001\":\"${team_id}\"}}" \
+    "https://redhat.atlassian.net/rest/api/3/issue/${key}" \
+    >"$out" 2>"$err" <<EOF
+user = "$(jira_login):${JIRA_API_TOKEN}"
+EOF
+  then
+    echo "Team field edit failed for ${key} (${team_name}) — jira-cli has no write path for this field, so set it manually if the REST call above didn't succeed:" >&2
+    echo "  https://redhat.atlassian.net/browse/${key}" >&2
+    cat "$err" >&2
+    return 1
+  fi
+}
+```
+
 ## Bootstrap epic metadata
 
 ```bash
-# After bootstrap epic parent verified. Label at create; copy fix version here.
-# Re-run safe on reuse: add label if missing; set fix version only when epic has none.
-# Caller passes "backlog" for fix_version when the Feature edit did not succeed,
-# so a failed Feature update never results in a copied version on the epic.
+# After bootstrap epic parent verified. Label at create; copy fix version and
+# team here. Re-run safe on reuse: add label if missing; set fix version/team
+# only when the epic has none. Caller passes "backlog" for fix_version when
+# the Feature edit did not succeed, so a failed Feature update never results
+# in a copied version on the epic. Team has no such sentinel (always passed).
+#
+# The epic's raw JSON is read once and used for both the fixVersion and Team
+# checks below — fix_version's "backlog" case must not skip the Team copy,
+# so the two checks run independently rather than one short-circuiting both.
 apply_bootstrap_epic_metadata() {
-  local epic_key=$1 feature_key=$2 fix_version=$3
+  local epic_key=$1 feature_key=$2 fix_version=$3 team_name=$4
   local err
   err=$(new_temp osac-jira-bootstrap-meta-err)
   add_temp "$err"
@@ -187,22 +292,29 @@ apply_bootstrap_epic_metadata() {
     cat "$err" >&2
   fi
 
-  [ "$fix_version" = "backlog" ] && return 0
-
-  local epic_version_count raw
+  local raw
   if ! raw=$(jira issue view "$epic_key" --raw 2>>"$err"); then
-    echo "Could not read ${epic_key} for fix version check — set manually if needed" >&2
+    echo "Could not read ${epic_key} for fix version/team check — set both manually if needed" >&2
     cat "$err" >&2
     return 0
   fi
-  epic_version_count=$(printf '%s' "$raw" | jq -r '[.fields.fixVersions[]?.name] | length')
-  [ "${epic_version_count:-0}" -gt 0 ] && return 0
 
-  if ! jira issue edit "$epic_key" --fix-version "$fix_version" --no-input 2>>"$err" </dev/null; then
-    echo "Bootstrap fix version copy failed for ${epic_key} (${fix_version}) — set manually:" >&2
-    echo "  jira issue edit ${epic_key} --fix-version \"${fix_version}\" --no-input </dev/null" >&2
-    cat "$err" >&2
-    return 0
+  if [ "$fix_version" != "backlog" ]; then
+    local epic_version_count
+    epic_version_count=$(printf '%s' "$raw" | jq -r '[.fields.fixVersions[]?.name] | length')
+    if [ "${epic_version_count:-0}" -eq 0 ]; then
+      if ! jira issue edit "$epic_key" --fix-version "$fix_version" --no-input 2>>"$err" </dev/null; then
+        echo "Bootstrap fix version copy failed for ${epic_key} (${fix_version}) — set manually:" >&2
+        echo "  jira issue edit ${epic_key} --fix-version \"${fix_version}\" --no-input </dev/null" >&2
+        cat "$err" >&2
+      fi
+    fi
+  fi
+
+  local epic_team
+  epic_team=$(printf '%s' "$raw" | jq -r '.fields.customfield_10001.name // empty')
+  if [ -z "$epic_team" ]; then
+    apply_team "$epic_key" "$team_name"
   fi
 }
 ```
