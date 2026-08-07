@@ -2,7 +2,7 @@
 name: report-bug
 description: Report a bug in Jira without fixing it — creates a Bug ticket with proper description, links it to an epic, and assigns it. Use when the user says 'report a bug', 'file a bug', 'log a bug', 'open a bug ticket', or wants to track a bug without immediately writing a fix.
 metadata:
-  version: "0.1.1"
+  version: "0.1.2"
 ---
 
 # Report Bug
@@ -252,11 +252,13 @@ curl -s --fail -K - \
   -H "X-Atlassian-Token: no-check" \
   -F "file=@<path>" \
   "https://redhat.atlassian.net/rest/api/3/issue/$KEY/attachments" <<EOF
-user = "$(grep '^login:' ~/.config/.jira/.config.yml | awk '{print $2}'):${JIRA_API_TOKEN}"
+user = "$(jira_login):$(jira_token)"
 EOF
 ```
 
-If the upload fails (missing `$JIRA_API_TOKEN`, auth error, or network issue), skip it and tell the user to attach files manually via the Jira link.
+`jira_login()` and `jira_token()` come from the already-sourced `tools/jira-safe-create.sh` (see "Create the Bug" above). `jira_token()` prefers `$JIRA_API_TOKEN` but falls back to the `machine redhat.atlassian.net` entry in `~/.netrc` — the same credentials `jira-cli` itself authenticates from — so the upload works without a separate token export.
+
+If the upload fails (no credentials in `$JIRA_API_TOKEN` or `~/.netrc`, auth error, or network issue), skip it and tell the user to attach files manually via the Jira link.
 
 ### Adding diagnostic output as a comment
 
