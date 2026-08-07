@@ -8,7 +8,7 @@ Meta-workspace that bootstraps all OSAC (Open Sovereign AI Cloud) component repo
 - **Never skip tenant isolation metadata** (`osac.openshift.io/tenant`, `osac.openshift.io/owner-reference` annotations) in new resources
 - **Always `buf lint` before committing** proto changes; regenerate with `buf generate`
 - **Fork-based workflow**: push to `$PUSH_REMOTE`, never to `$UPSTREAM_REMOTE` — resolve with `tools/resolve-remotes.sh`
-- **AI attribution**: use `Assisted-by: Claude Code <noreply@anthropic.com>` trailer on commits — never use `Co-Authored-By` for AI tools (Red Hat attribution standard)
+- **AI attribution**: use an `Assisted-by: <tool> <contact>` trailer on commits, naming whichever AI tool actually did the work — never use `Co-Authored-By` for AI tools (Red Hat attribution standard). Example for Claude Code: `Assisted-by: Claude Code <noreply@anthropic.com>`
 - When debugging Kubernetes operators, check for stale vendor directories and cached images before rebuilding
 - **Don't raise `.skillsaw.yaml`'s `context-budget` skill limit to silence a token-count warning** — split the oversized `SKILL.md` into `references/`/`steps/` instead (see Skill Authoring Conventions)
 
@@ -101,7 +101,7 @@ make deploy IMG=<registry>/osac-operator:tag
 - **Branch naming**: `<type>/<ticket-or-description>` (e.g., `feat/OSAC-23607`, `fix/duplicate-aap-jobs`)
 - **Resolve remotes**: `eval $(tools/resolve-remotes.sh <component-path>)` sets `$UPSTREAM_REMOTE` and `$PUSH_REMOTE` (handles both bootstrap and manual remote naming)
 - **DCO sign-off**: `git commit -s` on all commits
-- **AI attribution**: `Assisted-by: Claude Code <noreply@anthropic.com>` trailer — never `Co-Authored-By` for AI tools
+- **AI attribution**: `Assisted-by: <tool> <contact>` trailer, naming whichever AI tool actually did the work — never `Co-Authored-By` for AI tools. Example for Claude Code: `Assisted-by: Claude Code <noreply@anthropic.com>`
 
 ### Cross-Component Changes
 
@@ -187,6 +187,14 @@ Installed via `bootstrap.sh` from [flightctl/ai-workflows](https://github.com/fl
 - **implement** — Task-to-code: ingest Jira task → plan → code (TDD) → validate → publish PR
 
 Both workflows are phase-based — you can jump to any phase directly (e.g., `bugfix:fix`, `implement:code`).
+
+#### Project Overrides
+
+- **`implement:publish`** — overridden at `.workflows/implement/skills/publish.md` to add a
+  **Pre-Flight Review Gate** step (security + performance, via the `review-gate` skill) between
+  the built-in cross-cutting review and the confirm/push steps. This is OSAC-938's local review
+  gate applied to the `/implement:publish` path, in addition to `create-pr` — most OSAC work goes
+  through `/implement:publish`, not `create-pr` directly, so both paths need the same gate.
 
 ### PRD and Design Workflows
 

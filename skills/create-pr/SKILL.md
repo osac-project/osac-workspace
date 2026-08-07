@@ -205,10 +205,21 @@ Read the component's CLAUDE.md or Makefile for the correct validation sequence.
 
 Analyze the diff to detect production code changes that lack corresponding test changes. This is **advisory only** — it warns but does not block PR creation.
 
-Run:
+Compute the merge-base first — same fail-closed pattern as `review-gate`'s
+Prerequisites:
 
 ```bash
-git diff main..HEAD --name-only --diff-filter=AMR
+MERGE_BASE=$(git merge-base main HEAD)
+```
+
+If this command fails, stop and report the error — do not continue with an
+empty or missing merge-base. Step 1 already validated that `main` exists,
+so a failure here indicates a deeper problem (e.g., unrelated histories).
+
+Then list the changed files:
+
+```bash
+git diff "$MERGE_BASE" --name-only --diff-filter=AMR
 ```
 
 Classify each changed file using the component-specific rules below — for
@@ -249,7 +260,43 @@ This is a warning — proceeding with PR creation.
 
 **Always continue to Step 4** regardless of the result.
 
-## Step 4: Push to Push Remote
+## Step 4: Pre-Flight Review Gate
+
+Run the `review-gate` skill: read `../review-gate/SKILL.md` with the `Read`
+tool and follow it exactly, as if it were pasted inline here — don't rely on
+memory of what it does, even if you've run it earlier in this session. If
+your harness offers a dedicated skill-invocation mechanism (e.g. Claude
+Code's `Skill` tool), using that is fine too; either way, treat this step as
+a fresh execution of `review-gate`'s current instructions, not a recall of a
+prior result.
+
+This is the last local check before anything leaves the machine — it runs
+after validation (Step 2) and the coverage advisory (Step 3), since either
+of those can still prompt more edits, and right before push (Step 5).
+
+By this point the working tree is already clean and everything is committed
+(Step 1's gate check requires that). `create-pr` doesn't stack branches, so
+use `review-gate`'s default `BASE` (`main`) — no override needed.
+`review-gate` diffs from `$(git merge-base main HEAD)` — not a raw
+`git diff main` — so it reviews exactly the commits about to be pushed even
+if `main` has advanced since this branch was created. Nothing to stage
+here.
+
+**If the gate reports BLOCKED:** Stop. Show the full aggregated report from
+`review-gate`. Do not push. Fix the flagged issues in a new commit (never
+amend — see Red Flags) and re-run this step.
+
+**If the gate reports INVALID:** Stop — treat this the same as BLOCKED for
+the purpose of not pushing. Show what failed and why: either the gate's
+own scope-capture (`git merge-base` against `{BASE}`) failed, or a
+reviewer step produced no usable output. Either way, this means the gate
+itself didn't complete, not that the code has a confirmed problem — the
+next action is re-running this step (fixing the `{BASE}`/fetch issue, or
+re-reading the failed reviewer's `SKILL.md` fresh), not editing code.
+
+**If the gate reports PASS:** Continue to Step 5.
+
+## Step 5: Push to Push Remote
 
 Always push to `$PUSH_REMOTE`, never to `$UPSTREAM_REMOTE`.
 
@@ -259,7 +306,7 @@ git push -u "$PUSH_REMOTE" "$BRANCH"
 
 If push fails due to diverged history, do not force-push automatically. Show the push error to the user and ask them for explicit instructions on how to proceed.
 
-## Step 5: Determine PR Title
+## Step 6: Determine PR Title
 
 The PR title must include the Jira ticket key if one exists.
 
@@ -279,7 +326,7 @@ If no ticket key is found, ask: "Is there a Jira ticket for this work? (e.g., OS
 
 If none, omit the prefix — just use a descriptive title.
 
-## Step 6: Create PR
+## Step 7: Create PR
 
 `fulfillment-service`, `osac-operator`, `osac-aap`, `osac-installer`,
 `bare-metal-fulfillment-operator`, and `osac-csi-driver` share one remote pair
@@ -326,7 +373,7 @@ EOF
 )"
 ```
 
-## Step 7: Report Result
+## Step 8: Report Result
 
 Display the PR URL as a clickable markdown link:
 
@@ -345,10 +392,11 @@ related PRs in the description (e.g., 'Depends on osac-project/osac#123')."
 | 1 | Detect context, resolve remotes | Not on main, push remote exists, commits ahead |
 | 2 | Run validation | All checks pass |
 | 3 | Check test coverage | Advisory warning (does not block) |
-| 4 | Push branch | Push to `$PUSH_REMOTE` succeeds |
-| 5 | Determine title | Jira key included if available |
-| 6 | Create PR | PR created against upstream repo |
-| 7 | Report | Show PR URL |
+| 4 | Pre-flight review gate | `review-gate` reports PASS (blocks on BLOCKED or INVALID) |
+| 5 | Push branch | Push to `$PUSH_REMOTE` succeeds |
+| 6 | Determine title | Jira key included if available |
+| 7 | Create PR | PR created against upstream repo |
+| 8 | Report | Show PR URL |
 
 ## Common Issues
 
@@ -387,12 +435,15 @@ If a PR already exists, show its URL instead of creating a duplicate.
 - Push to `$UPSTREAM_REMOTE` — always use `$PUSH_REMOTE`
 - Create a PR from `main`
 - Skip validation checks
+- Skip the pre-flight review gate, or push after it reports BLOCKED or INVALID
 - Force-push without user confirmation
 - Create a PR with failing tests
+- Amend an existing commit — always create a new one
 
 **Always:**
 - Resolve remotes with `tools/resolve-remotes.sh` before pushing
 - Run repo-specific validation first
+- Run the pre-flight review gate before pushing
 - Push to `$PUSH_REMOTE`
 - Include Jira ticket key in title when available
 - Check for existing PRs before creating duplicates

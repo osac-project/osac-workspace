@@ -122,13 +122,17 @@ buf lint && buf generate proto
 
 ```bash
 git add <specific-files-only>
-git commit -m "$(cat <<'EOF'
+git commit -s -m "$(cat <<'EOF'
 <KEY>: <imperative description of fix>
 
-Assisted-By: Claude Code <noreply@anthropic.com>
+Assisted-by: <AI tool> <contact>
 EOF
 )"
 ```
+
+`Assisted-by` names whichever AI tool actually did the work — never
+`Co-Authored-By` for AI tools. Example for Claude Code: `Assisted-by:
+Claude Code <noreply@anthropic.com>`.
 
 Commit message format: `<JIRA-KEY>: <imperative description>`
 Example: `OSAC-356: fix VM namespace lookup when subnetRef is set`
@@ -157,7 +161,7 @@ gh pr create \
 
 Fixes: https://redhat.atlassian.net/browse/<KEY>
 
-Assisted-By: Claude Code <noreply@anthropic.com>
+Assisted-by: <AI tool> <contact>
 EOF
 )"
 ```
