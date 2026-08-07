@@ -98,14 +98,19 @@ else
   echo "Feature fix version not applied — bootstrap epic will not receive a copy; set both manually" >&2
   BOOTSTRAP_FIX_VERSION="backlog"
 fi
+apply_team "$KEY" "$TEAM"
 ```
 
 Allow up to 3 minutes for create to complete.
 
-Order after Feature create: **fix version → assign (if any) → bootstrap epic**.
-Gate tasks never receive `--fix-version`. Use `$BOOTSTRAP_FIX_VERSION` (not
-`$FIX_VERSION`) when applying bootstrap epic metadata below — it reflects
-whether the Feature edit actually succeeded.
+Order after Feature create: **fix version → team → assign (if any) →
+bootstrap epic**. Gate tasks never receive `--fix-version`. Use
+`$BOOTSTRAP_FIX_VERSION` (not `$FIX_VERSION`) when applying bootstrap epic
+metadata below — it reflects whether the Feature edit actually succeeded.
+Team has no such alias: `apply_team` is non-fatal on its own (see
+[bash-patterns.md](bash-patterns.md)), so `$TEAM` — the value the user
+chose — is passed through unchanged to the bootstrap epic and gate tasks
+regardless of whether this call succeeded.
 
 ## Assign if specified
 
