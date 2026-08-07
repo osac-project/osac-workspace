@@ -182,8 +182,12 @@ custom field: Jira expects the team's ID (a UUID), not its display name, and
 neither `jira-cli` nor JQL can resolve a team name to its ID. This skill
 sets Team with a direct REST call instead, following the same `curl -K -`
 credential pattern `report-bug` already uses for attachment uploads (reads
-the Jira username from `~/.config/.jira/.config.yml` and the token from
-`$JIRA_API_TOKEN`, passed via stdin so neither appears in the process list).
+the Jira username from `~/.config/.jira/.config.yml` via `jira_login()`,
+passed via stdin so it never appears in the process list). Unlike
+`report-bug`, the token comes from `jira_token()` (`tools/jira-safe-create.sh`),
+which prefers `$JIRA_API_TOKEN` but falls back to the same `~/.netrc` entry
+`jira-cli` itself authenticates from, so Team-setting works without a
+separate token export.
 
 ```bash
 # Hardcoded team name -> team ID (UUID), harvested read-only from existing
@@ -244,9 +248,14 @@ validate_team() {
 # to fix it manually, returns 1, does not exit. Caller passes a canonical
 # name from TEAM_NAME_TO_ID (already validated via validate_team).
 apply_team() {
-  local key=$1 team_name=$2 team_id err out
+  local key=$1 team_name=$2 team_id err out token
   team_id=$(team_id_for_name "$team_name") || {
     echo "Unknown team '${team_name}' for ${key} — set manually in Jira UI" >&2
+    return 1
+  }
+  token=$(jira_token) || {
+    echo "No Jira API token available (checked \$JIRA_API_TOKEN and ~/.netrc) — set '${team_name}' manually for ${key}:" >&2
+    echo "  https://redhat.atlassian.net/browse/${key}" >&2
     return 1
   }
   err=$(new_temp osac-jira-team-err)
@@ -257,7 +266,7 @@ apply_team() {
     --data "{\"fields\":{\"customfield_10001\":\"${team_id}\"}}" \
     "https://redhat.atlassian.net/rest/api/3/issue/${key}" \
     >"$out" 2>"$err" <<EOF
-user = "$(jira_login):${JIRA_API_TOKEN}"
+user = "$(jira_login):${token}"
 EOF
   then
     echo "Team field edit failed for ${key} (${team_name}) — jira-cli has no write path for this field, so set it manually if the REST call above didn't succeed:" >&2
