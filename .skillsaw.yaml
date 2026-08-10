@@ -412,6 +412,8 @@ exclude:
   # Workspace artifacts and generated content
   - ".artifacts/**"
   - "docs/pr-dashboard/data.json"
+  # Presentation slide decks (not instruction files)
+  - "presentations/**"
 
 # Treat warnings as errors
 strict: true

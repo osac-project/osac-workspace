@@ -1,33 +1,29 @@
 ---
-theme: default
-title: OSAC Storage Framework
-info: |
-  Storage Framework: StorageBackends, StorageTiers, Tenant and CaaS Storage Provisioning
-  OSAC-917 | August 2026
-class: text-center
-drawings:
-  persist: false
-transition: slide-left
-mdc: true
-colorSchema: dark
+marp: true
+theme: redhat
+paginate: true
 ---
+
+<style>
+section.compact { font-size: 22px; }
+section.compact li { margin-bottom: 2px; }
+section.compact h2 { margin-bottom: 10px; }
+section.detail { font-size: 22px; }
+section.detail li { margin-bottom: 2px; }
+</style>
+
+<!-- _class: title -->
+<!-- _paginate: false -->
 
 # OSAC Storage Framework
-## StorageBackends, StorageTiers, Tenant and CaaS Storage Provisioning
 
-<div class="pt-8">
-  <span class="px-2 py-1 rounded text-sm" style="background: #c00; color: white;">
-    OSAC Storage
-  </span>
-</div>
+### StorageBackends, StorageTiers, Tenant and CaaS Storage Provisioning
 
-<div class="pt-4 text-sm opacity-60">
-August 2026 | OSAC-917
-</div>
+OSAC-917 | August 2026
 
 ---
 
-# Agenda
+## Agenda
 
 | Part | Topic | Demo? |
 |------|-------|-------|
@@ -40,7 +36,7 @@ August 2026 | OSAC-917
 
 ---
 
-# The Problem
+## The Problem
 
 Datacenters have different storage equipment from different vendors.
 Each vendor supports different protocols and performance characteristics.
@@ -63,7 +59,7 @@ OSAC needs a unified way to:
 
 ---
 
-# The Solution: Storage Framework
+## The Solution: Storage Framework
 
 Three steps, each with a clear owner:
 
@@ -94,7 +90,7 @@ Three steps, each with a clear owner:
 
 ---
 
-# Personas and API Access
+## Personas and API Access
 
 ```
   Cloud Provider Admin                 Tenant Admin / User
@@ -115,14 +111,14 @@ Tenants should not be able to access vendor credentials.
 Tenants need to query available tiers when creating ComputeInstances.
 
 ---
-layout: center
----
+
+<!-- _class: divider -->
 
 # Part 1: StorageBackend and StorageTier
 
 ---
 
-# StorageBackend
+## StorageBackend
 
 A registered storage system with connection details.
 
@@ -149,7 +145,7 @@ Provider field determines which AAP role handles provisioning.
 
 ---
 
-# StorageTier
+## StorageTier
 
 A storage offering definition linked to a backend: protocol, capacity, and performance.
 
@@ -175,7 +171,7 @@ Tier names are defined by the CSP admin and vary per deployment
 
 ---
 
-# Backend and Tier Relationship
+## Backend and Tier Relationship
 
 StorageBackend and StorageTier are linked with enforced ordering:
 
@@ -195,11 +191,9 @@ StorageBackend and StorageTier are linked with enforced ordering:
 
 ---
 
-# CLI Commands
+<!-- _class: compact -->
 
-<div class="absolute bottom-4 right-8 text-xs opacity-40">* developer detail</div>
-
-<div class="text-sm">
+## CLI Commands
 
 **Create:**
 ```bash
@@ -226,32 +220,28 @@ osac delete storagetier fast
 osac delete storagebackend vast-edge22   # then backend
 ```
 
-</div>
-
----
-transition: fade-out
 ---
 
-# Demo: Backend and Tier Registration
+## Demo: Backend and Tier Registration
 
 1. Show current state: no backends, no tiers
 2. Register VAST as a StorageBackend
 3. Create a StorageTier linked to the backend
 4. Inspect both resources
 
-<div class="pt-8 text-sm opacity-60">
+<!--
 [Play recording: ./demos/storage/play-demo.sh 01 02 03]
-</div>
+-->
 
 ---
-layout: center
----
+
+<!-- _class: divider -->
 
 # Part 2: Tenant Onboarding
 
 ---
 
-# What Happens When a Tenant Becomes Ready
+## What Happens When a Tenant Becomes Ready
 
 The Storage Controller **waits until Tenant Phase=Ready** before acting.
 
@@ -276,7 +266,7 @@ Backend Setup runs once per tenant. Cluster Storage Setup runs once per cluster.
 
 ---
 
-# Stage 1: Backend Setup
+## Stage 1: Backend Setup
 
 AAP job template: `osac-create-tenant-storage-backend`
 
@@ -302,7 +292,7 @@ What gets created is vendor-specific. Each provider role implements `setup.yaml`
 
 ---
 
-# Stage 2: Cluster Storage Setup
+## Stage 2: Cluster Storage Setup
 
 AAP job template: `osac-create-tenant-cluster-storage`
 
@@ -322,9 +312,9 @@ AAP job template: `osac-create-tenant-cluster-storage`
 
 ---
 
-# How the Operator Finds StorageClasses
+<!-- _class: detail -->
 
-<div class="absolute bottom-4 right-8 text-xs opacity-40">* optional</div>
+## How the Operator Finds StorageClasses
 
 The operator discovers tenant StorageClasses purely by labels:
 
@@ -350,7 +340,7 @@ The shared `tenant=Default` fallback has been removed.
 
 ---
 
-# Default StorageClass Removed
+## Default StorageClass Removed
 
 The storage controller previously fell back to a shared StorageClass
 labeled `osac.openshift.io/tenant=Default` when no tenant-specific
@@ -375,10 +365,8 @@ StorageClass was found.
   per-tenant SCs provisioned via AAP or labeled manually
 
 ---
-transition: fade-out
----
 
-# Demo: Tenant Onboarding
+## Demo: Tenant Onboarding
 
 1. Create a Tenant
 2. Watch StorageBackendReady and ClusterStorageReady conditions progress
@@ -387,14 +375,14 @@ transition: fade-out
 5. Verify volume is created and bound
 
 ---
-layout: center
----
+
+<!-- _class: divider -->
 
 # Part 3: Cluster Provisioning
 
 ---
 
-# CaaS Clusters: Cluster Storage Setup Only
+## CaaS Clusters: Cluster Storage Setup Only
 
 When a ClusterOrder becomes Ready, the Storage Controller runs **only
 Cluster Storage Setup**. Backend resources already exist from tenant onboarding.
@@ -419,9 +407,9 @@ The ClusterOrder gets its own `ClusterStorageReady` condition.
 
 ---
 
-# How CaaS Cluster Storage is Provisioned
+<!-- _class: detail -->
 
-<div class="absolute bottom-4 right-8 text-xs opacity-40">* optional</div>
+## How CaaS Cluster Storage is Provisioned
 
 ```
   ClusterOrder becomes Ready
@@ -449,14 +437,14 @@ The ClusterOrder gets its own `ClusterStorageReady` condition.
 ```
 
 ---
-layout: center
----
+
+<!-- _class: divider -->
 
 # Part 4: Destroying a Cluster
 
 ---
 
-# Cluster Deletion: Storage Cleanup
+## Cluster Deletion: Storage Cleanup
 
 When a ClusterOrder is deleted, the storage finalizer ensures cleanup:
 
@@ -483,14 +471,14 @@ When a ClusterOrder is deleted, the storage finalizer ensures cleanup:
 ```
 
 ---
-layout: center
----
+
+<!-- _class: divider -->
 
 # Part 5: Destroying a Tenant
 
 ---
 
-# Tenant Deletion: Full Storage Cleanup
+## Tenant Deletion: Full Storage Cleanup
 
 Tenant deletion triggers a three-phase cleanup in strict order:
 
@@ -517,9 +505,9 @@ Tenant deletion triggers a three-phase cleanup in strict order:
 
 ---
 
-# What Prevents Incomplete Cleanup
+<!-- _class: detail -->
 
-<div class="absolute bottom-4 right-8 text-xs opacity-40">* developer detail</div>
+## What Prevents Incomplete Cleanup
 
 ```
   Finalizer: osac.openshift.io/storage (on Tenant)
@@ -535,16 +523,14 @@ Tenant deletion triggers a three-phase cleanup in strict order:
 ```
 
 ---
-layout: center
----
+
+<!-- _class: divider -->
 
 # Part 6: Deleting Tiers and Backend
 
 ---
-transition: fade-out
----
 
-# Demo: Tier and Backend Deletion
+## Demo: Tier and Backend Deletion
 
 Reverse of Part 1. Enforced ordering:
 
@@ -553,19 +539,17 @@ Reverse of Part 1. Enforced ordering:
 3. Delete the StorageBackend
 4. Verify both are gone
 
-<div class="pt-8 text-sm opacity-60">
+<!--
 [Play recording: ./demos/storage/play-demo.sh 04 05 06]
-</div>
+-->
 
 ---
 
-# What Happens in Different Configurations
+<!-- _class: detail -->
 
-<div class="absolute bottom-4 right-8 text-xs opacity-40">* developer detail</div>
+## What Happens in Different Configurations
 
 How the storage controller behaves:
-
-<div class="text-xs">
 
 | Backend registered? | AAP configured? | StorageBackendReady | ClusterStorageReady |
 |---|---|---|---|
@@ -573,13 +557,9 @@ How the storage controller behaves:
 | Yes | No | False: "no AAP configured" | Not evaluated |
 | No | N/A | False: "no backend registered" | Resolves manually labeled SCs |
 
-</div>
-
 ---
 
-# Storage Controller: Enabled vs Disabled
-
-<div class="absolute bottom-4 right-8 text-xs opacity-40">* developer detail</div>
+## Storage Controller: Enabled vs Disabled
 
 Helm value: `operator.controllers.storage` (default: enabled in chart).
 
@@ -604,9 +584,9 @@ CaaS clusters provision without it, but PVC workloads will fail.
 
 ---
 
-# Manual StorageClasses for Development
+<!-- _class: detail -->
 
-<div class="absolute bottom-4 right-8 text-xs opacity-40">* developer detail</div>
+## Manual StorageClasses for Development
 
 When no backends or tiers are registered, developers can configure
 StorageClasses manually. The storage controller resolves them by labels.
@@ -636,7 +616,7 @@ or environments running OSAC without a production storage backend.
 
 ---
 
-# What's Changing and What's Next
+## What's Changing and What's Next
 
 ### Recently completed
 
@@ -656,9 +636,9 @@ or environments running OSAC without a production storage backend.
 
 ---
 
-# Adding a New Storage Provider
+<!-- _class: detail -->
 
-<div class="absolute bottom-4 right-8 text-xs opacity-40">* developer detail</div>
+## Adding a New Storage Provider
 
 One AAP template role with four task files:
 
@@ -679,14 +659,14 @@ The dispatcher resolves the provider name from tier definitions and
 routes to the matching role automatically.
 
 Reference implementations:
-[`osac-aap/.../roles/vast_storage/`](https://github.com/osac-project/osac-aap/tree/main/collections/ansible_collections/osac/templates/roles/vast_storage)
-[`osac-aap/.../roles/lvms_storage/`](https://github.com/osac-project/osac-aap/tree/main/collections/ansible_collections/osac/templates/roles/lvms_storage)
+[vast_storage](https://github.com/osac-project/osac/tree/main/osac-aap/collections/ansible_collections/osac/templates/roles/vast_storage) |
+[lvms_storage](https://github.com/osac-project/osac/tree/main/osac-aap/collections/ansible_collections/osac/templates/roles/lvms_storage)
 
 ---
 
-# How Provider Routing Works
+<!-- _class: detail -->
 
-<div class="absolute bottom-4 right-8 text-xs opacity-40">* developer detail</div>
+## How Provider Routing Works
 
 ```
   Playbook: osac-create-tenant-storage-backend
@@ -712,9 +692,9 @@ Reference implementations:
 
 ---
 
-# Local Storage for Dev/CI (LVMS)
+<!-- _class: detail -->
 
-<div class="absolute bottom-4 right-8 text-xs opacity-40">* developer detail</div>
+## Local Storage for Dev/CI (LVMS)
 
 Dev/CI environments don't have a production storage backend like VAST.
 LVMS (Logical Volume Manager Storage) provides local block storage
@@ -742,7 +722,7 @@ Unlike VAST, backend + tier are auto-registered at install time.
 
 ---
 
-# Full Picture
+## Full Picture
 
 ```
   Step 1: Registration              Step 2: Provisioning
@@ -773,21 +753,19 @@ Unlike VAST, backend + tier are auto-registered at install time.
 
 ---
 
+<!-- _class: dark -->
+
 # Thank You
 
 Questions?
 
-<div class="pt-12 text-sm opacity-60">
-
-- [OSAC-917: Storage Framework](https://redhat.atlassian.net/browse/OSAC-917)
-
-</div>
+[OSAC-917: Storage Framework](https://redhat.atlassian.net/browse/OSAC-917)
 
 ---
 
-# Appendix: AAP Job Templates
+<!-- _class: compact -->
 
-<div class="text-sm">
+## Appendix: AAP Job Templates
 
 | Template | Triggered by | What it does |
 |---|---|---|
@@ -798,6 +776,3 @@ Questions?
 
 `osac-create-tenant-cluster-storage` handles both VMaaS (Tenant payload)
 and CaaS (ClusterOrder payload) by detecting the payload kind.
-
-</div>
-
