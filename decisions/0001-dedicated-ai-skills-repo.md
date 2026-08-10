@@ -155,7 +155,7 @@ the two decisions are coupled:
 
 | Candidate | Fits if... | Risk |
 |---|---|---|
-| `osac-ai-skills` | Content stays skill files (+ light supporting docs) only | Undersells scope today, not just hypothetically: the skill-quality eval harness (`design-review`/`prd-review` grading) already exists and is proposed to travel here alongside the fan-out script, `.skillsaw.yaml`, and `decisions/` — an eval harness (fixtures, graded output, harness code) reads less like "a skill" than like infrastructure that happens to test skills, and would only grow as eval coverage expands to more skills over time. Note: the bootstrap/orchestration script itself is *not* part of this scope question — Decision item 2 keeps that in `osac/` regardless of what this repo is named |
+| `osac-ai-skills` | Content stays skill files (+ light supporting docs) only | Weaker risk than an earlier draft of this table claimed — reviewed feedback pointed out that keeping a skill's evaluation right next to the skill (or in the same repo) is itself common practice, so the eval harness's presence doesn't by itself force a broader name; `osac-ai-skills` can still hold `design-review`/`prd-review` grading comfortably. What's left of the risk is narrower: the fan-out script, `.skillsaw.yaml` linting, and `decisions/` read a little less like "skills" than infrastructure *around* skills, and would only grow as eval coverage expands — a real but softer scope mismatch than originally framed. Note: the bootstrap/orchestration script itself is *not* part of this scope question — Decision item 2 keeps that in `osac/` regardless of what this repo is named |
 | `osac-ai-workflows` | Content is broader — skills plus the tooling/process around them, mirroring `flightctl/ai-workflows`'s naming | **Name collision risk, not just style**: `flightctl/ai-workflows` is already vendored into this ecosystem today (`.ai-workflows/` is the actual local directory name after bootstrap runs) — a same-named OSAC repo would make "which `ai-workflows` do you mean" a real, recurring, concrete confusion, not a matter of degree |
 | `osac-ai-helpers` | Same broad scope, mirrors OpenShift's `ai-helpers` naming | No real collision risk — checked directly, OSAC doesn't actually consume OpenShift's `ai-helpers` anywhere (no vendored directory, nothing cloned, nothing referenced in tooling), unlike `flightctl/ai-workflows`. It's purely a naming-convention echo of an unrelated project's tooling repo, not a functional relationship — OSAC provisioning OpenShift clusters is a product fact that has nothing to do with what OSAC names its own AI tooling repo |
 | `osac-ai-tooling` | Broad scope, deliberately neutral/generic | No collision risk, no borrowed identity either way — but also no positive case beyond "safe" |
@@ -164,15 +164,41 @@ the two decisions are coupled:
 collision (an identical name already in active use in this ecosystem), not
 a soft risk to weigh.
 
+**Keep the `osac-` prefix regardless of suffix — don't drop to a bare
+`ai-skills`/`skills`.** Living in the `osac-project` GitHub org only
+disambiguates the name within GitHub's own URLs and UI; the moment it's
+`git clone`'d locally (which defaults to a folder named after the repo, not
+the org) or vendored as a sibling inside `osac/`'s own tree (Decision item
+2), that org context disappears entirely. This isn't a hypothetical
+collision to weigh, either — checked directly, `ai-skills` and bare
+`skills` are both already in active, unrelated use as repo names for
+exactly this category of tool (`lgtm-hq/ai-skills`, `PMelch/ai-skills`,
+`kevin-lee/ai-skills`, `anthropics/skills`), several of which are
+themselves skill-management CLIs that create their own local `ai-skills`/
+`skills` directory. That's the same class of risk that already rules out
+`osac-ai-workflows` against `flightctl/ai-workflows` above, just against a
+far more generic, far more commonly-chosen term — so the case against
+dropping the prefix is at least as strong. It also matches the org's
+existing convention: every live OSAC product/tooling repo carries the
+`osac-` prefix (`osac`, `osac-ui`, `osac-ux`, `osac-workspace`,
+`osac-test-infra`, `osac-aap`, `osac-installer`, `osac-csi-driver`,
+`osac-operator` and its variants); the unprefixed exceptions
+(`enhancement-proposals`, `docs`) are content repos whose names are
+unambiguous enough on their own not to need it — `ai-skills` doesn't share
+that property.
+
 **Top choice: `osac-ai-tooling`.** It fits the broader content this repo is
 expected to hold, and needs no borrowed story to justify it — it just
 describes what's there. `osac-ai-helpers` is a fine alternative with a bit
 more personality, but its resemblance to OpenShift's naming isn't backed by
 any actual relationship between the two repos, so it shouldn't be read as
-more than a coincidence. `osac-ai-skills` only wins back out if the group
-draws the content boundary narrower than this record proposes — e.g., the
-eval harness gets its own repo instead of riding along
-with skills. Decide the content boundary first; let that pick the name.
+more than a coincidence. `osac-ai-skills` is a closer contender than an
+earlier pass of this record suggested — review feedback noted that
+colocating a skill's eval with the skill itself is normal practice
+regardless of repo name, so the eval harness alone isn't disqualifying —
+but it still reads narrower than the fan-out script, `.skillsaw.yaml`
+linting, and `decisions/` history this repo is also proposed to carry.
+Decide the content boundary first; let that pick the name.
 
 ## Options Considered
 
@@ -413,7 +439,8 @@ with skills. Decide the content boundary first; let that pick the name.
   consume skills?** Decision item 3 assumes `osac` can dictate whichever
   pinned-copy mechanism is eventually chosen as the consumption path for
   Forge/fullsend/jira-autofix/agentic-ci. If any of these are
-  centrally-managed tooling shared across teams (plausible, given Flight Control's own `ai-workflows`
+  centrally-managed tooling
+  shared across teams (plausible, given Flight Control's own `ai-workflows`
   is itself centrally-provided rather than OSAC-authored), that's a
   coordination dependency with each framework's owners, not something OSAC
   can unilaterally decide. Not confirmed either way by this record.
@@ -439,9 +466,9 @@ with skills. Decide the content boundary first; let that pick the name.
   one-time split — `git subtree` shows up in both discussions for
   unrelated reasons, don't conflate them).
 - Does not pick a mechanism for item 3's pinned-copy requirement — `git
-  subtree`, a custom copy-bot, and APM are laid out as candidates, with the
-  choice deferred to implementation once someone commits to evaluating them
-  properly.
+  subtree`, a custom copy-bot, and APM are laid out as candidates, same
+  treatment as the repo name, with the choice deferred to implementation
+  once someone commits to evaluating them properly.
 
 ## References
 
@@ -468,13 +495,13 @@ with skills. Decide the content boundary first; let that pick the name.
   clone, or tooling reference anywhere in this ecosystem — confirming
   OpenShift's `ai-helpers` is a naming-convention mention only, not an
   actual OSAC dependency the way `flightctl/ai-workflows` is
-- PR review feedback from `eranco74` on this record (2026-08-10,
-  `#194`) — flagged that a plain `git submodule` reference is only a
-  pointer and leaves the directory empty on a default `git clone`/
-  checkout, corrected in Decision item 3; also pointed to
-  `opendatahub-io/skills-registry`, "lola," and Microsoft's APM as
-  agent-skills tooling that can install from a marketplace "for all
-  agents," which prompted the APM entry in Options Considered
+- GitHub search (2026-08-10): `lgtm-hq/ai-skills`, `PMelch/ai-skills`,
+  `kevin-lee/ai-skills`, `anthropics/skills` — unrelated, actively
+  maintained repos already using `ai-skills`/`skills` as a bare repo name
+  for the same category of tool, grounding the case against dropping the
+  `osac-` prefix
+- `gh repo list osac-project` (2026-08-10) — confirms every live OSAC
+  product/tooling repo in the org already carries the `osac-` prefix
 - `git log --all --grep=marketplace` (2026-08-10) — commit `da0a6f95`
   ("feat: migrate plugin skills to repo-local skills/ directory",
   2026-04-30), the prior reversal away from Claude Code plugin
@@ -492,6 +519,13 @@ with skills. Decide the content boundary first; let that pick the name.
   request to extend commit-SHA pinning to relative-path plugins within a
   single marketplace repo, confirming that reproducibility gap is still
   unshipped upstream for this repo's actual shape
+- PR review feedback from `eranco74` on this record (2026-08-10,
+  `#194`) — flagged that a plain `git submodule` reference is only a
+  pointer and leaves the directory empty on a default `git clone`/
+  checkout, corrected in Decision item 3; also pointed to
+  `opendatahub-io/skills-registry`, "lola," and Microsoft's APM as
+  agent-skills tooling that can install from a marketplace "for all
+  agents," which prompted the APM entry in Options Considered
 - `opendatahub-io/skills-registry` README (checked 2026-08-10) — confirms
   it is a genuine Claude Code marketplace, but its own docs state Cursor,
   Gemini CLI, Codex, and OpenCode "do not have a marketplace aggregation
