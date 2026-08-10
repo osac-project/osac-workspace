@@ -41,7 +41,7 @@ OSAC-917 | August 2026
 Datacenters have different storage equipment from different vendors.
 Each vendor supports different protocols and performance characteristics.
 
-```
+```text
   Datacenter A              Datacenter B              Datacenter C
   +------------------+     +------------------+     +------------------+
   | VAST Data        |     | Pure Storage     |     | Ceph / ODF       |
@@ -63,7 +63,7 @@ OSAC needs a unified way to:
 
 Three steps, each with a clear owner:
 
-```
+```text
   +------------------------------------------------------------------+
   |  Step 1: Backend + Tier Registration      (Cloud Provider Admin)  |
   |  Private API: register storage vendors, define storage tiers     |
@@ -92,7 +92,7 @@ Three steps, each with a clear owner:
 
 ## Personas and API Access
 
-```
+```text
   Cloud Provider Admin                 Tenant Admin / User
   +----------------------------------+ +----------------------------------+
   |                                  | |                                  |
@@ -175,7 +175,7 @@ Tier names are defined by the CSP admin and vary per deployment
 
 StorageBackend and StorageTier are linked with enforced ordering:
 
-```
+```text
   StorageBackend (vast-edge22)        StorageTier (default)
   +-------------------------+         +-------------------------+
   | id: abc-123             |<--------| backends[0].backend_id  |
@@ -198,7 +198,8 @@ StorageBackend and StorageTier are linked with enforced ordering:
 **Create:**
 ```bash
 osac create storagebackend --name vast-edge22 --provider vast \
-  --endpoint 192.168.161.1:8443 --username admin --password 123456
+  --endpoint 192.168.161.1:8443 \
+  --username "$OSAC_STORAGE_USERNAME" --password "$OSAC_STORAGE_PASSWORD"
 
 osac create storagetier --name standard --backend-id <id> \
   --protocol NFS --quota-gib 100 --max-read-bandwidth-mbs 200
@@ -245,7 +246,7 @@ osac delete storagebackend vast-edge22   # then backend
 
 The Storage Controller **waits until Tenant Phase=Ready** before acting.
 
-```
+```text
   Tenant Phase=Ready --> add finalizer osac.openshift.io/storage
        |
   Stage 1: Backend Setup          (osac-create-tenant-storage-backend)
@@ -272,7 +273,7 @@ AAP job template: `osac-create-tenant-storage-backend`
 
 What gets created is vendor-specific. Each provider role implements `setup.yaml`.
 
-```
+```text
   Operator passes to AAP:             AAP creates per tenant on vendor:
   +--------------------------------+ +----------------------------------+
   | Tenant payload                 | | Tenant identity + credentials    |
@@ -296,7 +297,7 @@ What gets created is vendor-specific. Each provider role implements `setup.yaml`
 
 AAP job template: `osac-create-tenant-cluster-storage`
 
-```
+```text
   Operator passes to AAP:              AAP creates on target cluster:
   +----------------------------------+ +-------------------------------------+
   | Tenant or ClusterOrder payload   | | CSI Operator (via OLM)              |
@@ -318,7 +319,7 @@ AAP job template: `osac-create-tenant-cluster-storage`
 
 The operator discovers tenant StorageClasses purely by labels:
 
-```
+```yaml
   StorageClass: vast-nfs-mycompany-standard
     labels:
       osac.openshift.io/tenant: mycompany          # ownership
@@ -346,7 +347,7 @@ The storage controller previously fell back to a shared StorageClass
 labeled `osac.openshift.io/tenant=Default` when no tenant-specific
 StorageClass was found.
 
-```
+```text
   Before (removed):                    Now:
   +--------------------------------+   +--------------------------------+
   | 1. Look for SC labeled         |   | Look for SC labeled            |
@@ -387,7 +388,7 @@ StorageClass was found.
 When a ClusterOrder becomes Ready, the Storage Controller runs **only
 Cluster Storage Setup**. Backend resources already exist from tenant onboarding.
 
-```
+```text
   Tenant Onboarding                    Cluster Provisioning
   (runs both stages)                   (Cluster Storage Setup only)
 
@@ -411,7 +412,7 @@ The ClusterOrder gets its own `ClusterStorageReady` condition.
 
 ## How CaaS Cluster Storage is Provisioned
 
-```
+```text
   ClusterOrder becomes Ready
        |
   Storage Controller
@@ -448,7 +449,7 @@ The ClusterOrder gets its own `ClusterStorageReady` condition.
 
 When a ClusterOrder is deleted, the storage finalizer ensures cleanup:
 
-```
+```text
   ClusterOrder deletion triggered
        |
        +-- Has finalizer                        Only cluster-side resources
@@ -482,7 +483,7 @@ When a ClusterOrder is deleted, the storage finalizer ensures cleanup:
 
 Tenant deletion triggers a three-phase cleanup in strict order:
 
-```
+```text
   Tenant deletion triggered
        |
   Phase 1: CaaS Cluster Cleanup (osac-delete-tenant-cluster-storage)
@@ -509,7 +510,7 @@ Tenant deletion triggers a three-phase cleanup in strict order:
 
 ## What Prevents Incomplete Cleanup
 
-```
+```text
   Finalizer: osac.openshift.io/storage (on Tenant)
     Prevents tenant deletion until ALL storage cleanup completes.
     Removed only after Phase 3 backend teardown.
@@ -563,7 +564,7 @@ How the storage controller behaves:
 
 Helm value: `operator.controllers.storage` (default: enabled in chart).
 
-```
+```text
   Enabled (storage: true)              Disabled (storage: false)
   +----------------------------------+ +----------------------------------+
   | Waits for Tenant/ClusterOrder    | | No storage reconciliation        |
@@ -591,7 +592,7 @@ CaaS clusters provision without it, but PVC workloads will fail.
 When no backends or tiers are registered, developers can configure
 StorageClasses manually. The storage controller resolves them by labels.
 
-```
+```yaml
   Required labels on your StorageClass:
   +---------------------------------------------------+
   | osac.openshift.io/tenant: <tenantName>             |
@@ -642,7 +643,7 @@ or environments running OSAC without a production storage backend.
 
 One AAP template role with four task files:
 
-```
+```text
   roles/<provider>_storage/
     meta/
       osac.yaml                       # provider metadata + capabilities
@@ -668,14 +669,14 @@ Reference implementations:
 
 ## How Provider Routing Works
 
-```
+```text
   Playbook: osac-create-tenant-storage-backend
        |
        v
   osac.service.storage_provider (dispatcher)
        |
        +-- Extract providers from tier_definitions
-       |     [{provider: "vast", ...}, {provider: "local-lvms", ...}]
+       |     [{provider: "vast", ...}, {provider: "lvms", ...}]
        |
        +-- For each unique provider:
        |
@@ -685,7 +686,7 @@ Reference implementations:
        v
   vast_storage/tasks/setup.yaml     (VAST appliance)
     or
-  local_lvms_storage/tasks/setup.yaml (local LVMS, dev/CI)
+  lvms_storage/tasks/setup.yaml     (local LVMS, dev/CI)
 ```
 
 **Current providers:** `vast_storage` (production), `lvms_storage` (dev/CI)
@@ -700,7 +701,7 @@ Dev/CI environments don't have a production storage backend like VAST.
 LVMS (Logical Volume Manager Storage) provides local block storage
 using LVM on the node's disks.
 
-```
+```text
   At install time (Helm hook, gated by lvms.enabled):
   +---------------------------------------------------+
   | Auto-registers:                                    |
@@ -724,7 +725,7 @@ Unlike VAST, backend + tier are auto-registered at install time.
 
 ## Full Picture
 
-```
+```text
   Step 1: Registration              Step 2: Provisioning
   (Cloud Provider Admin)            (automatic)
 
@@ -769,9 +770,9 @@ Questions?
 
 | Template | Triggered by | What it does |
 |---|---|---|
-| `osac-create-tenant-storage-backend` | Tenant create | Backend Setup: vendor resources + hub Secret |
+| `osac-create-tenant-storage-backend` | Tenant Phase=Ready | Backend Setup: vendor resources + hub Secret |
 | `osac-delete-tenant-storage-backend` | Tenant delete | Reverse of above + delete hub Secret |
-| `osac-create-tenant-cluster-storage` | Tenant or ClusterOrder create | Cluster Storage Setup: CSI + StorageClasses |
+| `osac-create-tenant-cluster-storage` | Tenant Phase=Ready or ClusterOrder Ready | Cluster Storage Setup: CSI + StorageClasses |
 | `osac-delete-tenant-cluster-storage` | Tenant or ClusterOrder delete | Remove cluster-side K8s resources |
 
 `osac-create-tenant-cluster-storage` handles both VMaaS (Tenant payload)
