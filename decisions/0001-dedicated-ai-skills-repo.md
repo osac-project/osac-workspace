@@ -127,13 +127,14 @@ guess.
    |---|---|---|
    | `git subtree` | Content is physically copied into `osac/`'s own tree/history at merge time — any plain clone already has it, no population step exists to forget | Each bump is a full-content diff, not a one-line pointer change (noisier, though arguably more literally reviewable); `git subtree`'s UX has a real learning-curve reputation |
    | Custom vendor/copy bot | Same physically-present outcome as `subtree`, via bespoke automation that copies files and opens a PR — reuses the poll/diff/open-a-PR *pattern* `bump-submodules.yaml` already proves, just copying content instead of bumping a pointer | New automation to build and maintain, same as any option here; OSAC fully owns and understands it, unlike a third-party tool |
-   | Microsoft's APM | Deploys real files into the consuming repo per its own docs, content-hash-pinned via `apm.lock.yaml` — evaluation still needed before it's a real candidate, not just a name on this list | New third-party dependency with unevaluated maturity/trust posture; adds a tool next to (not instead of) plain `git` |
+   | Microsoft's APM | Deploys real files into the consuming repo per its own docs, content-hash-pinned via `apm.lock.yaml` — see the dedicated Options Considered entry below for the full evaluation | New third-party dependency with unevaluated maturity/trust posture; adds a tool next to (not instead of) plain `git` |
 
    A `git submodule`, a bare `git clone` (floating, matching item 2's own
-   precedent), and marketplace/registry-style pointers are all excluded
-   from this table — each fails to meet the requirement, not merely less
-   convenient. Whichever candidate is chosen, a new bump-bot still needs to
-   be built following the poll/diff/open-a-PR *pattern*
+   precedent), and marketplace/registry-style pointers (see Options
+   Considered below) are all excluded from this table — each was checked
+   directly above or below and found not to meet the requirement, not
+   merely less convenient. Whichever candidate is chosen, a new bump-bot
+   still needs to be built following the poll/diff/open-a-PR *pattern*
    `bump-submodules.yaml` already proves — that pattern is reusable
    regardless of mechanism; the mechanism itself is new work either way,
    not an assumption that one already exists.
@@ -191,6 +192,147 @@ with skills. Decide the content boundary first; let that pick the name.
   Flight Control's validated three-repo pattern, solves both concrete gaps,
   and doesn't force an immediate, disruptive decommission of
   `osac-workspace`.
+- **Distribute the new skills repo through a Claude Code plugin marketplace
+  instead of a plain git-clonable repo.** Considered, deferred: this
+  ecosystem already tried this once and reversed it. Before April 2026,
+  OSAC's skills ran through Claude Code plugin marketplaces
+  (`osac-dev`/`jira`/`osac-ep-generator`), and were migrated into a plain
+  repo-local `skills/` directory specifically "to eliminate the plugin
+  marketplace setup requirement" so skills "work for everyone who clones
+  the repo with zero additional config" (`da0a6f95`) — that's also where
+  the now-stale `osac-dev:fix-bug` reference fixed elsewhere came from.
+  Revisiting it now would need to explain what's actually changed since;
+  checked directly, little has. The mechanism is Claude-Code-specific —
+  `.claude-plugin/marketplace.json` has no Cursor/Gemini CLI equivalent —
+  so it can't replace the plain repo this decision already calls for.
+  Cursor/Gemini consumers, and item 3's pinned-copy requirement for
+  automated frameworks, would still need the plain repo regardless, meaning
+  a marketplace could only ever be an *additional* mechanism layered on
+  top, not a substitute for one. It also wouldn't match the one real
+  vendoring precedent already in place: `flightctl/ai-workflows` is
+  vendored via plain `git clone`/`git rebase` into `.ai-workflows/`
+  (`bootstrap.sh`), not a marketplace. On version-control maturity
+  specifically: `CLAUDE_CODE_PLUGIN_SEED_DIR` genuinely solves
+  non-interactive CI consumption for Claude-Code-based automated
+  consumers, but SHA-pinning for one marketplace repo holding many
+  relative-path plugins (this repo's actual shape) is still an open,
+  unshipped upstream feature request (`anthropics/claude-code#33653`) —
+  less mature than the plain-git-mechanism candidates (`git subtree`, a
+  custom copy-bot) item 3 lists above, which pin by committed content
+  rather than a plugin cache's resolved version string.
+  It also wouldn't simplify the naming question above: marketplace and
+  plugin names are flat, manually-chosen strings with no automatic
+  org-scoping (unlike, say, npm's `@scope/package`), so the same collision
+  logic that argues for keeping the `osac-` prefix on the repo would just
+  move to the marketplace/plugin name instead — as it already did the
+  first time around (`osac-dev:fix-bug`). Worth revisiting later as an
+  optional, additional path specifically for Claude-Code-based automated
+  frameworks (the open follow-up on framework consumption below), not as
+  this record's primary mechanism.
+- **Build a registry-catalog layer (à la `opendatahub-io/skills-registry`)
+  on top of the new skills repo, and use it to also reference
+  `flightctl/ai-workflows`.** Surfaced during review with a concrete
+  example (`opendatahub-io/skills-registry`, plus a specific proposal to
+  install flightctl's workflows as `flightctl@prd` through it). Checked
+  both halves directly rather than evaluating in the abstract:
+
+  - **What the reference example actually is, confirmed against its live
+    `registry.yaml`:** a catalog of pointers (`source: {repo, ref}` +
+    `skills_dir`) to skill files living in *other* repos — the registry
+    itself vendors nothing; a generated `.claude-plugin/marketplace.json`
+    is what Claude Code reads, and it fetches real content from each
+    entry's source repo at install time. That's the same
+    Claude-Code-specific, pointer-not-vendor category already weighed
+    above, just with a catalog layer in front of it — so it inherits the
+    same conclusion (doesn't replace the plain repo; Cursor/Gemini still
+    need direct installation per that project's own README). It also adds
+    a concrete, observed data point to the version-control-maturity
+    question above: of the ~20 externally-sourced entries in that live
+    `registry.yaml`, **zero use `sha:` pinning — all 20 float on a branch
+    `ref`** — despite the schema supporting commit-SHA pinning. That's the
+    floating-dependency risk item 3 is explicitly designed against, shown
+    happening in practice in a real, comparable implementation, not just
+    a theoretical gap.
+  - **Whether `flightctl/ai-workflows` specifically could be referenced
+    this way:** checked its actual layout directly — no
+    `.claude-plugin`/`plugin.json` anywhere in that repo, so it isn't
+    already shaped as an installable plugin bundle. Each workflow (e.g.
+    `prd/`) splits into a `skills/` directory *and* a separate `commands/`
+    directory — the latter holding the thin wrapper files (e.g.
+    `prd:ingest`) that are the actual `/prd:ingest`-style invocation
+    surface `AGENTS.md` documents. A `skills_dir`-only registry pointer,
+    which is all the reference implementation's schema supports (checked:
+    every one of its ~20 entries sets `skills_dir`, none anything
+    equivalent for commands), would only capture the `skills/` half. The
+    command wrapper content itself turned out to be simple, static,
+    relative-path pointer files rather than deeply project-templated —
+    so capturing both halves isn't structurally impossible — but doing so
+    would mean OSAC building and maintaining its own extended
+    registry schema/generator against `flightctl/ai-workflows`'s internal
+    directory conventions, duplicating translation work `install.sh`
+    already does and keeps in sync on flightctl's own side. If flightctl
+    restructures a workflow's internal layout, that bespoke entry drifts
+    silently; today's `install.sh`-driven vendoring absorbs that risk
+    instead. The payoff for taking it on is thin — a nicer Claude-Code-
+    only discovery/`/plugin update` UX, no new capability `bootstrap.sh`'s
+    existing fetch-and-rebase doesn't already provide, and nothing for
+    Cursor/Gemini CLI consumers either way.
+  - **Conclusion, sharpened after weighing it directly (not just
+    scoping it, rejecting the pattern itself):** the registry-catalog
+    *pattern* is built to solve a federation problem — checked the live
+    `registry.yaml` again specifically for this: all 20 entries point
+    outward to external repos, spanning five different orgs/individuals,
+    with zero self-hosted/local entries. That's the whole point of the
+    layer — aggregating skills scattered across many separately-owned
+    repos into one catalog. OSAC doesn't have that problem: Decision item
+    1 already centralizes every OSAC skill into one repo by design, so
+    there's no scattered ownership to federate. Layering a `registry.yaml`
+    + generator on top of a single, already-centralized repo solves
+    nothing a direct `.claude-plugin/marketplace.json` in that same repo
+    wouldn't already solve more simply. And even that simpler, direct
+    marketplace.json doesn't move either of this record's two concrete
+    problems (Context, above): it reaches only Claude Code, one of three
+    supported harnesses, and does nothing for automated/non-interactive
+    consumption — the plain-repo-plus-fan-out-script path already planned
+    covers all three harnesses uniformly, with no extra interactive step.
+    So: **not planned, and not treated as a live open follow-up** — a
+    bare `marketplace.json` (skipping the registry/generator layer
+    entirely) stays a cheap, low-priority *maybe* if Claude-Code-specific
+    discovery UX ever becomes something people actually ask for, not
+    something to build speculatively now. `flightctl/ai-workflows` stays
+    exactly what it is today: a separate, `install.sh`-driven dependency,
+    untouched by any of this.
+- **Distribute/pin the new skills repo through Microsoft's APM (Agent
+  Package Manager), one of item 3's candidate mechanisms above.** Surfaced
+  during review, not yet evaluated in depth — flagged as an open follow-up
+  rather than decided here. Unlike a bare Claude Code plugin marketplace, APM is
+  genuinely cross-agent: one `apm.yml` manifest deploys the same declared
+  primitives to Claude Code, Cursor, Gemini, Copilot, and others from a
+  single command, which would let it replace pieces of items 1 through 3
+  at once — item 1's generic fan-out script *and* item 2/3's vendor-and-pin
+  mechanism — rather than needing a marketplace layered on top of a
+  still-separate plain repo.
+  It also directly avoids the empty-directory failure mode above: its
+  docs describe the deployed output under `.claude/`, `.cursor/`, etc.
+  as committed into the *consuming* repo, so a plain clone of `osac/`
+  would already have real skill files, not a pointer that needs a second
+  step to populate. Its lockfile (`apm.lock.yaml`) pins by content hash,
+  which is a stronger reproducibility guarantee than the SHA-pinning gap
+  already noted for relative-path Claude marketplace plugins above, and
+  it has a `--frozen` CI mode that fits item 3's automated-consumer need
+  reasonably well on paper. Genuinely open questions this record does not
+  resolve: it's a third-party (Microsoft), non-Anthropic, comparatively
+  new dependency-management layer with its own supply-chain surface
+  (it resolves and fetches from arbitrary git hosts) — its maturity,
+  governance, and long-term maintenance posture haven't been evaluated;
+  it would be a wholly new tool in OSAC's toolchain, next to (not
+  replacing) plain `git`, so the "zero additional tooling" property a
+  plain repo has today wouldn't fully carry over even if the *files* end
+  up committed; and it changes today's generic fan-out script
+  (`link-agent-skills.sh`) from an OSAC-owned, fully-understood ~50-line
+  script into a dependency on an external tool's opinion about how each
+  harness's directories should look. Worth a dedicated, focused
+  evaluation before committing either way — not ruled in or out here.
 
 ## Consequences
 
@@ -332,4 +474,47 @@ with skills. Decide the content boundary first; let that pick the name.
   checkout, corrected in Decision item 3; also pointed to
   `opendatahub-io/skills-registry`, "lola," and Microsoft's APM as
   agent-skills tooling that can install from a marketplace "for all
-  agents," prompting follow-up evaluation of both
+  agents," which prompted the APM entry in Options Considered
+- `git log --all --grep=marketplace` (2026-08-10) — commit `da0a6f95`
+  ("feat: migrate plugin skills to repo-local skills/ directory",
+  2026-04-30), the prior reversal away from Claude Code plugin
+  marketplaces this record's Options Considered weighs against
+  reintroducing
+- `osac-workspace/bootstrap.sh` (2026-08-10 read) — confirms
+  `flightctl/ai-workflows` is vendored via plain `git clone`/`git fetch`/
+  `git rebase` into `.ai-workflows/`, not a plugin marketplace add
+- Claude Code plugin marketplace docs, code.claude.com/docs/en/
+  plugin-marketplaces (fetched 2026-08-10) — `CLAUDE_CODE_PLUGIN_SEED_DIR`
+  for non-interactive/CI consumption; marketplace/plugin `name` fields are
+  flat, manually-chosen, unscoped strings, not automatically tied to the
+  underlying GitHub org/repo
+- `anthropics/claude-code#33653` (checked 2026-08-10) — open feature
+  request to extend commit-SHA pinning to relative-path plugins within a
+  single marketplace repo, confirming that reproducibility gap is still
+  unshipped upstream for this repo's actual shape
+- `opendatahub-io/skills-registry` README (checked 2026-08-10) — confirms
+  it is a genuine Claude Code marketplace, but its own docs state Cursor,
+  Gemini CLI, Codex, and OpenCode "do not have a marketplace aggregation
+  mechanism" and require per-harness config files instead — corroborating
+  rather than contradicting this record's claim that bare Claude
+  marketplaces don't cover Cursor/Gemini
+- Microsoft APM docs, microsoft.github.io/apm and github.com/microsoft/apm
+  (fetched 2026-08-10) — cross-agent manifest/lockfile tool (`apm.yml`/
+  `apm.lock.yaml`) deploying to Claude Code, Cursor, Gemini, Copilot, and
+  others from one command; content-hash-pinned lockfile; deployed output
+  described as committed into the consuming repo rather than left as a
+  pointer; `apm install --frozen` for CI drift detection — basis for the
+  new APM entry in Options Considered, not yet independently evaluated
+  beyond what its own docs state
+- Live `registry.yaml` from `opendatahub-io/skills-registry` (fetched and
+  grepped directly, 2026-08-10) — of ~20 externally-sourced entries, `sha:`
+  appears 0 times and `ref:` appears 20 times; every entry that sets a
+  skill location uses `skills_dir`, none anything equivalent for a
+  commands directory — basis for the registry-catalog entry in Options
+  Considered
+- `osac-workspace/.ai-workflows/` (local vendored copy, inspected
+  2026-08-10) — confirms no `.claude-plugin`/`plugin.json` anywhere in
+  `flightctl/ai-workflows`; each workflow (e.g. `prd/`) splits into
+  separate `skills/` and `commands/` directories; a sampled command
+  wrapper (`prd/commands/ingest.md`) is a short, static, relative-path
+  pointer file, not project-templated content
