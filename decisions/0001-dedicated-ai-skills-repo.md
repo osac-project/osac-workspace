@@ -91,22 +91,52 @@ guess.
    concrete skill needs are identified), not a one-off hardcoded case that
    has to be re-architected every time another sibling turns out to be
    needed.
-3. **Automated frameworks consume the same vendored copy, pinned rather than
-   floating** — e.g. a `git submodule` reference checked directly into
-   `osac/` at a known SHA, so skills are already present the moment `osac/`
-   is checked out, with no script execution required. This gives Forge/
-   fullsend/jira-autofix/agentic-ci-style consumers a reproducible, reviewable
-   dependency. **This is new automation to build, not a reuse of an existing
-   one** — `osac` has no real `git submodule` anywhere today (confirmed: no
-   `.gitmodules` file, no `160000` gitlink entries in the tree), and its
-   existing `bump-submodules.yaml` bot bumps a SHA string embedded in
-   workflow YAML for a GitHub Actions *reusable-workflow reference*
-   (`osac-test-infra`), not a submodule checkout — a different mechanism
-   that produces no local file tree, so it couldn't back a skill fan-out on
-   its own. What *is* directly reusable is the pattern that bot already
-   proves: poll upstream, diff a pinned SHA, open a real PR for human
-   review. A new bump-bot for an actual `git submodule` pin needs to be
-   built following that pattern, not assumed to already exist.
+3. **Automated frameworks consume a pinned copy of the skills repo, not a
+   floating one — populated the moment `osac/` is checked out, with a bump
+   showing up as a small, auditable diff against `osac/`'s own history, not
+   a dependency that can change underneath a consumer with no PR to
+   review.** That's the actual requirement; this record does not name a
+   specific mechanism for it, for a concrete reason: **an earlier draft did
+   name one — a plain `git submodule` reference — and that was wrong, not
+   just imprecisely worded.** A submodule entry is only a pointer (a
+   `.gitmodules` line plus a `160000` gitlink SHA in the tree); by default,
+   `git clone`/checkout of `osac/` leaves that directory **empty**, not
+   populated, unless whatever does the checkout separately runs `git
+   submodule update --init --recursive` (or clones with
+   `--recurse-submodules`, or a CI checkout action is explicitly configured
+   with `submodules: true`/`recursive`). A mechanism that can silently yield
+   an empty directory instead of either real content or a hard failure
+   doesn't satisfy "populated the moment it's checked out" — it just moves
+   the same missing-step problem `osac/`'s bootstrap script already solves
+   for humans (item 2) onto every automated consumer's own checkout
+   configuration instead, with a worse failure mode (silent, not loud) than
+   not having a mechanism at all. Reusable-workflow SHA-bumping precedent
+   doesn't rescue this either: `osac`'s existing `bump-submodules.yaml` bot
+   bumps a SHA string embedded in workflow YAML for a GitHub Actions
+   *reusable-workflow reference* (`osac-test-infra`), not a submodule
+   checkout — a different mechanism that produces no local file tree, so it
+   couldn't back a skill fan-out on its own regardless. `osac` also has no
+   real `git submodule` anywhere today to build on (confirmed: no
+   `.gitmodules` file, no `160000` gitlink entries in the tree).
+
+   **Candidate mechanisms that actually meet the requirement** — populated
+   without a separate opt-in step, *and* pinned/reviewable, evaluated but
+   not chosen between here, the same treatment as Naming Candidates below:
+
+   | Candidate | Meets the requirement because... | Cost |
+   |---|---|---|
+   | `git subtree` | Content is physically copied into `osac/`'s own tree/history at merge time — any plain clone already has it, no population step exists to forget | Each bump is a full-content diff, not a one-line pointer change (noisier, though arguably more literally reviewable); `git subtree`'s UX has a real learning-curve reputation |
+   | Custom vendor/copy bot | Same physically-present outcome as `subtree`, via bespoke automation that copies files and opens a PR — reuses the poll/diff/open-a-PR *pattern* `bump-submodules.yaml` already proves, just copying content instead of bumping a pointer | New automation to build and maintain, same as any option here; OSAC fully owns and understands it, unlike a third-party tool |
+   | Microsoft's APM | Deploys real files into the consuming repo per its own docs, content-hash-pinned via `apm.lock.yaml` — evaluation still needed before it's a real candidate, not just a name on this list | New third-party dependency with unevaluated maturity/trust posture; adds a tool next to (not instead of) plain `git` |
+
+   A `git submodule`, a bare `git clone` (floating, matching item 2's own
+   precedent), and marketplace/registry-style pointers are all excluded
+   from this table — each fails to meet the requirement, not merely less
+   convenient. Whichever candidate is chosen, a new bump-bot still needs to
+   be built following the poll/diff/open-a-PR *pattern*
+   `bump-submodules.yaml` already proves — that pattern is reusable
+   regardless of mechanism; the mechanism itself is new work either way,
+   not an assumption that one already exists.
 4. **`osac-workspace` keeps its current meta-repo role, unchanged, for a
    defined transition window.** It is not degraded or partially dismantled
    while `osac/`-based development is being proven out — in-flight work is
@@ -238,10 +268,10 @@ with skills. Decide the content boundary first; let that pick the name.
   already named for skill *authorship* — this one is about blast radius
   once a change is consumed, not about who wrote it. Not resolved here.
 - **Open follow-up — does OSAC actually control how these frameworks
-  consume skills?** Decision item 3 assumes `osac` can dictate a pinned
-  `git submodule` as the consumption mechanism for Forge/fullsend/
-  jira-autofix/agentic-ci. If any of these are centrally-managed tooling
-  shared across teams (plausible, given Flight Control's own `ai-workflows`
+  consume skills?** Decision item 3 assumes `osac` can dictate whichever
+  pinned-copy mechanism is eventually chosen as the consumption path for
+  Forge/fullsend/jira-autofix/agentic-ci. If any of these are
+  centrally-managed tooling shared across teams (plausible, given Flight Control's own `ai-workflows`
   is itself centrally-provided rather than OSAC-authored), that's a
   coordination dependency with each framework's owners, not something OSAC
   can unilaterally decide. Not confirmed either way by this record.
@@ -259,8 +289,17 @@ with skills. Decide the content boundary first; let that pick the name.
   fully independent repo with its own history, ownership, and lifecycle,
   the same relationship it already has with `osac-workspace` today.
 - Does not specify the exact migration tooling (`git filter-repo`, `git
-  subtree`, or similar) for moving `skills/` and its supporting directories
-  into the new repo — an implementation detail for whoever executes this.
+  subtree`, or similar) for the one-time move of `skills/` and its
+  supporting directories out of `osac-workspace` into the new repo — an
+  implementation detail for whoever executes this, and a different
+  question from item 3's candidate mechanisms above (which cover pulling
+  the new repo's content back *into* `osac/` on an ongoing basis, not this
+  one-time split — `git subtree` shows up in both discussions for
+  unrelated reasons, don't conflate them).
+- Does not pick a mechanism for item 3's pinned-copy requirement — `git
+  subtree`, a custom copy-bot, and APM are laid out as candidates, with the
+  choice deferred to implementation once someone commits to evaluating them
+  properly.
 
 ## References
 
@@ -287,3 +326,10 @@ with skills. Decide the content boundary first; let that pick the name.
   clone, or tooling reference anywhere in this ecosystem — confirming
   OpenShift's `ai-helpers` is a naming-convention mention only, not an
   actual OSAC dependency the way `flightctl/ai-workflows` is
+- PR review feedback from `eranco74` on this record (2026-08-10,
+  `#194`) — flagged that a plain `git submodule` reference is only a
+  pointer and leaves the directory empty on a default `git clone`/
+  checkout, corrected in Decision item 3; also pointed to
+  `opendatahub-io/skills-registry`, "lola," and Microsoft's APM as
+  agent-skills tooling that can install from a marketplace "for all
+  agents," prompting follow-up evaluation of both
