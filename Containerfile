@@ -98,5 +98,5 @@ RUN pip3 install --no-cache-dir pytest ansible \
 # --- podman wrapper (delegates to host via distrobox-host-exec) ---
 # Supports rootful mode: set PODMAN_ROOTFUL=1 to use the system podman socket.
 # Requires the host to have the socket group override installed (see header).
-COPY kind-dev/podman-wrapper.sh /usr/local/bin/podman
+COPY osac/kind-dev/podman-wrapper.sh /usr/local/bin/podman
 RUN chmod +x /usr/local/bin/podman
