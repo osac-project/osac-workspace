@@ -158,7 +158,17 @@ guess.
 4. **`osac-workspace` keeps its current meta-repo role, unchanged, for a
    defined transition window.** It is not degraded or partially dismantled
    while `osac/`-based development is being proven out — in-flight work is
-   not disrupted for this migration.
+   not disrupted for this migration. **This creates a real, named risk this
+   record does not fully resolve:** once `skills/` migrates out of
+   `osac-workspace` into `osac-ai-skills`, `osac-workspace`'s own copy needs
+   to become a *consumer* of the new repo (vendored the same way `osac/`
+   will, per item 2) rather than an independently-editable leftover —
+   otherwise the transition window itself recreates the exact
+   two-source-of-truth drift this record exists to eliminate, just between
+   `osac-workspace` and `osac-ai-skills` instead of between `osac-workspace`
+   and `osac/`. Whoever executes the migration should not treat
+   `osac-workspace/skills/` as done merely by copying it out — the copy
+   left behind needs to stop being a live source, not just gain a sibling.
 5. **Decommission `osac-workspace` once `osac/`-based development is proven
    fully equivalent**, against concrete exit criteria (see Consequences),
    not a calendar date alone.
