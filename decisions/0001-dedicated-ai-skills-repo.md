@@ -502,6 +502,12 @@ precise one than `osac-ai-tooling` would have been for the broader content.
   is itself centrally-provided rather than OSAC-authored), that's a
   coordination dependency with each framework's owners, not something OSAC
   can unilaterally decide. Not confirmed either way by this record.
+  **Sequencing note: this is listed here as one open question among
+  several, but it's actually a precondition for the previous bullet, not a
+  parallel one.** Evaluating and picking a pinned-copy mechanism (`git
+  subtree` vs. a copy-bot vs. APM) before confirming which frameworks OSAC
+  can actually require it of risks building around a mechanism some
+  consumers can't or won't adopt. Worth answering this one first.
 
 ## Non-Goals
 
