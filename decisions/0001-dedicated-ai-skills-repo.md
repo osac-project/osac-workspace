@@ -144,17 +144,18 @@ guess.
    |---|---|---|
    | `git subtree` | Content is physically copied into `osac/`'s own tree/history at merge time — any plain clone already has it, no population step exists to forget | Each bump is a full-content diff, not a one-line pointer change (noisier, though arguably more literally reviewable); `git subtree`'s UX has a real learning-curve reputation |
    | Custom vendor/copy bot | Same physically-present outcome as `subtree`, via bespoke automation that copies files and opens a PR — reuses the poll/diff/open-a-PR *pattern* `bump-submodules.yaml` already proves, just copying content instead of bumping a pointer | New automation to build and maintain, same as any option here; OSAC fully owns and understands it, unlike a third-party tool |
-   | Microsoft's APM | Deploys real files into the consuming repo per its own docs, content-hash-pinned via `apm.lock.yaml` — see the dedicated Options Considered entry below for the full evaluation | New third-party dependency with unevaluated maturity/trust posture; adds a tool next to (not instead of) plain `git` |
 
    A `git submodule`, a bare `git clone` (floating, matching item 2's own
-   precedent), and marketplace/registry-style pointers (see Options
-   Considered below) are all excluded from this table — each was checked
-   directly above or below and found not to meet the requirement, not
-   merely less convenient. Whichever candidate is chosen, a new bump-bot
-   still needs to be built following the poll/diff/open-a-PR *pattern*
-   `bump-submodules.yaml` already proves — that pattern is reusable
-   regardless of mechanism; the mechanism itself is new work either way,
-   not an assumption that one already exists.
+   precedent), and marketplace/registry-style or agent-skill-package-manager
+   pointers/tools — Microsoft's APM included (see Options Considered below)
+   — are all excluded from this table — each was checked directly above or
+   below and found not to meet the requirement, or (for the package-manager
+   category) to be solving a different problem than the one this table is
+   for. Whichever candidate is chosen, a new bump-bot still needs to be
+   built following the poll/diff/open-a-PR *pattern* `bump-submodules.yaml`
+   already proves — that pattern is reusable regardless of mechanism; the
+   mechanism itself is new work either way, not an assumption that one
+   already exists.
 4. **`osac-workspace` keeps its current meta-repo role, unchanged, for a
    defined transition window.** It is not degraded or partially dismantled
    while `osac/`-based development is being proven out — in-flight work is
@@ -362,53 +363,44 @@ precise one than `osac-ai-tooling` would have been for the broader content.
     exactly what it is today: a separate, `install.sh`-driven dependency,
     untouched by any of this.
 - **Distribute/pin the new skills repo through Microsoft's APM (Agent
-  Package Manager), one of item 3's candidate mechanisms above.** Surfaced
-  during review, not yet evaluated in depth — flagged as an open follow-up
-  rather than decided here. Unlike a bare Claude Code plugin marketplace, APM is
-  genuinely cross-agent: one `apm.yml` manifest deploys the same declared
-  primitives to Claude Code, Cursor, Gemini, Copilot, and others from a
-  single command, which would let it replace pieces of items 1 through 3
-  at once — item 1's generic fan-out script *and* item 2/3's vendor-and-pin
-  mechanism — rather than needing a marketplace layered on top of a
-  still-separate plain repo.
-  It also directly avoids the empty-directory failure mode above: its
-  docs describe the deployed output under `.claude/`, `.cursor/`, etc.
-  as committed into the *consuming* repo, so a plain clone of `osac/`
-  would already have real skill files, not a pointer that needs a second
-  step to populate. Its lockfile (`apm.lock.yaml`) pins by content hash,
-  which is a stronger reproducibility guarantee than the SHA-pinning gap
-  already noted for relative-path Claude marketplace plugins above, and
-  it has a `--frozen` CI mode that fits item 3's automated-consumer need
-  reasonably well on paper.
-  **On "Microsoft-authored" specifically being a blocker for a Red Hat
-  project — checked directly, not just assumed:** `microsoft/apm` is
-  MIT-licensed, confirmed against its actual `LICENSE` file — a standard
-  permissive license Red Hat's own open-source policy already treats as
-  routinely approvable, the same category as countless other
-  Microsoft-originated projects Red Hat already consumes or contributes to
-  (VS Code, TypeScript, and others). Licensing is not the open question
-  here. What actually is: this is a young, fast-moving project — created
-  September 2025, only moved from an individual maintainer's personal repo
-  (`danielmeppiel/apm`) into the `microsoft/apm` org in February 2026, and
-  its own docs describe it as "community-driven" rather than an
-  officially-supported Microsoft product (its `SUPPORT.md` explicitly
-  routes support through GitHub Issues, "not through Microsoft customer
-  support channels"). That maturity/governance profile — not the vendor
-  name, and not the license — is the real open question, and it's the same
-  one already named below: whether a comparatively new third-party
-  dependency-management layer is something OSAC wants sitting in front of
-  automated pipelines that may hold real credentials (see the trust-
-  boundary follow-up in Consequences). Genuinely open questions this record
-  does not resolve: its maturity, governance, and long-term maintenance
-  posture haven't been evaluated beyond the above; it would be a wholly new
-  tool in OSAC's toolchain, next to (not replacing) plain `git`, so the
-  "zero additional tooling" property a plain repo has today wouldn't fully
-  carry over even if the *files* end up committed; and it changes today's
-  generic fan-out script (`link-agent-skills.sh`) from an OSAC-owned,
-  fully-understood ~50-line script into a dependency on an external tool's
-  opinion about how each harness's directories should look. Worth a
-  dedicated, focused evaluation before committing either way — not ruled
-  in or out here.
+  Package Manager) or an equivalent "AI agent skill package manager."**
+  Surfaced during review; evaluated, then the whole category was ruled
+  out — not treated as a live open follow-up.
+  Unlike a bare Claude Code plugin marketplace, APM is genuinely
+  cross-agent: one `apm.yml` manifest deploys the same declared primitives
+  to Claude Code, Cursor, Gemini, Copilot, and others from a single
+  command, and its docs describe deployed output as committed into the
+  *consuming* repo (avoiding the empty-directory failure mode above), with
+  a content-hash-pinned lockfile (`apm.lock.yaml`) and a `--frozen` CI
+  mode. On "Microsoft-authored" specifically being a blocker for a Red Hat
+  project — checked directly, not assumed: `microsoft/apm` is MIT-licensed
+  (confirmed against its actual `LICENSE` file), the same permissive
+  category as other Microsoft-originated projects Red Hat already
+  consumes or contributes to (VS Code, TypeScript, and others). Licensing
+  was never the real question.
+  **What actually rules the category out is fit, not trust, and not any
+  one tool's specific flaws.** A deliberate landscape check beyond APM
+  alone (Microsoft's is not the only entrant — `PSPM`, `spazyCZ/`
+  `agent-package-manager`, `helincao/skilled`, `usescrolls/scribe`,
+  `chrismdp/airskills`, and `EvanL1/aitoolsync` all showed up covering
+  overlapping ground) confirms this whole tool category is solving a
+  different problem than OSAC has: distributing many independently-versioned
+  skills from many separate authors/sources across 30-40+ agent harnesses
+  a given developer might have installed locally. OSAC has one already-
+  centralized skills repo (Decision item 1), a small, known set of
+  consumers, and exactly three harnesses to support (Claude Code, Cursor,
+  Gemini CLI) — a problem OSAC's own ~50-line `link-agent-skills.sh` fan-out
+  script already solves today, understood and owned in-house. Every tool
+  found, APM included, is also comparably young (all created within
+  roughly the last year as of this check) and comparably unproven at OSAC's
+  trust bar — so even setting the fit problem aside, none of them is a
+  clearly *safer* choice than APM specifically, which removes the "maybe a
+  better APM-like alternative exists" escape hatch along with APM itself.
+  Adopting any of them would mean taking on a new third-party dependency to
+  replace something already working, not to solve something otherwise
+  unsolved. `git subtree` and a custom copy-bot (item 3's remaining
+  candidates) need nothing beyond plain `git` and this ecosystem's existing
+  poll/diff/open-a-PR pattern.
 
 ## Consequences
 
@@ -505,9 +497,9 @@ precise one than `osac-ai-tooling` would have been for the broader content.
   **Sequencing note: this is listed here as one open question among
   several, but it's actually a precondition for the previous bullet, not a
   parallel one.** Evaluating and picking a pinned-copy mechanism (`git
-  subtree` vs. a copy-bot vs. APM) before confirming which frameworks OSAC
-  can actually require it of risks building around a mechanism some
-  consumers can't or won't adopt. Worth answering this one first.
+  subtree` vs. a copy-bot) before confirming which frameworks OSAC can
+  actually require it of risks building around a mechanism some consumers
+  can't or won't adopt. Worth answering this one first.
 
 ## Non-Goals
 
@@ -532,9 +524,10 @@ precise one than `osac-ai-tooling` would have been for the broader content.
   one-time split — `git subtree` shows up in both discussions for
   unrelated reasons, don't conflate them).
 - Does not pick a mechanism for item 3's pinned-copy requirement — `git
-  subtree`, a custom copy-bot, and APM are laid out as candidates, same
-  treatment as the repo name, with the choice deferred to implementation
-  once someone commits to evaluating them properly.
+  subtree` and a custom copy-bot are laid out as candidates (APM and the
+  wider "AI agent skill package manager" category were evaluated and
+  ruled out, not left open — see Options Considered), with the choice
+  between these two remaining candidates deferred to implementation.
 
 ## References
 
@@ -608,8 +601,7 @@ precise one than `osac-ai-tooling` would have been for the broader content.
   others from one command; content-hash-pinned lockfile; deployed output
   described as committed into the consuming repo rather than left as a
   pointer; `apm install --frozen` for CI drift detection — basis for the
-  new APM entry in Options Considered, not yet independently evaluated
-  beyond what its own docs state
+  APM entry in Options Considered
 - `microsoft/apm`'s `LICENSE` file (checked 2026-08-10) — confirms MIT,
   ruling licensing in/out as a factor in whether a Red Hat project can
   adopt it; and `microsoft/apm` discussion #86, "APM moves to Microsoft OSS
@@ -619,6 +611,13 @@ precise one than `osac-ai-tooling` would have been for the broader content.
   support routed through GitHub Issues rather than Microsoft customer
   support — the maturity/governance data point behind this entry's
   Microsoft-vendor discussion
+- Web search, "AI agent skill package manager" landscape (2026-08-10) —
+  surfaced `pspm.dev`/`anyt-io/pspm-cli`, `spazyCZ/agent-package-manager`,
+  `helincao/skilled`, `usescrolls/scribe`, `chrismdp/airskills`, and
+  `EvanL1/aitoolsync`, all covering the same npm-for-many-skills-across-
+  30-40+-harnesses ground as APM and all comparably young (roughly the
+  last year) — basis for ruling out the whole category rather than
+  treating APM as an outlier worth a dedicated follow-up
 - Live `registry.yaml` from `opendatahub-io/skills-registry` (fetched and
   grepped directly, 2026-08-10) — of ~20 externally-sourced entries, `sha:`
   appears 0 times and `ref:` appears 20 times; every entry that sets a
