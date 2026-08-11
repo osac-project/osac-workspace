@@ -412,9 +412,16 @@ precise one than `osac-ai-tooling` would have been for the broader content.
 
 ## Consequences
 
-- Solves both concrete touch points (developer ergonomics, automated
-  framework consumption) without requiring `osac-workspace` to disappear on
-  day one.
+- Fully solves one of the two concrete touch points from Context — developer
+  ergonomics (item 2's bootstrap extension) — without requiring
+  `osac-workspace` to disappear on day one. **The other, automated framework
+  consumption, is only partially solved: item 3 states the actual
+  requirement and rules out the mechanism an earlier draft wrongly assumed
+  (`git submodule`), but does not pick a mechanism from its own candidate
+  list.** Until that choice is made, Forge/fullsend/jira-autofix/agentic-ci
+  have no concrete way to consume skills yet — one of this record's two
+  founding problems stays open in practice, not just as an implementation
+  detail to fill in later.
 - Matches a real, working pattern already proven by a peer AI SDLC framework
   OSAC itself depends on, rather than a purely internal guess.
 - **Resolved — naming.** `osac-ai-skills` is the final name
