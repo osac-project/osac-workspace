@@ -66,19 +66,32 @@ guess.
    (today's `link-agent-skills.sh` — turning a `skills/` directory into
    `.claude/`/`.cursor/`/`.gemini/` symlinks, a property of the skills
    content itself and portable to whatever clones it, not specific to any
-   one consumer repo), skill-backing assets, and the ADRs that govern this
-   space. This includes the skill-quality eval harness that already exists
-   today (currently `osac-workspace/evals/`, grading `design-review`/
-   `prd-review` skill output — not a hypothetical future addition), and any
-   eval coverage added later for other skills follows it to the same repo,
-   for the same reason: it only exists to grade skill output, so it has no
-   independent reason to live anywhere else. **Final name: `osac-ai-skills`**
-   (repo created 2026-08-10, `osac-project/osac-ai-skills`) — see Naming
+   one consumer repo), and skill-backing assets. This includes the
+   skill-quality eval harness that already exists today (currently
+   `osac-workspace/evals/`, grading `design-review`/`prd-review` skill
+   output — not a hypothetical future addition), and any eval coverage
+   added later for other skills follows it to the same repo, for the same
+   reason: it only exists to grade skill output, so it has no independent
+   reason to live anywhere else. **Final name: `osac-ai-skills`** (repo
+   created 2026-08-10, `osac-project/osac-ai-skills`) — see Naming
    Candidates below for how that lands relative to this record's own
    analysis, and note explicitly that the content boundary above (fan-out
-   script, `.skillsaw.yaml`, eval harness, `decisions/` — not just skill
-   files) stays as proposed; the name was decided pragmatically, not by
-   narrowing scope to match it.
+   script, `.skillsaw.yaml`, eval harness — not just skill files) stays as
+   proposed; the name was decided pragmatically, not by narrowing scope to
+   match it.
+   **Explicitly not moving yet: the `decisions/` ADR history, including
+   this record.** An earlier pass of this item listed "the ADRs that govern
+   this space" as part of what moves here, but `decisions/` in
+   `osac-workspace` today isn't skills-only — it also holds
+   [0002](0002-osac-ui-monorepo-consolidation.md), an unrelated
+   `osac-ui`/`osac` topology decision — so "move the ADRs" isn't a clean
+   directory copy without first splitting skills-governance records from
+   everything else `decisions/` accumulates. Deferred rather than decided:
+   `decisions/` stays in `osac-workspace` for now, and whether skills-
+   specific ADRs eventually get a home in `osac-ai-skills` (by splitting
+   the history, starting a fresh ADR trail there, or something else) is an
+   open question, not a rejected one. See the exit-criteria list in
+   Consequences, which now carries this as its own item.
 2. **What does *not* move here: the bootstrap/orchestration logic that
    decides what to clone and when.** That's `osac/`'s own onboarding entry
    point — it already partially exists as `osac/tools/bootstrap.sh` today —
@@ -159,7 +172,7 @@ different name — not as a still-open question:
 
 | Candidate | Fits if... | Risk |
 |---|---|---|
-| `osac-ai-skills` | Content stays skill files (+ light supporting docs) only | Weaker risk than an earlier draft of this table claimed — reviewed feedback pointed out that keeping a skill's evaluation right next to the skill (or in the same repo) is itself common practice, so the eval harness's presence doesn't by itself force a broader name; `osac-ai-skills` can still hold `design-review`/`prd-review` grading comfortably. What's left of the risk is narrower: the fan-out script, `.skillsaw.yaml` linting, and `decisions/` read a little less like "skills" than infrastructure *around* skills, and would only grow as eval coverage expands — a real but softer scope mismatch than originally framed. Note: the bootstrap/orchestration script itself is *not* part of this scope question — Decision item 2 keeps that in `osac/` regardless of what this repo is named |
+| `osac-ai-skills` | Content stays skill files (+ light supporting docs) only | Weaker risk than an earlier draft of this table claimed — reviewed feedback pointed out that keeping a skill's evaluation right next to the skill (or in the same repo) is itself common practice, so the eval harness's presence doesn't by itself force a broader name; `osac-ai-skills` can still hold `design-review`/`prd-review` grading comfortably. What's left of the risk is narrower: the fan-out script and `.skillsaw.yaml` linting read a little less like "skills" than infrastructure *around* skills, and would only grow as eval coverage expands — a real but softer scope mismatch than originally framed. Note: the bootstrap/orchestration script itself is *not* part of this scope question — Decision item 2 keeps that in `osac/` regardless of what this repo is named |
 | `osac-ai-workflows` | Content is broader — skills plus the tooling/process around them, mirroring `flightctl/ai-workflows`'s naming | **Name collision risk, not just style**: `flightctl/ai-workflows` is already vendored into this ecosystem today (`.ai-workflows/` is the actual local directory name after bootstrap runs) — a same-named OSAC repo would make "which `ai-workflows` do you mean" a real, recurring, concrete confusion, not a matter of degree |
 | `osac-ai-helpers` | Same broad scope, mirrors OpenShift's `ai-helpers` naming | No real collision risk — checked directly, OSAC doesn't actually consume OpenShift's `ai-helpers` anywhere (no vendored directory, nothing cloned, nothing referenced in tooling), unlike `flightctl/ai-workflows`. It's purely a naming-convention echo of an unrelated project's tooling repo, not a functional relationship — OSAC provisioning OpenShift clusters is a product fact that has nothing to do with what OSAC names its own AI tooling repo |
 | `osac-ai-tooling` | Broad scope, deliberately neutral/generic | No collision risk, no borrowed identity either way — but also no positive case beyond "safe" |
@@ -197,18 +210,18 @@ to justify it. `osac-ai-skills` was flagged as a closer contender than an
 earlier pass of this table suggested (review feedback noted that colocating
 a skill's eval with the skill itself is normal practice, so the eval
 harness alone doesn't disqualify it), but was still expected to read
-narrower than the fan-out script, `.skillsaw.yaml` linting, and
-`decisions/` history this repo also carries.
+narrower than the fan-out script and `.skillsaw.yaml` linting this repo
+also carries.
 
 **The actual decision landed on `osac-ai-skills` anyway** — the name
 originally floated informally in the Slack thread that prompted this
 record, before this table's deeper analysis existed. The content boundary
 did not narrow to match it: this repo still carries the full scope Decision
-item 1 describes, not just skill files. Worth naming plainly for anyone
-reading this later: the chosen name and this record's own top pick
-diverged, and that's fine — `osac-ai-skills` is not a bad name for
-what's actually there, just a less precise one than `osac-ai-tooling`
-would have been for the broader content.
+item 1 describes (minus `decisions/`, deferred per that item), not just
+skill files. Worth naming plainly for anyone reading this later: the chosen
+name and this record's own top pick diverged, and that's fine —
+`osac-ai-skills` is not a bad name for what's actually there, just a less
+precise one than `osac-ai-tooling` would have been for the broader content.
 
 ## Options Considered
 
@@ -381,8 +394,9 @@ would have been for the broader content.
   (`osac-project/osac-ai-skills`, created 2026-08-10), decided ahead of
   this record's own analysis rather than by it — see Naming Candidates for
   the full account, including that the content boundary stayed broad
-  (fan-out script, `.skillsaw.yaml` linting, eval harness, `decisions/`)
-  rather than narrowing to match the name.
+  (fan-out script, `.skillsaw.yaml` linting, eval harness) rather than
+  narrowing to match the name. `decisions/` is the one exception — see
+  Decision item 1 and the exit-criteria item below.
 - **Open follow-up — concrete exit criteria for decommissioning
   `osac-workspace`.** "Once we're sure development from within `osac/` is
   100%" needs to become a checkable list before it can actually trigger
@@ -396,7 +410,12 @@ would have been for the broader content.
   `Makefile` targets) is ported to `osac/` or intentionally dropped; (e) a
   decided placement for `osac-workspace`'s cross-repo `reference/` docs,
   which describe the multi-repo ecosystem as a whole rather than any one
-  component.
+  component; (f) a decided placement for `decisions/` itself (this ADR
+  history, plus [0002](0002-osac-ui-monorepo-consolidation.md) and
+  whatever accumulates alongside it) — deliberately not moved into
+  `osac-ai-skills` by Decision item 1, so it needs its own resolution
+  before `osac-workspace` can go away, not just a default "it goes wherever
+  skills went."
 - **Open follow-up — protection strategy for the new skills repo.** OSAC's
   baseline expectation here is the same one used everywhere else in this
   ecosystem: a human reviews and approves a change before it merges —
@@ -452,6 +471,10 @@ would have been for the broader content.
 
 ## Non-Goals
 
+- Does not move `decisions/` (this ADR history) into `osac-ai-skills` —
+  deferred, not decided against. It isn't skills-only content today (see
+  Decision item 1), so moving it needs its own resolution rather than
+  riding along with the rest of this record's content boundary.
 - Does not commit to a specific decommission date for `osac-workspace` —
   ties it to exit criteria instead.
 - Does not change anything about `enhancement-proposals` staying a separate
