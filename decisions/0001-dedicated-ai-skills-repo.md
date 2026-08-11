@@ -1,6 +1,6 @@
 # 0001. Dedicated AI Skills Repo, `osac/` as Primary Workspace, Phased `osac-workspace` Retirement
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-08-06
 
 ## Context
@@ -72,9 +72,13 @@ guess.
    `prd-review` skill output — not a hypothetical future addition), and any
    eval coverage added later for other skills follows it to the same repo,
    for the same reason: it only exists to grade skill output, so it has no
-   independent reason to live anywhere else. Exact name and final content
-   boundary are an open follow-up (see below); this record settles the
-   *shape* of the decision, not the label on it.
+   independent reason to live anywhere else. **Final name: `osac-ai-skills`**
+   (repo created 2026-08-10, `osac-project/osac-ai-skills`) — see Naming
+   Candidates below for how that lands relative to this record's own
+   analysis, and note explicitly that the content boundary above (fan-out
+   script, `.skillsaw.yaml`, eval harness, `decisions/` — not just skill
+   files) stays as proposed; the name was decided pragmatically, not by
+   narrowing scope to match it.
 2. **What does *not* move here: the bootstrap/orchestration logic that
    decides what to clone and when.** That's `osac/`'s own onboarding entry
    point — it already partially exists as `osac/tools/bootstrap.sh` today —
@@ -146,12 +150,12 @@ guess.
    fully equivalent**, against concrete exit criteria (see Consequences),
    not a calendar date alone.
 
-## Naming Candidates (Not Yet Decided)
+## Naming Candidates
 
-Not settling on a name here — the Slack thread that prompted this record
-already agreed naming can wait until scope is clear — but worth laying out
-the candidates side by side against the content-boundary question, since
-the two decisions are coupled:
+**Decided: `osac-ai-skills`** (repo created 2026-08-10). The analysis below
+predates that decision and is kept as the record of what was actually
+weighed — including why this record's own analysis leaned toward a
+different name — not as a still-open question:
 
 | Candidate | Fits if... | Risk |
 |---|---|---|
@@ -187,18 +191,24 @@ existing convention: every live OSAC product/tooling repo carries the
 unambiguous enough on their own not to need it — `ai-skills` doesn't share
 that property.
 
-**Top choice: `osac-ai-tooling`.** It fits the broader content this repo is
-expected to hold, and needs no borrowed story to justify it — it just
-describes what's there. `osac-ai-helpers` is a fine alternative with a bit
-more personality, but its resemblance to OpenShift's naming isn't backed by
-any actual relationship between the two repos, so it shouldn't be read as
-more than a coincidence. `osac-ai-skills` is a closer contender than an
-earlier pass of this record suggested — review feedback noted that
-colocating a skill's eval with the skill itself is normal practice
-regardless of repo name, so the eval harness alone isn't disqualifying —
-but it still reads narrower than the fan-out script, `.skillsaw.yaml`
-linting, and `decisions/` history this repo is also proposed to carry.
-Decide the content boundary first; let that pick the name.
+**This record's own analysis leaned toward `osac-ai-tooling`** — it fits the
+broader content this repo is expected to hold, and needs no borrowed story
+to justify it. `osac-ai-skills` was flagged as a closer contender than an
+earlier pass of this table suggested (review feedback noted that colocating
+a skill's eval with the skill itself is normal practice, so the eval
+harness alone doesn't disqualify it), but was still expected to read
+narrower than the fan-out script, `.skillsaw.yaml` linting, and
+`decisions/` history this repo also carries.
+
+**The actual decision landed on `osac-ai-skills` anyway** — the name
+originally floated informally in the Slack thread that prompted this
+record, before this table's deeper analysis existed. The content boundary
+did not narrow to match it: this repo still carries the full scope Decision
+item 1 describes, not just skill files. Worth naming plainly for anyone
+reading this later: the chosen name and this record's own top pick
+diverged, and that's fine — `osac-ai-skills` is not a bad name for
+what's actually there, just a less precise one than `osac-ai-tooling`
+would have been for the broader content.
 
 ## Options Considered
 
@@ -367,17 +377,12 @@ Decide the content boundary first; let that pick the name.
   day one.
 - Matches a real, working pattern already proven by a peer AI SDLC framework
   OSAC itself depends on, rather than a purely internal guess.
-- **Open follow-up — naming and exact content boundary.** A name like
-  `osac-ai-skills` was floated informally, but whether that fits depends on
-  what actually lands in the repo. If it's skill markdown files only, a
-  narrow name fits. If it also carries the generic fan-out script, `.skillsaw.yaml`
-  linting, the existing skill-quality eval harness, and this `decisions/`
-  directory (as proposed above) — bootstrap/orchestration logic is out of
-  scope for this question, since Decision item 2 keeps that in `osac/`
-  regardless — a broader name fits better. See Naming Candidates for
-  specifics, including which risk (`osac-ai-workflows`'s) is a hard fact
-  versus which (`osac-ai-helpers`' vs. `osac-ai-tooling`'s) is closer to a
-  toss-up. Resolve naming after the content boundary is final, not before.
+- **Resolved — naming.** `osac-ai-skills` is the final name
+  (`osac-project/osac-ai-skills`, created 2026-08-10), decided ahead of
+  this record's own analysis rather than by it — see Naming Candidates for
+  the full account, including that the content boundary stayed broad
+  (fan-out script, `.skillsaw.yaml` linting, eval harness, `decisions/`)
+  rather than narrowing to match the name.
 - **Open follow-up — concrete exit criteria for decommissioning
   `osac-workspace`.** "Once we're sure development from within `osac/` is
   100%" needs to become a checkable list before it can actually trigger
@@ -447,8 +452,6 @@ Decide the content boundary first; let that pick the name.
 
 ## Non-Goals
 
-- Does not finalize the new repo's name — deliberately deferred until its
-  content boundary is settled.
 - Does not commit to a specific decommission date for `osac-workspace` —
   ties it to exit criteria instead.
 - Does not change anything about `enhancement-proposals` staying a separate
@@ -472,6 +475,10 @@ Decide the content boundary first; let that pick the name.
 
 ## References
 
+- `osac-project/osac-ai-skills` (created 2026-08-10, confirmed empty via
+  `gh api repos/osac-project/osac-ai-skills` — no branches, no content yet)
+  — the actual repo, settling the naming question this record's own
+  analysis (Naming Candidates) had left as a `osac-ai-tooling` lean
 - Internal Slack discussion, 2026-08 — naming proposal (`osac-ai-skills`)
   and the question of why `flightctl`/OpenShift name their equivalent repos
   `ai-workflows`/`ai-helpers` rather than something skills-specific
