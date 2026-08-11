@@ -485,21 +485,24 @@ precise one than `osac-ai-tooling` would have been for the broader content.
   is a distinct risk from the reward-hacking/self-certification concern
   already named for skill *authorship* — this one is about blast radius
   once a change is consumed, not about who wrote it. Not resolved here.
-- **Open follow-up — does OSAC actually control how these frameworks
-  consume skills?** Decision item 3 assumes `osac` can dictate whichever
-  pinned-copy mechanism is eventually chosen as the consumption path for
-  Forge/fullsend/jira-autofix/agentic-ci. If any of these are
-  centrally-managed tooling
-  shared across teams (plausible, given Flight Control's own `ai-workflows`
-  is itself centrally-provided rather than OSAC-authored), that's a
-  coordination dependency with each framework's owners, not something OSAC
-  can unilaterally decide. Not confirmed either way by this record.
-  **Sequencing note: this is listed here as one open question among
-  several, but it's actually a precondition for the previous bullet, not a
-  parallel one.** Evaluating and picking a pinned-copy mechanism (`git
-  subtree` vs. a copy-bot) before confirming which frameworks OSAC can
-  actually require it of risks building around a mechanism some consumers
-  can't or won't adopt. Worth answering this one first.
+- **Resolved — does OSAC actually control how these frameworks consume
+  skills?** Confirmed directly (2026-08-10): yes. OSAC controls
+  configuration for Forge, fullsend, jira-autofix, and agentic-ci even
+  where the underlying engine is shared — jira-autofix's engine is
+  understood to be part of Flight Control's tooling (the same provider
+  behind `ai-workflows`, which OSAC already depends on), but OSAC
+  configures and uses it for its own purposes, the same
+  shared-engine/OSAC-configured relationship assumed for the other three.
+  This answers the precondition the previous version of this bullet
+  flagged as blocking: picking a pinned-copy mechanism (item 3) does not
+  need another team's buy-in — OSAC can require its own consumption path
+  from these frameworks unilaterally. **Confidence note:** this is a
+  first-hand confirmation, not independently verified against each
+  framework's own documentation (none of the four have any footprint in
+  this workspace to check against — confirmed by grepping the full
+  workspace, including git history, for all four names before asking).
+  Item 3's mechanism choice (`git subtree` vs. a copy-bot) remains the
+  next actionable decision — no longer blocked, just not yet made.
 
 ## Non-Goals
 
@@ -618,6 +621,20 @@ precise one than `osac-ai-tooling` would have been for the broader content.
   30-40+-harnesses ground as APM and all comparably young (roughly the
   last year) — basis for ruling out the whole category rather than
   treating APM as an outlier worth a dedicated follow-up
+- Workspace-wide grep, including git history, for `Forge`, `fullsend`,
+  `jira-autofix`, and `agentic-ci` (2026-08-10) — confirmed none of the
+  four have any footprint in `osac-workspace` (no config, no vendored
+  dependency, no docs) except `jira-autofix-merged`/`jira-autofix-rejected`
+  Jira-label references in `evals/review/docs/measurement-taxonomy.md`,
+  which map to OSAC's own bugfix-skill workflow, not a separate tool —
+  basis for asking the framework-ownership question directly rather than
+  guessing from repo evidence alone
+- Direct confirmation from Tommy Hughes (OSAC, 2026-08-10) — OSAC controls
+  configuration for Forge, fullsend, jira-autofix, and agentic-ci even
+  where the underlying engine is shared (jira-autofix's engine understood
+  to be part of Flight Control's tooling); basis for resolving the
+  "does OSAC actually control..." Consequences bullet from an open
+  follow-up to Resolved
 - Live `registry.yaml` from `opendatahub-io/skills-registry` (fetched and
   grepped directly, 2026-08-10) — of ~20 externally-sourced entries, `sha:`
   appears 0 times and `ref:` appears 20 times; every entry that sets a
