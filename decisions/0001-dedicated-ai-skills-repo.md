@@ -379,19 +379,36 @@ precise one than `osac-ai-tooling` would have been for the broader content.
   which is a stronger reproducibility guarantee than the SHA-pinning gap
   already noted for relative-path Claude marketplace plugins above, and
   it has a `--frozen` CI mode that fits item 3's automated-consumer need
-  reasonably well on paper. Genuinely open questions this record does not
-  resolve: it's a third-party (Microsoft), non-Anthropic, comparatively
-  new dependency-management layer with its own supply-chain surface
-  (it resolves and fetches from arbitrary git hosts) — its maturity,
-  governance, and long-term maintenance posture haven't been evaluated;
-  it would be a wholly new tool in OSAC's toolchain, next to (not
-  replacing) plain `git`, so the "zero additional tooling" property a
-  plain repo has today wouldn't fully carry over even if the *files* end
-  up committed; and it changes today's generic fan-out script
-  (`link-agent-skills.sh`) from an OSAC-owned, fully-understood ~50-line
-  script into a dependency on an external tool's opinion about how each
-  harness's directories should look. Worth a dedicated, focused
-  evaluation before committing either way — not ruled in or out here.
+  reasonably well on paper.
+  **On "Microsoft-authored" specifically being a blocker for a Red Hat
+  project — checked directly, not just assumed:** `microsoft/apm` is
+  MIT-licensed, confirmed against its actual `LICENSE` file — a standard
+  permissive license Red Hat's own open-source policy already treats as
+  routinely approvable, the same category as countless other
+  Microsoft-originated projects Red Hat already consumes or contributes to
+  (VS Code, TypeScript, and others). Licensing is not the open question
+  here. What actually is: this is a young, fast-moving project — created
+  September 2025, only moved from an individual maintainer's personal repo
+  (`danielmeppiel/apm`) into the `microsoft/apm` org in February 2026, and
+  its own docs describe it as "community-driven" rather than an
+  officially-supported Microsoft product (its `SUPPORT.md` explicitly
+  routes support through GitHub Issues, "not through Microsoft customer
+  support channels"). That maturity/governance profile — not the vendor
+  name, and not the license — is the real open question, and it's the same
+  one already named below: whether a comparatively new third-party
+  dependency-management layer is something OSAC wants sitting in front of
+  automated pipelines that may hold real credentials (see the trust-
+  boundary follow-up in Consequences). Genuinely open questions this record
+  does not resolve: its maturity, governance, and long-term maintenance
+  posture haven't been evaluated beyond the above; it would be a wholly new
+  tool in OSAC's toolchain, next to (not replacing) plain `git`, so the
+  "zero additional tooling" property a plain repo has today wouldn't fully
+  carry over even if the *files* end up committed; and it changes today's
+  generic fan-out script (`link-agent-skills.sh`) from an OSAC-owned,
+  fully-understood ~50-line script into a dependency on an external tool's
+  opinion about how each harness's directories should look. Worth a
+  dedicated, focused evaluation before committing either way — not ruled
+  in or out here.
 
 ## Consequences
 
@@ -580,6 +597,15 @@ precise one than `osac-ai-tooling` would have been for the broader content.
   pointer; `apm install --frozen` for CI drift detection — basis for the
   new APM entry in Options Considered, not yet independently evaluated
   beyond what its own docs state
+- `microsoft/apm`'s `LICENSE` file (checked 2026-08-10) — confirms MIT,
+  ruling licensing in/out as a factor in whether a Red Hat project can
+  adopt it; and `microsoft/apm` discussion #86, "APM moves to Microsoft OSS
+  organization" (checked 2026-08-10) — confirms the repo moved from
+  `danielmeppiel/apm` to the `microsoft/apm` org in February 2026 (project
+  created September 2025), and is described as "community-driven" with
+  support routed through GitHub Issues rather than Microsoft customer
+  support — the maturity/governance data point behind this entry's
+  Microsoft-vendor discussion
 - Live `registry.yaml` from `opendatahub-io/skills-registry` (fetched and
   grepped directly, 2026-08-10) — of ~20 externally-sourced entries, `sha:`
   appears 0 times and `ref:` appears 20 times; every entry that sets a
