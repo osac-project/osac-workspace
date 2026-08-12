@@ -41,10 +41,12 @@ resolve_osac_ai_skills_dir() {
 
 # Absolute symlink skills/<name> -> <vendor>/skills/<name>.
 # Refuses to replace a real (non-symlink) path.
+# Prunes stale symlinks that still point into ${vendor}/skills/ after removals.
 materialize_osac_skills() {
   local vendor="$1"
-  local skill_dir name link_path target
+  local skill_dir name link_path target vendor_skills existing link_target
 
+  vendor_skills="$(cd "${vendor}/skills" && pwd -P)"
   mkdir -p "${WORKSPACE_ROOT}/skills"
   for skill_dir in "${vendor}/skills"/*/; do
     [[ -d "${skill_dir}" ]] || continue
@@ -62,6 +64,25 @@ materialize_osac_skills() {
       return 1
     fi
     ln -sfn "${target}" "${link_path}"
+  done
+
+  # Drop stale vendor skill links whose source was removed upstream.
+  for existing in "${WORKSPACE_ROOT}/skills"/*; do
+    [[ -e "${existing}" || -L "${existing}" ]] || continue
+    [[ -L "${existing}" ]] || continue
+    name="$(basename "${existing}")"
+    case "${name}" in
+      bugfix|design|e2e|implement|prd|_shared) continue ;;
+    esac
+    link_target="$(readlink "${existing}")"
+    # Only prune links that point into this vendor's skills tree.
+    case "${link_target}" in
+      "${vendor_skills}"/*) ;;
+      *) continue ;;
+    esac
+    if [[ ! -d "${vendor_skills}/${name}" ]]; then
+      rm -f "${existing}"
+    fi
   done
 }
 

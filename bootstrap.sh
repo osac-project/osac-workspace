@@ -333,10 +333,17 @@ done
 
 # Vendor osac-ai-skills (OSAC-3956). Same clone/fetch/rebase pattern as
 # ai-workflows below — copy this block for OSAC-3957 (osac/tools/bootstrap.sh).
-# Prefer ~/.osac-ai-skills if present; otherwise use ./.osac-ai-skills.
+# Prefer ~/.osac-ai-skills only when it is a usable vendor checkout; otherwise
+# use ./.osac-ai-skills (clone or update).
 OSAC_AI_SKILLS_REPO="${GITHUB_ORG}/osac-ai-skills"
 OSAC_AI_SKILLS_DIR=""
-if [ -d "${HOME}/.osac-ai-skills" ]; then
+osac_ai_skills_vendor_ok() {
+  local dir="$1"
+  [ -d "${dir}/.git" ] \
+    && [ -d "${dir}/skills" ] \
+    && [ -x "${dir}/tools/link-agent-skills.sh" ]
+}
+if [ -d "${HOME}/.osac-ai-skills" ] && osac_ai_skills_vendor_ok "${HOME}/.osac-ai-skills"; then
   OSAC_AI_SKILLS_DIR="$(readlink -f "${HOME}/.osac-ai-skills")"
   echo "📦 Updating osac-ai-skills (${OSAC_AI_SKILLS_DIR})..."
   if ! (cd "$OSAC_AI_SKILLS_DIR" && git fetch origin); then
@@ -359,6 +366,9 @@ elif [ -d ".osac-ai-skills" ]; then
     UPDATE_WARNINGS=1
   fi
 else
+  if [ -d "${HOME}/.osac-ai-skills" ]; then
+    echo "⚠️  ${HOME}/.osac-ai-skills exists but is not a usable vendor checkout; using ./.osac-ai-skills"
+  fi
   OSAC_AI_SKILLS_DIR="$(pwd)/.osac-ai-skills"
   echo "📥 Cloning osac-ai-skills..."
   git clone "https://github.com/${OSAC_AI_SKILLS_REPO}.git" ".osac-ai-skills"

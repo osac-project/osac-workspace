@@ -27,6 +27,14 @@ pass() { echo "PASS: $*"; }
 TMPDIR_ROOT=$(mktemp -d)
 trap 'rm -rf "$TMPDIR_ROOT"' EXIT
 
+# Isolate HOME so fixtures never pick up the developer's ~/.osac-ai-skills.
+run_wrapper() {
+  local ws="$1"
+  shift
+  mkdir -p "${ws}/home"
+  (cd "$ws" && HOME="${ws}/home" ./tools/link-agent-skills.sh "$@")
+}
+
 seed_vendor() {
   local ws="$1"
   local vendor="${ws}/.osac-ai-skills"
@@ -65,7 +73,7 @@ seed_vendor() {
 
 install_wrapper() {
   local ws="$1"
-  mkdir -p "${ws}/tools"
+  mkdir -p "${ws}/tools" "${ws}/home"
   cp "$WRAPPER" "${ws}/tools/link-agent-skills.sh"
   chmod +x "${ws}/tools/link-agent-skills.sh"
 }
@@ -75,7 +83,7 @@ test_missing_vendor_fails() {
   ws=$(mktemp -d "${TMPDIR_ROOT}/missing.XXXXXX")
   install_wrapper "$ws"
   local rc=0
-  (cd "$ws" && ./tools/link-agent-skills.sh --claude) >/dev/null 2>&1 || rc=$?
+  run_wrapper "$ws" --claude >/dev/null 2>&1 || rc=$?
   [[ "$rc" -ne 0 ]] || fail "expected non-zero exit when vendor missing"
   pass "missing vendor dir fails loudly"
 }
@@ -99,7 +107,7 @@ test_materialize_and_link() {
   echo '# stub' >"${ws}/.ai-workflows/implement/SKILL.md"
   echo '# stub' >"${ws}/.ai-workflows/prd/SKILL.md"
 
-  (cd "$ws" && ./tools/link-agent-skills.sh --all --with-ai-workflows) >/dev/null
+  run_wrapper "$ws" --all --with-ai-workflows >/dev/null
 
   [[ -L "${ws}/skills/create-pr" ]] || fail "skills/create-pr is not a symlink"
   [[ -r "${ws}/skills/create-pr/SKILL.md" ]] || fail "cannot read create-pr via skills/"
@@ -123,15 +131,35 @@ test_refuse_real_skill_directory() {
 
   local rc=0
   local err
-  err=$(cd "$ws" && ./tools/link-agent-skills.sh --claude 2>&1) || rc=$?
+  err=$(run_wrapper "$ws" --claude 2>&1) || rc=$?
   [[ "$rc" -ne 0 ]] || fail "expected failure when skills/create-pr is a real directory"
   echo "$err" | grep -qi 'not a symlink\|refusing\|real directory' \
     || fail "expected refusal message, got: $err"
   pass "refuses to replace a real skill directory"
 }
 
+test_prunes_removed_vendor_skill() {
+  local ws
+  ws=$(mktemp -d "${TMPDIR_ROOT}/prune.XXXXXX")
+  seed_vendor "$ws"
+  install_wrapper "$ws"
+  mkdir -p "${ws}/.osac-ai-skills/skills/obsolete-skill"
+  echo '# obsolete' >"${ws}/.osac-ai-skills/skills/obsolete-skill/SKILL.md"
+
+  run_wrapper "$ws" --claude >/dev/null
+  [[ -L "${ws}/skills/obsolete-skill" ]] || fail "expected obsolete-skill link after first materialize"
+
+  rm -rf "${ws}/.osac-ai-skills/skills/obsolete-skill"
+  run_wrapper "$ws" --claude >/dev/null
+  [[ ! -e "${ws}/skills/obsolete-skill" && ! -L "${ws}/skills/obsolete-skill" ]] \
+    || fail "expected obsolete-skill symlink to be pruned after vendor removal"
+  [[ -L "${ws}/skills/create-pr" ]] || fail "create-pr should still be linked after prune"
+  pass "prunes stale vendor skill symlinks"
+}
+
 test_missing_vendor_fails
 test_materialize_and_link
 test_refuse_real_skill_directory
+test_prunes_removed_vendor_skill
 
 echo "All link-agent-skills consumer smoke tests passed."
