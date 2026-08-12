@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Smoke test jira-safe-create.sh and affected skill patterns.
-# Run from osac-workspace: bash tools/test/jira-skills-smoke.sh
+# Run from osac-workspace after bootstrap (or tools/link-agent-skills.sh) so
+# skills/ is materialized from vendored osac-ai-skills:
+#   bash tools/test/jira-skills-smoke.sh
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)

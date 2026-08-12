@@ -6,7 +6,7 @@
 
 - **`osac-workspace/` is the project root** — all work happens from here; component `CLAUDE.md` files are loaded via progressive disclosure
 - **Read component `CLAUDE.md` first** before making changes in any component repo (progressive disclosure). Where a component also has `AGENTS.md`, it holds tool-agnostic conventions; `CLAUDE.md` remains the Claude entry point.
-- **Bump `metadata.version` in any `skills/*/SKILL.md` you modify** — the `check-skill-version-bump` CI job fails if a skill's content changes without a version bump. Use semver patch increments (e.g. `0.1.0` → `0.1.1`) for fixes and improvements, minor increments (`0.1.0` → `0.2.0`) for new capabilities.
+- **Edit OSAC skills only in [`osac-project/osac-ai-skills`](https://github.com/osac-project/osac-ai-skills)** — bump `metadata.version` there; this workspace only vendors skills via bootstrap.
 
 ## Detailed Rules (auto-loaded from `.claude/rules/`)
 

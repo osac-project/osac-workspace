@@ -10,8 +10,8 @@ Meta-workspace that bootstraps all OSAC (Open Sovereign AI Cloud) component repo
 - **Fork-based workflow**: push to `$PUSH_REMOTE`, never to `$UPSTREAM_REMOTE` — resolve with `tools/resolve-remotes.sh`
 - **AI attribution**: use an `Assisted-by: <tool> <contact>` trailer on commits, naming whichever AI tool actually did the work — never use `Co-Authored-By` for AI tools (Red Hat attribution standard). Example for Claude Code: `Assisted-by: Claude Code <noreply@anthropic.com>`
 - When debugging Kubernetes operators, check for stale vendor directories and cached images before rebuilding
-- **Don't raise `.skillsaw.yaml`'s `context-budget` skill limit to silence a token-count warning** — split the oversized `SKILL.md` into `references/`/`steps/` instead (see Skill Authoring Conventions)
-- **Bump `metadata.version` in any `skills/*/SKILL.md` you modify** — the `check-skill-version-bump` CI job fails if a skill's content changes without a version bump. Use semver patch increments (e.g. `0.1.0` → `0.1.1`) for fixes and improvements, minor increments (`0.1.0` → `0.2.0`) for new capabilities.
+- **Edit OSAC skills only in [`osac-project/osac-ai-skills`](https://github.com/osac-project/osac-ai-skills)** — this workspace vendors them via `./bootstrap.sh`; do not treat local `skills/` as an editable source
+- **Bump `metadata.version` in any skill you modify in `osac-ai-skills`** — that repo's `check-skill-version-bump` CI enforces semver patch/minor bumps (e.g. `0.1.0` → `0.1.1` / `0.2.0`)
 
 ## Dev Environment
 
@@ -212,7 +212,9 @@ The `/e2e` workflow writes tests in `osac-test-infra/tests/` following the conve
 
 ### Skill discovery
 
-Canonical skill definitions live in `skills/` (committed OSAC skills plus bootstrap-managed ai-workflows symlinks). Run `./bootstrap.sh` to wire skill discovery for each agent:
+OSAC-native skill definitions live in [`osac-project/osac-ai-skills`](https://github.com/osac-project/osac-ai-skills). This workspace is a **consumer**: `./bootstrap.sh` vendors that repo (`.osac-ai-skills/` or `~/.osac-ai-skills`) and materializes a local `skills/` overlay (per-skill symlinks plus ai-workflows links). Edit skills only in `osac-ai-skills`; re-run `./bootstrap.sh` (or `tools/link-agent-skills.sh`) to refresh.
+
+Agent discovery after bootstrap:
 
 | Agent | Skill path | Phase commands |
 |-------|------------|----------------|
@@ -221,7 +223,9 @@ Canonical skill definitions live in `skills/` (committed OSAC skills plus bootst
 | Gemini CLI | `.gemini/skills/` → `skills/` | — |
 | GitHub Copilot | `AGENTS.md` conventions only | — |
 
-`.claude/`, `.cursor/`, and `.gemini/` are gitignored except project settings; bootstrap recreates agent skill symlinks via `tools/link-agent-skills.sh`.
+`.claude/`, `.cursor/`, and `.gemini/` are gitignored except project settings; bootstrap recreates agent skill symlinks via `tools/link-agent-skills.sh` (thin wrapper around the vendored fan-out).
+
+Consumers that skip `./bootstrap.sh` (for example the jira-autofix `osac-workspace` profile) must import `osac-ai-skills` themselves and run the same consumer fan-out — otherwise OSAC-native skills will be missing after clone.
 
 `osac` also has its own root `AGENTS.md`/`tools/bootstrap.sh` upstream (`OSAC-3557`), which
 installs the same ai-workflows skills for someone cloning `osac` standalone, outside this
@@ -229,32 +233,9 @@ workspace. **Don't run `osac/tools/bootstrap.sh` from within `osac-workspace`** 
 workspace's own `./bootstrap.sh` and skill-linking above already cover `osac/` as a
 component; running both would install two separate, out-of-sync `.ai-workflows` clones.
 
-### Skillsaw Linting
+### Skill authoring and skillsaw
 
-**Skillsaw linting** (version pinned in `Makefile` `SKILLSAW_VERSION`; scope is `skillsaw lint .` with blacklist via `.skillsaw.yaml` `exclude:`; strict lint only — no baseline file, see `.gitignore`):
-
-- `make skillsaw` — lint full repo (on-demand; applies `SKILLSAW_VERSION`, `--strict`, `--no-baseline`)
-- `make skillsaw SKILL=skills/<name>/` — lint one skill (same pin and flags; no bare `skillsaw` on PATH)
-- Keep `Makefile`'s `SKILLSAW_VERSION` and `.github/workflows/skillsaw.yml`'s `version:` input in sync when bumping.
-- **CI** — `stbenjam/skillsaw` action on PRs (same `.skillsaw.yaml`; fixed command, not `Makefile`); `skillsaw-review` workflow posts inline PR comments from the lint report (no PR code execution in the review job)
-
-Skillsaw enforces [Agent Skills](https://agentskills.io/specification) structure (frontmatter, naming) and content quality heuristics. **Do not rewrite skill semantics just to pass lint** — tune `.skillsaw.yaml` for false positives or fix with backticks (see below).
-
-### Skill Authoring Conventions
-
-OSAC skills are workspace operators, not isolated skill bundles:
-
-- **Context budget:** Keep `SKILL.md` body under **5,000 tokens** ([Agent Skills spec](https://agentskills.io/specification) Tier 2). Move reference material to `references/` or `steps/` and link from `SKILL.md` with explicit **read before** callouts at each workflow step.
-
-| Reference type | Format | Example |
-|----------------|--------|---------|
-| File inside the skill directory | Markdown link ([Agent Skills spec](https://agentskills.io/specification)) | `[preflight.md](steps/preflight.md)` |
-| Path at workspace repo root | Backtick path, not a markdown link | `` `presentations/themes/redhat.css` `` |
-| Component or external doc | Backtick path or full URL | `` `osac/fulfillment-service/docs/API.md` `` |
-| User-input markers in examples | Backtick the marker | `` `TODO:` `` in meeting notes (not bare `TODO` in headings) |
-| Bad examples in calibration text | Backtick the quoted phrase | `` `handle edge cases appropriately` `` |
-
-Put `CRITICAL` / `IMPORTANT` rules in the first 20% of `SKILL.md` (skillsaw `content-critical-position`). When stating a prohibition, include the required alternative (for example: do Y instead of X). When lint forces a trade-off between passing and preserving operational guidance, preserve the guidance and adjust config or formatting.
+Author and lint skills in [`osac-ai-skills`](https://github.com/osac-project/osac-ai-skills) (skillsaw CI, `metadata.version` bumps, eval harness). This workspace no longer runs skillsaw or skill-version-check CI.
 
 ## Architecture
 

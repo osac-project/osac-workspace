@@ -68,14 +68,15 @@ This workspace provides a pre-configured AI-assisted development environment:
 
 | File | Purpose |
 |------|---------|
-| `bootstrap.sh` | Clones or updates all component repos, installs ai-workflows, and wires agent skill symlinks — re-run anytime to sync |
+| `bootstrap.sh` | Clones or updates all component repos, vendors `osac-ai-skills` and ai-workflows, and wires agent skill symlinks — re-run anytime to sync |
 | `osac-helpers.sh` | Developer shell helpers — source to get worktree and workflow utilities |
 | `AGENTS.md` | Tool-agnostic project instructions (Claude, Cursor, Gemini, Copilot) — build commands, architecture; bootstrap-linked skills for Claude/Cursor/Gemini; Copilot reads this file for conventions only |
 | `CLAUDE.md` | Thin wrapper that loads `AGENTS.md` plus Claude-specific command syntax |
-| `tools/link-agent-skills.sh` | Links `.claude/skills`, `.cursor/skills`, and `.gemini/skills` to canonical `skills/` |
+| `tools/link-agent-skills.sh` | Consumer wrapper: materializes `skills/` from vendored `osac-ai-skills`, then links `.claude`/`.cursor`/`.gemini` skills |
 | `.claude/settings.json` | Pre-approved shell commands (git, ls, cat, etc.) so Claude doesn't prompt for routine operations |
 | `AI-assisted-development-workflow.md` | AI-assisted development workflow: Feature → PRD → Design → Jira sync → Implement |
-| `skills/` | Canonical OSAC skill definitions (Jira, PRs, design review, release, demos) plus bootstrap-managed ai-workflows symlinks |
+| `skills/` | Bootstrap-managed overlay (symlinks into vendored `osac-ai-skills` + ai-workflows) — not an editable source |
+| `.osac-ai-skills/` | Vendored clone of [`osac-project/osac-ai-skills`](https://github.com/osac-project/osac-ai-skills) (gitignored; or prefer `~/.osac-ai-skills`) |
 | `.gitignore` | Ignores cloned repos, `.planning/`, `.claude/`, `.cursor/`, `.gemini/`, credentials, editor files, and build artifacts |
 
 ## Distrobox Dev Environment
@@ -189,8 +190,10 @@ grpcurl -insecure -H "Authorization: Bearer $TOKEN" $ROUTE:443 osac.public.v1.Vi
 
 See [`AI-assisted-development-workflow.md`](AI-assisted-development-workflow.md) for the full workflow: Feature → PRD → Design → Jira sync → Implement.
 
-**Prerequisites:** `./bootstrap.sh` (installs ai-workflows and links agent skill directories), `gh` (authenticated), `jira` CLI, `rg`
+**Prerequisites:** `./bootstrap.sh` (vendors `osac-ai-skills`, installs ai-workflows, links agent skill directories), `gh` (authenticated), `jira` CLI, `rg`
 
-After bootstrap, OSAC repo-local skills and ai-workflows (`bugfix`, `implement`, `prd`, `design`, `e2e`) are discoverable via `.claude/skills/`, `.cursor/skills/`, and `.gemini/skills/` (each symlinked to `skills/`). See `AGENTS.md` for agent-specific paths and the full skill list.
+After bootstrap, OSAC skills (from `osac-ai-skills`) and ai-workflows (`bugfix`, `implement`, `prd`, `design`, `e2e`) are discoverable via `.claude/skills/`, `.cursor/skills/`, and `.gemini/skills/` (each symlinked to the local `skills/` overlay). Edit skills only in [`osac-ai-skills`](https://github.com/osac-project/osac-ai-skills). See `AGENTS.md` for agent-specific paths.
+
+Harnesses that skip `./bootstrap.sh` (e.g. jira-autofix) must import `osac-ai-skills` and run `tools/link-agent-skills.sh` themselves before relying on OSAC-native skills.
 
 See `AGENTS.md` and `CLAUDE.md` for detailed development instructions and conventions.
