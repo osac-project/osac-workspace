@@ -85,29 +85,83 @@ proving this).
 
 ## Output Contract
 
-Normalize first (trim whitespace/blank lines, strip a single wrapping code
-fence). Then match exactly one of:
+**Normalize first, in this order:**
+
+1. Trim leading/trailing whitespace and blank lines.
+2. **Tolerate at most one short leading paragraph before the payload** —
+   if the text doesn't already start with `VERDICT:` or the table's exact
+   header row, scan for the first line that is *exactly*
+   `| Severity | File:Line | Issue | Suggestion |` and, if that line
+   appears within the first 5 lines and the discarded prefix is at most
+   500 characters, drop everything before it. If no such header line
+   exists in the first place, or it exists but only past that 5-line/
+   500-char bound, don't drop anything (the too-long case is itself a
+   normalization failure — see below). Trailing content after the table
+   is **not** given this tolerance — only a leading paragraph is.
+3. Strip a single wrapping markdown code fence, if present.
+
+Then match the normalized text against exactly one of:
 
 1. Exactly two lines: `VERDICT: INVALID`, then one non-empty explanation
    line — nothing else.
-2. Exactly the two words `no findings` — including for an empty review
-   scope. **Not** the native `"<category> review: no findings"` phrasing.
-3. A findings table: exactly the template's 4 header names, a separator
-   row, ≥1 body rows of exactly 4 cells, Severity cells exactly `CRITICAL`/
-   `IMPORTANT`/`ADVISORY`. Any single deviation invalidates the whole
-   response.
+2. A results table: exactly the template's 4 header names, a separator
+   row, ≥1 body rows of exactly 4 cells. Severity cells exactly `CRITICAL`/
+   `IMPORTANT`/`ADVISORY`/`NONE`. A `NONE` row means "no findings" and
+   **must be the table's only row** — combining a `NONE` row with a real
+   (`CRITICAL`/`IMPORTANT`/`ADVISORY`) row in the same response is
+   self-contradictory and invalidates the whole response, same as any
+   other single deviation.
+
+There is no separate bare-string shape for "no findings" (including for an
+empty review scope) — a clean result is a one-row table with severity
+`NONE`, not a literal string like the old `"no findings"`.
+
+**Why the leading-paragraph tolerance exists:** Task 4's live dry run
+against the round-6 bare-string contract found that most genuinely-clean
+reviews came back as an explanatory sentence followed by `"no findings"`,
+even under an explicit no-preamble instruction — correctly rejected as
+unparseable under the strict rule, but a real, frequent false `INVALID`.
+Two follow-up hypotheses were tried and *disproven* by further live
+spawns before landing on this one: neither switching the clean case to a
+`NONE`-severity table row, nor switching the whole payload to a JSON
+array, stopped the model from prepending the same kind of sentence — the
+behavior is about wanting to narrate before a final answer, not about the
+shape of that answer. The fix that actually worked in live testing is
+narrower: tolerate the leading sentence itself, rather than trying to
+design a shape immune to it. The exact-match header-row anchor (as
+opposed to, say, a JSON array's bare `[`) matters because it makes false
+positives effectively impossible — a preamble sentence would have to
+coincidentally contain the literal 4-column header string to be
+mistaken for the payload boundary. The length/line cap exists so this
+tolerance can't be used to bury an arbitrary amount of content ahead of a
+"clean" table; anything past that bound is treated as a normalization
+failure (unparseable), not silently accepted.
 
 **Reviewers never self-report PASS or BLOCKED.** `create-pr` alone computes
-PASS/BLOCKED from severity labels.
+PASS/BLOCKED from severity labels; a reviewer's `NONE` row is its
+contribution toward an eventual PASS, exactly like an empty findings set
+was under the old bare-string shape.
 
-**Anything not matching one of the three shapes is unparseable** —
-including a timeout, an unbounded-wait harness, the native no-findings
-phrase, a malformed table (even a "mostly valid" one), or a stray
-`VERDICT: PASS`/`VERDICT: BLOCKED` line. Any spawned reviewer's unparseable
-or missing result makes the **overall** verdict `INVALID`. **Whenever the
-overall verdict is `INVALID` for any reason, show every spawned reviewer's
-output in the report** (raw if unparsed, its findings if parsed) — not only
-the one that caused the `INVALID`.
+**Anything not matching one of the two shapes is unparseable** — including
+a timeout, an unbounded-wait harness, a bare `"no findings"` string (no
+longer a valid shape, native-phrased or not), a `NONE` row combined with
+real-finding rows, a malformed table (even a "mostly valid" one), a
+leading paragraph longer than the 5-line/500-char tolerance, or a stray
+`VERDICT: PASS`/`VERDICT: BLOCKED` line. Any spawned reviewer's
+unparseable or missing result makes the **overall** verdict `INVALID`.
+**Whenever the overall verdict is `INVALID` for any reason, show every
+spawned reviewer's output in the report** (raw if unparsed, its findings if
+parsed) — not only the one that caused the `INVALID`.
+
+**Known limitation:** the header-row anchor is checked as an exact string
+match, which this document can specify precisely, but the check is
+executed by an LLM reading these instructions, not a fixed parser —
+judgment calls at the margin (e.g., whitespace inside a cell that's
+visually but not byte-for-byte identical to the header) are possible.
+This is the same trust model the rest of this contract already relies on
+("any single deviation invalidates the whole response" is itself a
+judgment call the executing agent makes, not something enforced by a
+separate program).
 
 This format overrides `performance-review`/`security-review`'s own native
 `## Output` sections. **`create-pr` Step 4 does not call `review-gate`.**

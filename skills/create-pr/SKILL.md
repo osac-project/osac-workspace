@@ -232,15 +232,21 @@ option to note the limitation and keep waiting.
 
 ### 4.2: Validate Outputs and Aggregate Results
 
-For each spawned reviewer, normalize its output (trim whitespace/blank
-lines, strip a single wrapping code fence), then check it against
+For each spawned reviewer, normalize its output per
 [reviewer-config.md](references/reviewer-config.md)'s Output Contract:
-exactly `VERDICT: INVALID` + one explanation line and nothing else, or
-exactly `no findings` (not the native `"<category> review: no findings"`
-phrase), or a findings table matching the exact grammar (any single
-deviation invalidates the whole table). **Reviewers never self-report PASS
-or BLOCKED — only INVALID.** A timeout, empty/missing output, or anything
-else not matching this contract is that reviewer's result: `INVALID`.
+trim whitespace/blank lines, tolerate at most one short leading paragraph
+before the table (only if the exact header row appears within 5 lines/500
+chars — anything before that bound is discarded; anything past it makes
+the response unparseable), then strip a single wrapping code fence. Then
+check the result against the contract: exactly `VERDICT: INVALID` + one
+explanation line and nothing else, or a results table matching the exact
+grammar (any single deviation invalidates the whole table, and this
+leading-paragraph tolerance does **not** extend to trailing content) — a
+lone `NONE`-severity row means that reviewer found nothing; a `NONE` row
+combined with real-finding rows in the same table is itself a deviation.
+**Reviewers never self-report PASS or BLOCKED — only INVALID.** A timeout,
+empty/missing output, or anything else not matching this contract is that
+reviewer's result: `INVALID`.
 
 **If any spawned reviewer's result is `INVALID`, the overall gate verdict
 is `INVALID`** — name the reviewer(s) and stop. **Show every spawned
@@ -248,8 +254,9 @@ reviewer's output in the report** (raw if it didn't parse, its findings if
 it did) — not only the one that failed; do not aggregate the clean
 reviewers into a PASS alongside a failed one.
 
-Only once every spawned reviewer's result validates, combine all findings
-rows into a single aggregated table:
+Only once every spawned reviewer's result validates, combine all
+real-finding rows (excluding any `NONE` rows — they aren't findings) into a
+single aggregated table:
 
 ```markdown
 | Severity | File:Line | Category | Issue | Suggestion |
@@ -279,7 +286,7 @@ shown in the report (Step 4.2), regardless of which one caused the
 - **A reviewer's output was unparseable, or it timed out/crashed** — check its raw output manually for any real finding (the gate could not auto-classify it), then re-run Step 4.
 
 An empty review scope is **not** INVALID — a reviewer with nothing to
-review reports `no findings`, contributing to PASS.
+review reports a lone `NONE` row, contributing to PASS.
 
 **If BLOCKED:** Stop. Show the full aggregated findings table with all
 CRITICAL/IMPORTANT issues. Do not push. Fix the flagged issues in a new

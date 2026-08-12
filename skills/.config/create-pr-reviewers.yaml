@@ -43,18 +43,24 @@ prompt_template: |
   VERDICT: INVALID
   <one-line explanation of what failed>
 
-  Otherwise, do not include a "VERDICT:" line at all.
-
-  - If you have no findings, your entire response must be exactly the two
-    words: no findings
-    Do NOT write "{category} review: no findings" or any other variant —
-    it must be exactly "no findings" and nothing else.
-  - If you have findings, respond with only this table (no other text, no
-    other rows with unrecognized severities):
+  Otherwise, do not include a "VERDICT:" line at all. You may include one
+  short sentence of context before the table if you want — that's fine.
+  But starting from the table's header row, respond with only the table
+  below and nothing else: no text after it, no rows with unrecognized
+  severities:
 
   | Severity | File:Line | Issue | Suggestion |
   |----------|-----------|-------|------------|
-  | [CRITICAL|IMPORTANT|ADVISORY] | path:line | description | fix |
+  | [CRITICAL|IMPORTANT|ADVISORY|NONE] | path:line | description | fix |
 
-  An empty review scope (nothing changed since BASE) is not INVALID —
-  respond with "no findings".
+  - If you have no findings, respond with exactly one row and nothing
+    else after it: `| NONE | - | <one-line rationale> | - |` — put any
+    explanation you want to give in that row's Issue cell (e.g.
+    "comment-only change, nothing in scope"). Do NOT write "{category}
+    review: no findings" or any other sentence in place of the table.
+  - If you have findings, respond with one row per finding using only
+    CRITICAL/IMPORTANT/ADVISORY severities. Never combine a NONE row with
+    a real-finding row in the same response.
+
+  An empty review scope (nothing changed since BASE) is not INVALID — it's
+  a clean NONE row like any other.
