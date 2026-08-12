@@ -331,6 +331,39 @@ for entry in "${REFERENCE_REPOS[@]}"; do
   fi
 done
 
+# Vendor osac-ai-skills (OSAC-3956). Same clone/fetch/rebase pattern as
+# ai-workflows below — copy this block for OSAC-3957 (osac/tools/bootstrap.sh).
+# Prefer ~/.osac-ai-skills if present; otherwise use ./.osac-ai-skills.
+OSAC_AI_SKILLS_REPO="${GITHUB_ORG}/osac-ai-skills"
+OSAC_AI_SKILLS_DIR=""
+if [ -d "${HOME}/.osac-ai-skills" ]; then
+  OSAC_AI_SKILLS_DIR="$(readlink -f "${HOME}/.osac-ai-skills")"
+  echo "📦 Updating osac-ai-skills (${OSAC_AI_SKILLS_DIR})..."
+  if ! (cd "$OSAC_AI_SKILLS_DIR" && git fetch origin); then
+    echo "⚠️  Fetch failed for osac-ai-skills. Skipping update."
+    UPDATE_WARNINGS=1
+  elif ! (cd "$OSAC_AI_SKILLS_DIR" && git rebase origin/main --autostash); then
+    (cd "$OSAC_AI_SKILLS_DIR" && git rebase --abort 2>/dev/null || true)
+    echo "⚠️  Rebase failed for osac-ai-skills. Resolve manually: cd $OSAC_AI_SKILLS_DIR && git rebase origin/main"
+    UPDATE_WARNINGS=1
+  fi
+elif [ -d ".osac-ai-skills" ]; then
+  OSAC_AI_SKILLS_DIR="$(pwd)/.osac-ai-skills"
+  echo "📦 Updating osac-ai-skills (.osac-ai-skills)..."
+  if ! (cd "$OSAC_AI_SKILLS_DIR" && git fetch origin); then
+    echo "⚠️  Fetch failed for osac-ai-skills. Skipping update."
+    UPDATE_WARNINGS=1
+  elif ! (cd "$OSAC_AI_SKILLS_DIR" && git rebase origin/main --autostash); then
+    (cd "$OSAC_AI_SKILLS_DIR" && git rebase --abort 2>/dev/null || true)
+    echo "⚠️  Rebase failed for osac-ai-skills. Resolve manually: cd $OSAC_AI_SKILLS_DIR && git rebase origin/main"
+    UPDATE_WARNINGS=1
+  fi
+else
+  OSAC_AI_SKILLS_DIR="$(pwd)/.osac-ai-skills"
+  echo "📥 Cloning osac-ai-skills..."
+  git clone "https://github.com/${OSAC_AI_SKILLS_REPO}.git" ".osac-ai-skills"
+fi
+
 # Install ai-workflows (bugfix, implement, etc.)
 AI_WORKFLOWS_REPO="flightctl/ai-workflows"
 AI_WORKFLOWS_DIR=""
