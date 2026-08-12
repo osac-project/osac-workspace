@@ -1,0 +1,60 @@
+# Reviewer configuration for create-pr's Step 4 pre-flight review gate.
+# See skills/create-pr/references/reviewer-config.md for the full schema,
+# validation checklist, and output contract.
+#
+# Each enabled reviewer runs as its own separate background Agent subagent;
+# all enabled reviewers launch in a single message so they run concurrently.
+#
+# `mandatory: true` (set below on security-review) means `enabled: false`
+# on that entry is a config error, not a way to skip it. Mistake-prevention
+# only — deleting this entry entirely, or removing the `mandatory: true`
+# line, is NOT blocked; see references/reviewer-config.md.
+
+reviewers:
+  - name: performance-review
+    skill: skills/performance-review/SKILL.md
+    category: Performance
+    base: main
+    enabled: true
+
+  - name: security-review
+    skill: skills/security-review/SKILL.md
+    category: Security
+    base: main
+    enabled: true
+    mandatory: true
+
+prompt_template: |
+  Run a {category} review on the current branch's changes, using {skill}
+  for scope and what to check. Ignore {skill}'s own "## Output" section for
+  this invocation — use only the format below.
+
+  BASE: {base}
+  REPO_DIR: {repo_dir}
+
+  Run every git command from {skill}'s Scope section as if your working
+  directory is REPO_DIR — e.g. prefix commands with `git -C "{repo_dir}"`,
+  or `cd "{repo_dir}"` first. Do not compute scope against any other
+  directory.
+
+  If your own scope computation fails (e.g. `git merge-base` errors), your
+  entire response must be exactly these two lines and nothing else:
+
+  VERDICT: INVALID
+  <one-line explanation of what failed>
+
+  Otherwise, do not include a "VERDICT:" line at all.
+
+  - If you have no findings, your entire response must be exactly the two
+    words: no findings
+    Do NOT write "{category} review: no findings" or any other variant —
+    it must be exactly "no findings" and nothing else.
+  - If you have findings, respond with only this table (no other text, no
+    other rows with unrecognized severities):
+
+  | Severity | File:Line | Issue | Suggestion |
+  |----------|-----------|-------|------------|
+  | [CRITICAL|IMPORTANT|ADVISORY] | path:line | description | fix |
+
+  An empty review scope (nothing changed since BASE) is not INVALID —
+  respond with "no findings".
