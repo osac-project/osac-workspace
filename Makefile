@@ -4,7 +4,7 @@ HOME_DIR ?= $(HOME)
 CONTAINER_CMD ?= $(shell command -v podman 2>/dev/null || echo docker)
 ARGS ?=
 
-.PHONY: image enter claude stop rm rebuild status help skillsaw slides
+.PHONY: image enter claude stop rm rebuild status help slides
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
@@ -50,9 +50,3 @@ slides: ## Build presentation HTML and generate site index (local preview)
 	@echo ""
 	@echo "  Open: file://$(CURDIR)/index.html"
 	@echo "  Or:   file://$(CURDIR)/presentations/ai-assisted-sdlc.html"
-
-SKILLSAW_VERSION ?= 0.17.0
-SKILL ?= .
-
-skillsaw: ## Lint repo or one skill (SKILL=skills/<name>/; version pinned here — match skillsaw.yml)
-	uvx --from skillsaw==$(SKILLSAW_VERSION) skillsaw lint $(SKILL) --strict --no-baseline
