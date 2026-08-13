@@ -198,10 +198,36 @@ test_prunes_removed_vendor_skill() {
   pass "prunes stale vendor skill symlinks"
 }
 
+test_verify_rejects_removed_canonical_file() {
+  local ws
+  ws=$(mktemp -d "${TMPDIR_ROOT}/verify-removed.XXXXXX")
+  seed_vendor "$ws"
+  install_wrapper "$ws"
+
+  run_wrapper "$ws" --claude >/dev/null
+  run_wrapper "$ws" --claude --verify >/dev/null \
+    || fail "expected --verify to pass before canonical file removal"
+
+  # Simulate a canonical shared rule vanishing out from under an
+  # otherwise-present consumer symlink (e.g. mid-migration deletion).
+  rm -f "${ws}/.osac-ai-skills/.claude/rules/architecture-patterns.md"
+  [[ -L "${ws}/.claude/rules/architecture-patterns.md" ]] \
+    || fail "expected stale symlink to remain after canonical file removal"
+
+  local rc=0
+  local err
+  err=$(run_wrapper "$ws" --claude --verify 2>&1) || rc=$?
+  [[ "$rc" -ne 0 ]] || fail "expected --verify to fail after canonical file removal"
+  echo "$err" | grep -qi 'missing or unreadable' \
+    || fail "expected missing-canonical-source error, got: $err"
+  pass "--verify rejects a symlink whose canonical file was removed"
+}
+
 test_missing_vendor_fails
 test_materialize_and_link
 test_shared_rules_agents_design_context
 test_refuse_real_skill_directory
 test_prunes_removed_vendor_skill
+test_verify_rejects_removed_canonical_file
 
 echo "All link-agent-skills consumer smoke tests passed."
