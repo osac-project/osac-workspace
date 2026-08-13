@@ -69,6 +69,24 @@ seed_vendor() {
       echo "# stub ${name}" >"${vendor}/skills/${name}/SKILL.md"
     fi
   done
+
+  # Shared rules/agents/design-context/reference (OSAC-4006): stub the same
+  # filenames the vendored script's SHARED_RULES/SHARED_AGENTS/
+  # SHARED_DESIGN_CONTEXT/SHARED_REFERENCE arrays expect, so
+  # materialize_shared_dir has real files to link to.
+  mkdir -p "${vendor}/.claude/rules" "${vendor}/.claude/agents" "${vendor}/.design/context" "${vendor}/reference"
+  for name in architecture-patterns networking-design-alignment request-path-tracing; do
+    echo "# stub ${name}" >"${vendor}/.claude/rules/${name}.md"
+  done
+  for name in quick-fix; do
+    echo "# stub ${name}" >"${vendor}/.claude/agents/${name}.md"
+  done
+  for name in enclave-wizard-pipeline networking-decisions osac-dimensions review-patterns; do
+    echo "# stub ${name}" >"${vendor}/.design/context/${name}.md"
+  done
+  for name in ARCHITECTURE; do
+    echo "# stub ${name}" >"${vendor}/reference/${name}.md"
+  done
 }
 
 install_wrapper() {
@@ -121,6 +139,31 @@ test_materialize_and_link() {
   pass "materialize + vendored fan-out links consumer tree"
 }
 
+test_shared_rules_agents_design_context() {
+  local ws
+  ws=$(mktemp -d "${TMPDIR_ROOT}/shared.XXXXXX")
+  seed_vendor "$ws"
+  install_wrapper "$ws"
+
+  run_wrapper "$ws" --claude >/dev/null
+
+  [[ -L "${ws}/.claude/rules/architecture-patterns.md" ]] \
+    || fail "expected .claude/rules/architecture-patterns.md to be a symlink"
+  [[ -r "${ws}/.claude/rules/architecture-patterns.md" ]] \
+    || fail "cannot read .claude/rules/architecture-patterns.md via symlink"
+  [[ -L "${ws}/.claude/agents/quick-fix.md" ]] \
+    || fail "expected .claude/agents/quick-fix.md to be a symlink"
+  [[ -L "${ws}/.design/context/osac-dimensions.md" ]] \
+    || fail "expected .design/context/osac-dimensions.md to be a symlink"
+  [[ -r "${ws}/.design/context/osac-dimensions.md" ]] \
+    || fail "cannot read .design/context/osac-dimensions.md via symlink"
+  [[ -L "${ws}/reference/ARCHITECTURE.md" ]] \
+    || fail "expected reference/ARCHITECTURE.md to be a symlink"
+  [[ -r "${ws}/reference/ARCHITECTURE.md" ]] \
+    || fail "cannot read reference/ARCHITECTURE.md via symlink"
+  pass "materializes shared rules/agents/design-context/reference"
+}
+
 test_refuse_real_skill_directory() {
   local ws
   ws=$(mktemp -d "${TMPDIR_ROOT}/refuse.XXXXXX")
@@ -159,6 +202,7 @@ test_prunes_removed_vendor_skill() {
 
 test_missing_vendor_fails
 test_materialize_and_link
+test_shared_rules_agents_design_context
 test_refuse_real_skill_directory
 test_prunes_removed_vendor_skill
 
