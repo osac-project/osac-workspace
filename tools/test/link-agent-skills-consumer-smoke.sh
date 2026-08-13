@@ -153,6 +153,8 @@ test_shared_rules_agents_design_context() {
     || fail "cannot read .claude/rules/architecture-patterns.md via symlink"
   [[ -L "${ws}/.claude/agents/quick-fix.md" ]] \
     || fail "expected .claude/agents/quick-fix.md to be a symlink"
+  [[ -r "${ws}/.claude/agents/quick-fix.md" ]] \
+    || fail "cannot read .claude/agents/quick-fix.md via symlink"
   [[ -L "${ws}/.design/context/osac-dimensions.md" ]] \
     || fail "expected .design/context/osac-dimensions.md to be a symlink"
   [[ -r "${ws}/.design/context/osac-dimensions.md" ]] \
