@@ -405,11 +405,20 @@ else
   echo "📥 Cloning ai-workflows..."
   git clone "https://github.com/${AI_WORKFLOWS_REPO}.git" ".ai-workflows"
 fi
+# Must run before ai-workflows' install.sh: on a from-scratch clone, nothing
+# under .claude/, .cursor/, or .gemini/ exists yet, so link-agent-skills.sh
+# can freely create the .claude/skills -> ../skills (etc.) umbrella symlinks.
+# install.sh's own `mkdir -p "<agent>/skills"` + targeted `ln -sfn .../<wf>`
+# calls are non-destructive against an existing directory symlink -- they
+# follow it and land each ai-workflows entry inside the shared skills/ tree.
+# Reversing this order breaks a from-scratch bootstrap: install.sh would
+# create .claude/skills (etc.) as a real directory first, and safe_symlink
+# refuses to replace a real directory with a symlink.
+echo "🔗 Linking agent skill directories to skills/..."
+tools/link-agent-skills.sh --all
 echo "🔧 Installing ai-workflows skills..."
 AI_WORKFLOWS="bugfix,implement,prd,design,e2e"
 "$AI_WORKFLOWS_DIR/install.sh" all --project . --workflows "$AI_WORKFLOWS"
-echo "🔗 Linking agent skill directories to skills/..."
-tools/link-agent-skills.sh --all
 
 if command -v rh-multi-pre-commit &>/dev/null; then
   echo ""
