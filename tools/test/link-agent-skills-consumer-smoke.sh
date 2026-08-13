@@ -70,11 +70,14 @@ seed_vendor() {
     fi
   done
 
-  # Shared rules/agents/design-context/reference (OSAC-4006): stub the same
-  # filenames the vendored script's SHARED_RULES/SHARED_AGENTS/
-  # SHARED_DESIGN_CONTEXT/SHARED_REFERENCE arrays expect, so
-  # materialize_shared_dir has real files to link to.
-  mkdir -p "${vendor}/.claude/rules" "${vendor}/.claude/agents" "${vendor}/.design/context" "${vendor}/reference"
+  # Shared rules/agents/design-context (OSAC-4006): stub the same filenames
+  # the vendored script's SHARED_RULES/SHARED_AGENTS/SHARED_DESIGN_CONTEXT
+  # arrays expect, so materialize_shared_dir has real files to link to.
+  # reference/*.md (ARCHITECTURE.md and siblings) is NOT part of this
+  # fan-out — it's a codebase-analysis snapshot, not portable skill
+  # guidance; placement deferred to OSAC-4008. reference/ stays a real,
+  # workspace-local directory, untouched by this script.
+  mkdir -p "${vendor}/.claude/rules" "${vendor}/.claude/agents" "${vendor}/.design/context"
   for name in architecture-patterns networking-design-alignment request-path-tracing; do
     echo "# stub ${name}" >"${vendor}/.claude/rules/${name}.md"
   done
@@ -83,9 +86,6 @@ seed_vendor() {
   done
   for name in enclave-wizard-pipeline networking-decisions osac-dimensions review-patterns; do
     echo "# stub ${name}" >"${vendor}/.design/context/${name}.md"
-  done
-  for name in ARCHITECTURE; do
-    echo "# stub ${name}" >"${vendor}/reference/${name}.md"
   done
 }
 
@@ -159,11 +159,7 @@ test_shared_rules_agents_design_context() {
     || fail "expected .design/context/osac-dimensions.md to be a symlink"
   [[ -r "${ws}/.design/context/osac-dimensions.md" ]] \
     || fail "cannot read .design/context/osac-dimensions.md via symlink"
-  [[ -L "${ws}/reference/ARCHITECTURE.md" ]] \
-    || fail "expected reference/ARCHITECTURE.md to be a symlink"
-  [[ -r "${ws}/reference/ARCHITECTURE.md" ]] \
-    || fail "cannot read reference/ARCHITECTURE.md via symlink"
-  pass "materializes shared rules/agents/design-context/reference"
+  pass "materializes shared rules/agents/design-context"
 }
 
 test_refuse_real_skill_directory() {
