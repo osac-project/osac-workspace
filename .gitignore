@@ -22,7 +22,6 @@ kubeconfig
 !.claude/settings.json
 !.claude/rules/
 !.claude/workflows/
-!.claude/workflows/*
 .mcp.json
 
 # Shared rules vendored via osac-ai-skills (OSAC-4006): symlinks materialized
