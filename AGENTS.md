@@ -135,7 +135,7 @@ workflow) at release time — not by a feature PR. What still needs an explicit 
 - **New CRD types** in `osac-operator` → register in the `fulfillment-service` reconciler (an in-repo change, same PR)
 - **`osac-ui`** → a real external dependency (OCI chart + image, version-tagged), bumped deliberately when a new release is needed
 
-See `reference/CONVENTIONS.md` for the full dependency table (regenerated via the repo-intel tooling, not hand-edited).
+See `reference/CONVENTIONS.md` for the full dependency table (a hand-trimmed excerpt symlinked to `osac/docs/CONVENTIONS.md` — see that file's `README.md` for provenance).
 
 ## Enhancement Proposals
 
