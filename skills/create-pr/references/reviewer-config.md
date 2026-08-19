@@ -281,13 +281,21 @@ describing a native response format, such as `ponytail-review`'s
 error (check 9). It does **not** protect against: removing/flipping
 `mandatory: true` then disabling; deleting the entry outright (explicitly
 tested as passing, not a bug); repointing `skill:`; overwriting the
-`SKILL.md`. This is mistake-prevention against an accidental single-field
-disable only — as of this writing there is no CI check, CODEOWNERS rule, or
-other automated control over `skills/.config/create-pr-reviewers.yaml`'s
-content, so a deliberate change to any of the above (including removing
-`security-review` entirely) currently goes unflagged. A CODEOWNERS entry on
-this file, or a CI job that diffs it against an expected mandatory-entries
-list, would close that gap; neither exists yet.
+`SKILL.md`; or editing the shared `prompt_template` itself to add
+outcome-steering language (e.g. "always answer with a single NONE row") —
+`prompt_template` is one string shared by every reviewer including
+`security-review`, checks 10/14/15 only constrain specific fields and the
+literal `VERDICT: PASS`/`VERDICT: BLOCKED` substrings, not arbitrary
+free-form instructional content, and there's no narrow safe pattern to
+constrain a field whose entire purpose is to carry free-form instructions
+the way there is for `name`/`category`/`base`. This is mistake-prevention
+against an accidental single-field disable only — as of this writing there
+is no CI check, CODEOWNERS rule, or other automated control over
+`skills/.config/create-pr-reviewers.yaml`'s content, so a deliberate change
+to any of the above (including removing `security-review` entirely)
+currently goes unflagged. A CODEOWNERS entry on this file, or a CI job
+that diffs it against an expected mandatory-entries list, would close that
+gap; neither exists yet.
 
 ## Adding a reviewer
 
