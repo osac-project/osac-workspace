@@ -30,13 +30,20 @@ BRANCH=$(git branch --show-current)
 **Resolve remote names** before deriving the repo name or running gate checks:
 
 ```bash
-WORKSPACE_ROOT=$(cd "$REPO_DIR/.." && git rev-parse --show-toplevel 2>/dev/null || echo "$REPO_DIR/..")
+WORKSPACE_ROOT="$REPO_DIR"
+[[ -f "$WORKSPACE_ROOT/tools/resolve-remotes.sh" ]] || WORKSPACE_ROOT="$REPO_DIR/.."
+WORKSPACE_ROOT=$(cd "$WORKSPACE_ROOT" && git rev-parse --show-toplevel 2>/dev/null || echo "$WORKSPACE_ROOT")
 _resolve_out=$("${WORKSPACE_ROOT}/tools/resolve-remotes.sh" "$REPO_DIR") || {
   echo "Failed to resolve remotes. Run tools/resolve-remotes.sh --print to diagnose."
   exit 1
 }
 eval "$_resolve_out"
 ```
+
+`$REPO_DIR` may itself already be the workspace root (e.g. running `create-pr`
+from `osac-workspace` directly, not a component subdirectory) — check for
+`tools/resolve-remotes.sh` there first before falling back to the parent,
+the same self-check-then-fallback idiom Step 4.1 uses for `$SKILLS_ROOT`.
 
 This sets `$UPSTREAM_REMOTE` (the osac-project remote) and `$PUSH_REMOTE` (developer's push target). Run `tools/resolve-remotes.sh --print` to see current detection.
 
@@ -188,7 +195,7 @@ itself:
 ```bash
 SKILLS_ROOT="$REPO_DIR"
 [[ -f "$SKILLS_ROOT/skills/.config/create-pr-reviewers.yaml" ]] || SKILLS_ROOT="$REPO_DIR/.."
-SKILLS_ROOT=$(cd "$SKILLS_ROOT" && pwd)
+SKILLS_ROOT=$(cd "$SKILLS_ROOT" && pwd) || { echo "Failed to resolve SKILLS_ROOT at $SKILLS_ROOT"; exit 1; }
 ```
 
 Read `$SKILLS_ROOT/skills/.config/create-pr-reviewers.yaml` with `Read`.
@@ -229,26 +236,22 @@ itself blocked; that's an accepted limitation, not a bug.
 Wait for all agents to complete. **A reviewer that hasn't returned within
 10 minutes — or if this harness provides no way to detect/bound a hung
 subagent's runtime at all — is `INVALID`** (see Step 4.2); there is no
-option to note the limitation and keep waiting.
+option to note the limitation and keep waiting. If the harness reports
+elapsed wall-clock time per agent call (e.g. a `duration_ms` field on a
+completion notification), use that to apply the 10-minute bound; if it
+reports no such signal at all for a given call, that absence is itself the
+"no way to detect/bound" case above.
 
 ### 4.2: Validate Outputs and Aggregate Results
 
-For each spawned reviewer, normalize its output per
-[reviewer-config.md](references/reviewer-config.md)'s Output Contract:
-trim whitespace/blank lines, tolerate any amount of leading prose before
-the table (discard everything before the point where the *rest* of the
-response is a complete, valid table with nothing after it — an incidental
-mention of the header text that isn't followed by a genuinely complete
-table doesn't count), then strip a single wrapping code fence. Then
-check the result against the contract: exactly `VERDICT: INVALID` + one
-explanation line and nothing else, or a results table matching the exact
-grammar (any single deviation invalidates the whole table, and this
-leading-paragraph tolerance does **not** extend to trailing content) — a
-lone `NONE`-severity row means that reviewer found nothing; a `NONE` row
-combined with real-finding rows in the same table is itself a deviation.
-**Reviewers never self-report PASS or BLOCKED — only INVALID.** A timeout,
-empty/missing output, or anything else not matching this contract is that
-reviewer's result: `INVALID`.
+For each spawned reviewer, normalize and validate its output per
+[reviewer-config.md](references/reviewer-config.md)'s Output Contract —
+read that section for the exact rules (the unconditional stray-`VERDICT:`
+check, the leading-prose tolerance and its concrete-finding judgment call,
+the single-table-shape grammar including the `NONE`/`INVALID` solo-row
+rule). **Reviewers never self-report PASS or BLOCKED — only a solo
+`INVALID` row.** A timeout, empty/missing output, or anything else not
+matching the contract is that reviewer's result: `INVALID`.
 
 **If any spawned reviewer's result is `INVALID`, the overall gate verdict
 is `INVALID`** — name the reviewer(s) and stop. **Show every spawned
@@ -256,18 +259,22 @@ reviewer's output in the report** (raw if it didn't parse, its findings if
 it did) — not only the one that failed; do not aggregate the clean
 reviewers into a PASS alongside a failed one.
 
-Only once every spawned reviewer's result validates, combine all
-real-finding rows (excluding any `NONE` rows — they aren't findings) into a
-single aggregated table:
+Only once every spawned reviewer's result validates — meaning no reviewer
+reported an `INVALID` row — combine all real-finding rows
+(`CRITICAL`/`IMPORTANT`/`ADVISORY`, excluding any `NONE` rows — they aren't
+findings) into a single aggregated table:
 
 ```markdown
 | Severity | File:Line | Category | Issue | Suggestion |
 |----------|-----------|----------|-------|------------|
 | ... | ... | Performance | ... | ... |
 | ... | ... | Security | ... | ... |
+| ... | ... | Ponytail | ... | ... |
 ```
 
-"Category" uses each reviewer's config `category`.
+"Category" uses each reviewer's config `category` — the example above shows
+three rows because three reviewers are currently enabled; it grows or
+shrinks with the config, not with this example.
 
 ### 4.3: Determine Overall Verdict
 
@@ -282,9 +289,13 @@ single aggregated table:
 
 **If INVALID:** Stop. Do not push. Every spawned reviewer's output is
 shown in the report (Step 4.2), regardless of which one caused the
-`INVALID`. Identify which cause applies:
+`INVALID`. Do not resolve an `INVALID` verdict by editing the reviewed
+source, history, or git state to make a reviewer's scope computation
+succeed — fix the tooling/config problem, or escalate to the user; the
+reviewed change itself is not the thing to change here. Identify which
+cause applies:
 - **Step 4.1 config validation failed** — fix `skills/.config/create-pr-reviewers.yaml` per the reported check, then re-run Step 4.
-- **A reviewer self-reported `VERDICT: INVALID`** — investigate the git state its explanation points to, then re-run Step 4.
+- **A reviewer reported an `INVALID` row** — investigate the git state its explanation cell points to, then re-run Step 4.
 - **A reviewer's output was unparseable, or it timed out/crashed** — check its raw output manually for any real finding (the gate could not auto-classify it), then re-run Step 4.
 
 An empty review scope is **not** INVALID — a reviewer with nothing to

@@ -206,15 +206,36 @@ reviewer's output must be either:
 - at least one line in the form `[CRITICAL|IMPORTANT|ADVISORY] file:line —
   description — suggested fix`, or
 - the exact phrase `"performance review: no findings"` /
-  `"security review: no findings"`.
+  `"security review: no findings"`, optionally preceded by leading prose —
+  see the tolerance rule below.
+
+**Tolerate leading prose before either valid form, with the same
+concrete-finding judgment call `create-pr`'s Output Contract uses** (see
+`skills/create-pr/references/reviewer-config.md`'s Output Contract for the
+canonical statement of this rule; summarized here for review-gate's own,
+simpler shape): a reviewer narrating one sentence of context before its
+findings or its "no findings" phrase is common and not itself a problem.
+Before discarding any such leading text, judge it — does it describe a
+concrete problem (a specific file, line, behavior, or issue) at
+`CRITICAL`/`IMPORTANT` severity, even informally? If yes, and what follows
+is the bare "no findings" phrase rather than a findings line reflecting
+that problem, do not discard the prose — treat the output as invalid
+instead of "no findings". Rejecting an exact-match-only bare string here is
+the same false-`INVALID` bug `create-pr`'s own Output Contract had to fix
+once already (see that file's `bc0e4ef` reference) — most genuinely clean
+reviews narrate a sentence first even under a no-preamble instruction, and
+an exact-match requirement with no tolerance turns that into a frequent
+false gate failure.
 
 If either reviewer's output is missing, empty, or doesn't match one of
-these two forms — a reviewer step was skipped, crashed, returned free text
-with no severity labels, or anything else that doesn't parse — that is
-itself a gate failure, distinct from BLOCKED. Do not treat an unparseable
-or absent reviewer section as "no findings" and do not let it produce a
-PASS. Stop and report which reviewer's output was invalid or missing. A
-gate that can't verify what a reviewer found has not passed.
+these two forms after applying the tolerance above — a reviewer step was
+skipped, crashed, returned free text with no severity labels, narrated a
+real finding and then claimed "no findings" anyway, or anything else that
+doesn't parse — that is itself a gate failure, distinct from BLOCKED. Do
+not treat an unparseable or absent reviewer section as "no findings" and do
+not let it produce a PASS. Stop and report which reviewer's output was
+invalid or missing. A gate that can't verify what a reviewer found has not
+passed.
 
 Once both outputs validate, merge them into one, in this shape:
 

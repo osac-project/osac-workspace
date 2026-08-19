@@ -26,6 +26,8 @@ make lint
 make build
 make test
 make manifests generate && git diff --exit-code
+make check-helm-crds
+make test-kustomize
 ```
 
 ### osac-aap
@@ -75,6 +77,7 @@ make lint
 make build
 make test
 make manifests generate && git diff --exit-code
+make check-helm-crds
 ```
 
 ### osac-csi-driver

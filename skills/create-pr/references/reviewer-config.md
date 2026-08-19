@@ -30,7 +30,7 @@ validation rather than being silently ignored.
 ```bash
 SKILLS_ROOT="$REPO_DIR"
 [[ -f "$SKILLS_ROOT/skills/.config/create-pr-reviewers.yaml" ]] || SKILLS_ROOT="$REPO_DIR/.."
-SKILLS_ROOT=$(cd "$SKILLS_ROOT" && pwd)
+SKILLS_ROOT=$(cd "$SKILLS_ROOT" && pwd) || { echo "Failed to resolve SKILLS_ROOT at $SKILLS_ROOT"; exit 1; }
 ```
 
 Checking for the config file itself, not merely a `skills/` directory,
@@ -85,6 +85,12 @@ proving this).
 
 ## Output Contract
 
+`docs/superpowers/specs/2026-08-10-config-driven-reviewers-design.md` and its
+matching implementation plan describe an earlier, two-shape version of this
+contract (a `VERDICT: INVALID` string as a separate top-level format from the
+results table) — those are historical/frozen design records; this section is
+authoritative for current behavior.
+
 The exact header row quoted throughout this section
 (`| Severity | File:Line | Issue | Suggestion |`) must stay byte-identical
 to the one in `skills/.config/create-pr-reviewers.yaml`'s `prompt_template`
@@ -93,40 +99,84 @@ copies aren't derived from one another; if a future change adds a column
 or renames one, update both together, or every reviewer's otherwise-clean
 output will stop matching the anchor.
 
-**Normalize first, in this order:**
+**There is exactly one valid response shape: a single table with this
+template's four columns.** `INVALID` is a severity value like any other, not
+a separate top-level format — a reviewer whose own scope computation fails
+reports it as a solo `| INVALID | - | <explanation> | - |` row, the same way
+a clean result is a solo `NONE` row. Collapsing two shapes ("either a 2-line
+`VERDICT: INVALID` string, or a table") into one removes an entire axis of
+format mismatch a reviewer has to get right — exactly the kind of surface
+that produced the false-`INVALID` bug this file's own commit history
+(`bc0e4ef`) already had to fix once, for the table shape alone.
+
+**Before normalizing anything, reject stray self-reported verdicts
+unconditionally.** If the raw, unmodified response contains the literal
+substring `VERDICT: PASS` or `VERDICT: BLOCKED` anywhere — even inside text
+that would otherwise be discarded as leading prose — the response is
+`INVALID`, full stop, before any other normalization step runs. Reviewers
+never compute PASS/BLOCKED; only `create-pr` does, from the aggregated
+severity labels. A reviewer that writes one of these lines (even in a
+narrated aside, even if a clean table follows it) is contradicting its own
+role, and that contradiction must not be silently stripped away along with
+the rest of the preamble.
+
+**Normalize next, in this order:**
 
 1. Trim leading/trailing whitespace and blank lines.
-2. **Tolerate any amount of leading prose before the payload** — if the
-   text doesn't already start with `VERDICT:` or the table's exact header
-   row, look for a point in the response where the *rest of the response,
-   in full,* is a complete, valid table: the exact header row, a separator
-   row, and one or more well-formed body rows, with nothing after it. If
-   such a point exists, drop everything before it — there is no limit on
-   how much leading prose is tolerated. An occurrence of the header text
-   that isn't immediately followed by a genuinely complete, valid table
-   (e.g. a sentence describing the format rather than the payload itself)
-   doesn't count as that point; if no such point exists anywhere in the
-   response, no tolerance applies and normalization stops here. Trailing
-   content after the table is **never** tolerated — the table (or the
-   two-line `VERDICT: INVALID` form) must be exactly how the response
-   ends.
+2. **Tolerate leading prose before the table, but only if it doesn't itself
+   describe a concrete finding.** If the text doesn't already start with the
+   table's exact header row, look for a point where the *rest of the
+   response, in full,* is a complete, valid table: the exact header row, a
+   separator row, and one or more well-formed body rows, with nothing after
+   it. If such a point exists, before dropping the discarded prefix, judge
+   it: **does this prefix describe a concrete problem — a specific file,
+   line, behavior, or issue — and characterize it as `CRITICAL`/`IMPORTANT`
+   severity, even informally?** If yes, do **not** drop it; the response is
+   `INVALID` instead of normalized. If the mention is purely definitional or
+   hedging — discussing what `CRITICAL` vs. `IMPORTANT` *means*, or
+   reasoning about which bucket something might fall into without ever
+   naming a concrete issue — that does not trigger this rule; discard
+   normally.
+   - **Positive example (triggers `INVALID`):** a preamble says "this DAO
+     query builds without a tenant-scoping clause, which is a CRITICAL
+     leak" and the response then ends in a solo `NONE` row — the finding
+     was real and got silently discarded; don't let that happen.
+   - **Negative example (does not trigger, discard normally):** a preamble
+     says "I couldn't decide if this is IMPORTANT or CRITICAL, but both are
+     blocking so it doesn't matter" with no file, line, or behavior named —
+     this is the reviewer reasoning about the severity vocabulary in the
+     abstract, not reporting a finding.
+   - This is a judgment call the executing agent makes, not a literal
+     string search — a bare scan for the words `CRITICAL`/`IMPORTANT`
+     was considered and rejected, because it can't tell the two examples
+     above apart and would false-`INVALID` on ordinary reasoning language.
+   - If the discarded prefix contains neither kind of claim, drop it —
+     there is no length limit on prose that passes this check (see
+     rationale below for why an unbounded *length* cap was already tried
+     and rejected; this is a content check, not a length check, and closes
+     a gap length never could: a preamble can be short and still narrate a
+     finding). An occurrence of the header text that isn't immediately
+     followed by a genuinely complete, valid table doesn't count as that
+     point; if no such point exists anywhere in the response, no tolerance
+     applies and normalization stops here. Trailing content after the
+     table is **never** tolerated — the table must be the exact, unbroken
+     end of the response.
 3. Strip a single wrapping markdown code fence, if present.
 
-Then match the normalized text against exactly one of:
+Then match the normalized text against the table grammar: exactly the
+template's 4 header names, a separator row, ≥1 body rows of exactly 4 cells
+(a literal `|` inside a cell must be written `\|` by the reviewer, per the
+prompt; an unescaped `|` producing more than 4 cells is a grammar violation
+like any other). Severity cells exactly `CRITICAL`/`IMPORTANT`/`ADVISORY`/
+`NONE`/`INVALID`. A `NONE` row means "no findings" and an `INVALID` row means
+"this reviewer's own scope computation failed" — either **must be the
+table's only row**: combining a `NONE` or `INVALID` row with any other row
+(including each other) is self-contradictory and invalidates the whole
+response, same as any other single deviation.
 
-1. Exactly two lines: `VERDICT: INVALID`, then one non-empty explanation
-   line — nothing else.
-2. A results table: exactly the template's 4 header names, a separator
-   row, ≥1 body rows of exactly 4 cells. Severity cells exactly `CRITICAL`/
-   `IMPORTANT`/`ADVISORY`/`NONE`. A `NONE` row means "no findings" and
-   **must be the table's only row** — combining a `NONE` row with a real
-   (`CRITICAL`/`IMPORTANT`/`ADVISORY`) row in the same response is
-   self-contradictory and invalidates the whole response, same as any
-   other single deviation.
-
-There is no separate bare-string shape for "no findings" (including for an
-empty review scope) — a clean result is a one-row table with severity
-`NONE`, not a literal string like the old `"no findings"`.
+There is no separate bare-string shape for "no findings" or for a
+scope-computation failure (including for an empty review scope) — both are
+one-row tables, not a special top-level format.
 
 **Why the leading-paragraph tolerance exists:** Task 4's live dry run
 against the round-6 bare-string contract found that most genuinely-clean
@@ -138,11 +188,11 @@ spawns before landing on this one: neither switching the clean case to a
 `NONE`-severity table row, nor switching the whole payload to a JSON
 array, stopped the model from prepending the same kind of sentence — the
 behavior is about wanting to narrate before a final answer, not about the
-shape of that answer. The fix that actually worked in live testing is
-narrower: tolerate the leading sentence itself, rather than trying to
-design a shape immune to it. The exact-match header-row anchor (as
-opposed to, say, a JSON array's bare `[`) matters because it makes false
-positives effectively impossible — a preamble sentence would have to
+shape of that answer. The fix that actually worked in that round of live
+testing was narrower: tolerate the leading sentence itself, rather than
+trying to design a shape immune to it. The exact-match header-row anchor
+(as opposed to, say, a JSON array's bare `[`) matters because it makes
+false positives effectively impossible — a preamble sentence would have to
 coincidentally contain the literal 4-column header string, *and* be
 immediately followed by a complete, well-formed table with nothing after
 it, to be mistaken for the payload boundary. An earlier version of this
@@ -152,43 +202,52 @@ content ahead of a "clean" table. Live testing found that cap itself was
 the bug: a legitimate, substantive `security-review` explanation ran to
 971 characters and was incorrectly rejected as unparseable under the
 5-line/500-char bound, despite the table that followed being perfectly
-well-formed. The cap was removed rather than re-tuned to a larger number,
-because the actual safety property was never the preamble's length — it's
-that the table (or the `VERDICT: INVALID` form) must be the exact,
-unbroken end of the response, which is already enforced independently of
-how much comes before it. A length limit was solving a problem ("bury
-content ahead of a clean table") that the trailing-forbidden rule already
-solves on its own.
+well-formed. The cap was removed rather than re-tuned to a larger number.
+A later review round found that removing the cap outright reopened a
+different, more serious hole: nothing then stopped a reviewer from
+narrating a genuine `CRITICAL`/`IMPORTANT` finding in that same unbounded
+prose and then emitting a fabricated clean `NONE` row, silently discarding
+the narrated finding along with the rest of the preamble and contributing
+to an undeserved PASS. The content-based check above closes that hole
+directly, without reintroducing a length-based false-positive class: a
+discarded preamble that actually describes a concrete finding blocks the
+discard regardless of how short it is, while a preamble that merely reasons
+about severity in the abstract (however long) still discards cleanly.
 
 **Reviewers never self-report PASS or BLOCKED.** `create-pr` alone computes
 PASS/BLOCKED from severity labels; a reviewer's `NONE` row is its
 contribution toward an eventual PASS, exactly like an empty findings set
 was under the old bare-string shape.
 
-**Anything not matching one of the two shapes is unparseable** — including
-a timeout, an unbounded-wait harness, a bare `"no findings"` string (no
-longer a valid shape, native-phrased or not), a `NONE` row combined with
-real-finding rows, a malformed table (even a "mostly valid" one), any
-trailing content after the table, a response where the header text
-appears but is never followed by a genuinely complete table, or a stray
-`VERDICT: PASS`/`VERDICT: BLOCKED` line. Any spawned reviewer's
+**Anything not matching this shape is unparseable** — including a timeout,
+an unbounded-wait harness, a bare `"no findings"` string (no longer a valid
+shape, native-phrased or not), a `NONE` or `INVALID` row combined with any
+other row, a malformed table (even a "mostly valid" one), any trailing
+content after the table, a response where the header text appears but is
+never followed by a genuinely complete table, or a stray `VERDICT: PASS`/
+`VERDICT: BLOCKED` line anywhere in the raw response. Any spawned reviewer's
 unparseable or missing result makes the **overall** verdict `INVALID`.
 **Whenever the overall verdict is `INVALID` for any reason, show every
 spawned reviewer's output in the report** (raw if unparsed, its findings if
 parsed) — not only the one that caused the `INVALID`.
 
-**Known limitation:** the header-row anchor is checked as an exact string
-match, which this document can specify precisely, but the check is
-executed by an LLM reading these instructions, not a fixed parser —
-judgment calls at the margin (e.g., whitespace inside a cell that's
-visually but not byte-for-byte identical to the header) are possible.
-This is the same trust model the rest of this contract already relies on
-("any single deviation invalidates the whole response" is itself a
-judgment call the executing agent makes, not something enforced by a
-separate program).
+**Known limitation:** the header-row anchor and the concrete-finding judgment
+call in discarded prose are both checked by an LLM reading these
+instructions, not a fixed parser — judgment calls at the margin (e.g.,
+whitespace inside a cell that's visually but not byte-for-byte identical to
+the header, or a preamble that hints at a real issue without clearly naming
+one) are possible. This is the same trust model the rest of this contract
+already relies on ("any single deviation invalidates the whole response" is
+itself a judgment call the executing agent makes, not something enforced by
+a separate program). A determined or prompt-injected reviewer could still
+describe a real problem while carefully avoiding language that ties it to a
+concrete file/line/behavior — this check raises the bar, it doesn't
+guarantee closure.
 
-This format overrides `performance-review`/`security-review`'s own native
-`## Output` sections. **`create-pr` Step 4 does not call `review-gate`.**
+This format overrides `performance-review`/`security-review`/
+`ponytail-review`'s own native `## Output` sections (and any other section
+describing a native response format, such as `ponytail-review`'s
+`## Scoring`). **`create-pr` Step 4 does not call `review-gate`.**
 
 ## Mandatory Reviewers
 
@@ -196,8 +255,13 @@ This format overrides `performance-review`/`security-review`'s own native
 error (check 9). It does **not** protect against: removing/flipping
 `mandatory: true` then disabling; deleting the entry outright (explicitly
 tested as passing, not a bug); repointing `skill:`; overwriting the
-`SKILL.md`. Mistake-prevention against an accidental single-field disable —
-CI is the control against deliberate bypass.
+`SKILL.md`. This is mistake-prevention against an accidental single-field
+disable only — as of this writing there is no CI check, CODEOWNERS rule, or
+other automated control over `skills/.config/create-pr-reviewers.yaml`'s
+content, so a deliberate change to any of the above (including removing
+`security-review` entirely) currently goes unflagged. A CODEOWNERS entry on
+this file, or a CI job that diffs it against an expected mandatory-entries
+list, would close that gap; neither exists yet.
 
 ## Adding a reviewer
 
@@ -211,9 +275,13 @@ CI is the control against deliberate bypass.
    through this gate. What the reviewer must actually emit when spawned by
    `create-pr` is the Output Contract above: the table with this
    template's four columns and a `CRITICAL`/`IMPORTANT`/`ADVISORY`
-   severity per finding row, or a single `NONE` row for a clean result —
-   never the reviewer's own native line format. `ponytail-review`'s
-   `## Output` section shows the pattern for stating this explicitly.
+   severity per finding row, a single `NONE` row for a clean result, or a
+   single `INVALID` row if its own scope computation fails — never the
+   reviewer's own native line format, and never a separate `VERDICT:
+   INVALID` string (that shape no longer exists in this contract).
+   `ponytail-review`'s `## Output` section shows the pattern for stating
+   this explicitly, including how to suppress a native section beyond
+   `## Output` itself (its `## Scoring` section).
 2. Add a `reviewers[]` entry.
 3. No `SKILL.md` changes needed.
 

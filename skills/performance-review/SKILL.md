@@ -1,6 +1,6 @@
 ---
 name: performance-review
-description: Performance self-review of a branch's changes before PR submission. Scans everything changed since diverging from a base ref (main by default, committed, staged, and unstaged, via merge-base) for O(n)/O(n^2) hot-path issues, memory/goroutine leaks, and inefficient patterns across OSAC's Go services and Ansible/Python tooling. Use standalone before opening a PR, or via the review-gate skill as part of create-pr's pre-flight gate.
+description: Performance self-review of a branch's changes before PR submission. Scans everything changed since diverging from a base ref (main by default, committed, staged, and unstaged, via merge-base) for O(n)/O(n^2) hot-path issues, memory/goroutine leaks, and inefficient patterns across OSAC's Go services and Ansible/Python tooling. Use standalone before opening a PR, via review-gate (which pairs it with security-review), or via create-pr's config-driven pre-flight gate, which invokes it directly.
 allowed-tools: Read, Grep, Bash, Glob
 ---
 
@@ -10,10 +10,15 @@ Performance self-review of a branch's changes — catches inefficiencies while
 they're still cheap to fix, before the change is pushed or exposed to
 reviewers/CI.
 
-This is one of two reviewers in OSAC's local pre-flight review gate (the other
-is `security-review`); both are called in order by the `review-gate` skill,
-with this one running **first**. It's also independently invocable — run it
-any time you want a performance pass without going through the full gate.
+This is one of the reviewers in OSAC's local pre-flight review gate. When run
+via `review-gate` (standalone use), it's paired with `security-review` and
+always runs **first**. When run via `create-pr`'s Step 4, it's one of
+however many reviewers `skills/.config/create-pr-reviewers.yaml` currently
+enables — `create-pr` invokes each reviewer directly and in parallel, not
+through `review-gate`'s sequencing, and the enabled set may include
+reviewers beyond these two (it currently also runs `ponytail-review`). It's
+also independently invocable — run it any time you want a performance pass
+without going through either gate.
 
 **Severity contract:** tag every finding `CRITICAL`, `IMPORTANT`, or
 `ADVISORY` — full definitions are in the Severity section below.
@@ -148,3 +153,9 @@ Produce a short structured list:
 
 If you find nothing, say so explicitly ("performance review: no findings") —
 a silent skip is indistinguishable from forgetting to run the review at all.
+
+**When invoked through `create-pr`'s config-driven pre-flight gate, its
+`prompt_template` overrides this section entirely** — respond with the
+table format specified there instead (see
+`skills/create-pr/references/reviewer-config.md`'s Output Contract), never
+this native list format or the bare "no findings" string above.

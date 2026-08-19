@@ -129,10 +129,14 @@ verbose review style.
 The format above (tags, one-liner-per-finding, `net:` scoring) is this
 skill's native standalone format — use it when invoked directly (e.g.
 `/ponytail-review`). **When invoked through `create-pr`, its
-`prompt_template` overrides this entirely** — ignore this section and
-respond with the table format `create-pr` specifies instead (see
+`prompt_template` overrides this entirely, including the `## Scoring`
+section above** — ignore both sections and respond with the table format
+`create-pr` specifies instead (see
 `skills/create-pr/references/reviewer-config.md`'s Output Contract): one
 row per finding with `Severity` = `IMPORTANT` for `duplicate:` findings and
 `ADVISORY` for every other tag, `File:Line`, `Issue` = the tag and what to
-cut/de-duplicate, `Suggestion` = the replacement; or a single `NONE` row
-for "lean already, ship" with no findings at all.
+cut/de-duplicate, `Suggestion` = the replacement; a single `NONE` row for
+"lean already, ship" with no findings at all; or a single `INVALID` row if
+your own scope computation fails. Never append a `net: -<N> lines
+possible.` line (or any other native-format trailer) after the table — that
+is exactly the kind of trailing content the Output Contract forbids.

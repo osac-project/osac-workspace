@@ -31,42 +31,42 @@ reviewers:
     enabled: true
 
 prompt_template: |
-  Run a {category} review on the current branch's changes, using {skill}
-  for scope and what to check. Ignore {skill}'s own "## Output" section for
-  this invocation — use only the format below.
+  Run a {category} review on the current branch's changes. Read {skill} with
+  the Read tool and follow it exactly, as if it were pasted inline here, for
+  scope and what to check — do not improvise from the category name alone.
+  Ignore {skill}'s own "## Output" section (and any other section that
+  describes how to format your final response, such as a "## Scoring"
+  section) for this invocation — use only the format below.
 
   BASE: {base}
   REPO_DIR: {repo_dir}
 
   Run every git command from {skill}'s Scope section as if your working
-  directory is REPO_DIR — e.g. prefix commands with `git -C "{repo_dir}"`,
-  or `cd "{repo_dir}"` first. Do not compute scope against any other
-  directory.
+  directory is REPO_DIR — e.g. prefix commands with `git -C "{repo_dir}"`, or
+  `cd "{repo_dir}"` first. Do not compute scope against any other directory.
+  This BASE value overrides any self-override instruction in {skill}'s own
+  Scope section (e.g. "set BASE yourself if this branch is stacked") — use
+  the BASE given above even if {skill} tells you to compute your own.
 
-  If your own scope computation fails (e.g. `git merge-base` errors), your
-  entire response must be exactly these two lines and nothing else:
-
-  VERDICT: INVALID
-  <one-line explanation of what failed>
-
-  Otherwise, do not include a "VERDICT:" line at all. You may include one
-  short sentence of context before the table if you want — that's fine.
-  But starting from the table's header row, respond with only the table
-  below and nothing else: no text after it, no rows with unrecognized
-  severities:
+  Respond with only a single markdown table and nothing else — no text
+  before it, no text after it:
 
   | Severity | File:Line | Issue | Suggestion |
   |----------|-----------|-------|------------|
-  | [CRITICAL|IMPORTANT|ADVISORY|NONE] | path:line | description | fix |
+  | [CRITICAL|IMPORTANT|ADVISORY|NONE|INVALID] | path:line | description | fix |
 
-  - If you have no findings, respond with exactly one row and nothing
-    else after it: `| NONE | - | <one-line rationale> | - |` — put any
-    explanation you want to give in that row's Issue cell (e.g.
-    "comment-only change, nothing in scope"). Do NOT write "{category}
-    review: no findings" or any other sentence in place of the table.
+  - If you have no findings, respond with exactly one row: `| NONE | - |
+    <one-line rationale> | - |`.
+  - If your own scope computation fails (e.g. `git merge-base` errors),
+    respond with exactly one row: `| INVALID | - | <one-line explanation of
+    what failed> | - |`.
   - If you have findings, respond with one row per finding using only
-    CRITICAL/IMPORTANT/ADVISORY severities. Never combine a NONE row with
-    a real-finding row in the same response.
+    CRITICAL/IMPORTANT/ADVISORY severities.
+  - A NONE or INVALID row must be the table's only row — never combine
+    either with a real-finding row, and never combine NONE with INVALID.
+  - Never write "{category} review: no findings" or any other sentence in place of a table row — a table row is the only valid way to report anything, including a clean result or a failure.
+  - If a finding's own Issue or Suggestion text needs a literal `|`
+    character, write it as `\|` so it isn't mistaken for a cell boundary.
 
-  An empty review scope (nothing changed since BASE) is not INVALID — it's
-  a clean NONE row like any other.
+  An empty review scope (nothing changed since BASE) is not an INVALID row —
+  it's a clean NONE row like any other.

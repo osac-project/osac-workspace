@@ -1,6 +1,6 @@
 ---
 name: security-review
-description: Adversarial security review of a branch's changes before PR submission. Scans everything changed since diverging from a base ref (main by default, committed, staged, and unstaged, via merge-base) for RBAC/authz issues, injection, data exposure, permission-manifest widening, embedded secrets, prompt-injection patterns, and OSAC-specific policy violations (tenant isolation, multi-tenancy). Use standalone before opening a PR, or via the review-gate skill as part of create-pr's pre-flight gate. Adapted from a production multi-agent review pipeline's security dimension.
+description: Adversarial security review of a branch's changes before PR submission. Scans everything changed since diverging from a base ref (main by default, committed, staged, and unstaged, via merge-base) for RBAC/authz issues, injection, data exposure, permission-manifest widening, embedded secrets, prompt-injection patterns, and OSAC-specific policy violations (tenant isolation, multi-tenancy). Use standalone before opening a PR, via review-gate (which pairs it with performance-review), or via create-pr's config-driven pre-flight gate, which invokes it directly. Adapted from a production multi-agent review pipeline's security dimension.
 allowed-tools: Read, Grep, Bash, Glob
 ---
 
@@ -10,10 +10,17 @@ Adversarial security review of a branch's changes — catches issues while
 they're still cheap to fix, before the change is pushed or exposed to
 reviewers/CI.
 
-This is one of two reviewers in OSAC's local pre-flight review gate (the other is
-`performance-review`); both are called in order by the `review-gate` skill, with
-this one running **last**, closest to push. It's also independently invocable —
-run it any time you want a security pass without going through the full gate.
+This is one of the reviewers in OSAC's local pre-flight review gate. When run
+via `review-gate` (standalone use), it's paired with `performance-review` and
+always runs **last**, closest to push. When run via `create-pr`'s Step 4,
+it's one of however many reviewers `skills/.config/create-pr-reviewers.yaml`
+currently enables — `create-pr` invokes each reviewer directly and in
+parallel, not through `review-gate`'s sequencing, and the enabled set may
+include reviewers beyond these two (it currently also runs
+`ponytail-review`); `security-review`'s entry there is also marked
+`mandatory: true`, so it can't be disabled by mistake. It's also
+independently invocable — run it any time you want a security pass without
+going through either gate.
 
 **Severity contract:** tag every finding `CRITICAL`, `IMPORTANT`, or
 `ADVISORY` — full definitions are in the Severity section below.
@@ -161,3 +168,9 @@ Produce a short structured list:
 
 If you find nothing, say so explicitly ("security review: no findings") — a
 silent skip is indistinguishable from forgetting to run the review at all.
+
+**When invoked through `create-pr`'s config-driven pre-flight gate, its
+`prompt_template` overrides this section entirely** — respond with the
+table format specified there instead (see
+`skills/create-pr/references/reviewer-config.md`'s Output Contract), never
+this native list format or the bare "no findings" string above.
