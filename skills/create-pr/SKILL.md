@@ -197,16 +197,12 @@ output contract.
 
 ### 4.1: Validate Config and Launch Reviewers in Parallel
 
-Resolve this feature's own workspace root — independent of Step 1's
-`$WORKSPACE_ROOT`, which is wrong when `$REPO_DIR` is `osac-workspace`
-itself:
-
-```bash
-SKILLS_ROOT="$REPO_DIR"
-[[ -f "$SKILLS_ROOT/skills/.config/create-pr-reviewers.yaml" ]] || SKILLS_ROOT="$REPO_DIR/.."
-_skills_root_candidate="$SKILLS_ROOT"
-SKILLS_ROOT=$(cd "$SKILLS_ROOT" && pwd) || { echo "Failed to resolve SKILLS_ROOT at $_skills_root_candidate"; exit 1; }
-```
+Resolve this feature's own workspace root by following
+[reviewer-config.md](references/reviewer-config.md)'s **Path Resolution**
+section exactly — independent of Step 1's `$WORKSPACE_ROOT`, which is a
+separate variable for a separate purpose (remote resolution, not
+skill/config file reading). The canonical `$SKILLS_ROOT` resolution
+snippet lives only there; don't duplicate it here.
 
 Read `$SKILLS_ROOT/skills/.config/create-pr-reviewers.yaml` with `Read`.
 Run every check in

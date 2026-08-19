@@ -70,7 +70,7 @@ run its git commands against that directory (see the shipped
 | 9 | No entry has `mandatory: true` and `enabled: false` simultaneously | the entry name |
 | 10 | `prompt_template` is a non-empty YAML string (not a list/map), contains `{skill}`, `{base}`, `{category}`, `{repo_dir}`, and does not contain the literal substring `VERDICT: PASS` or `VERDICT: BLOCKED` | which condition failed |
 | 11 | After filtering to entries where `enabled` is not explicitly `false`, the remaining set is non-empty | "no enabled reviewers" |
-| 12 | Every entry in the enabled set has a `skill` value that's sandboxed (under `skills/`, no `..`, not absolute, ends in `SKILL.md`), contains no embedded newline or control character, and exists under `$SKILLS_ROOT`. Not checked for disabled entries. | the entry and path |
+| 12 | Every entry in the enabled set has a `skill` value that's sandboxed (under `skills/`, no `..`, not absolute, ends in `SKILL.md`), contains no embedded newline or control character, and — resolving any symlink in the path, not just checking the lexical string — its real path exists and stays under `$SKILLS_ROOT/skills/`. Not checked for disabled entries. | the entry and path |
 | 13 | Any present `base`, on an enabled entry only, is a non-empty string. Not checked for disabled entries. | the entry name |
 | 14 | Every entry in the enabled set has `category` matching `^[A-Za-z][A-Za-z0-9 _-]{0,31}$` as a full-string match against the *entire* value — letters, digits, spaces, underscores, and hyphens only, starting with a letter, max 32 characters, rejected outright if it contains a newline anywhere. Not checked for disabled entries. | the entry and field |
 | 15 | Any present `base`, on an enabled entry only, matches `^[A-Za-z0-9][A-Za-z0-9._/-]{0,99}$` as a full-string match against the *entire* value — valid git-ref characters only (alphanumeric, dot, underscore, slash, hyphen), no spaces or control characters anywhere in the value, max 100 characters, rejected outright if it contains a newline anywhere. Not checked for disabled entries. | the entry name |
@@ -134,6 +134,17 @@ real `category` values are short labels like `Performance`/`Security`/
 `Ponytail`, and `base` must resolve to an actual git ref for `git
 merge-base {base} HEAD` to succeed in the first place — so legitimate
 configuration is unaffected by either constraint.
+
+Check 12's real-path requirement matters because this repo's own `skills/`
+directory already contains real symlinks pointing outside the tracked
+tree (`skills/bugfix`, `skills/design`, `skills/e2e`, `skills/implement`,
+`skills/prd`, `skills/_shared` — all bootstrap-managed links into the
+gitignored `.ai-workflows/`). A `skill:` value that lexically satisfies
+"under `skills/`, ends in `SKILL.md`" could still resolve, via a new
+symlink added under `skills/` in the same PR, to a file entirely outside
+`$SKILLS_ROOT/skills/` — and that file's contents become literal
+instructions handed to a tool-using background agent. A lexical-only
+check would miss this; resolving the real path closes it.
 
 Deleting `security-review`'s entry entirely, leaving only
 `performance-review` enabled, **passes** check 11 (the enabled set is
@@ -342,13 +353,19 @@ literal `VERDICT: PASS`/`VERDICT: BLOCKED` substrings, not arbitrary
 free-form instructional content, and there's no narrow safe pattern to
 constrain a field whose entire purpose is to carry free-form instructions
 the way there is for `name`/`category`/`base`. This is mistake-prevention
-against an accidental single-field disable only — as of this writing there
-is no CI check, CODEOWNERS rule, or other automated control over
-`skills/.config/create-pr-reviewers.yaml`'s content, so a deliberate change
-to any of the above (including removing `security-review` entirely)
-currently goes unflagged. A CODEOWNERS entry on this file, or a CI job
-that diffs it against an expected mandatory-entries list, would close that
-gap; neither exists yet.
+against an accidental single-field disable only. A GitHub Actions check
+(`.github/workflows/mandatory-reviewer-check.yml`, running
+`tools/check-mandatory-reviewers.sh`) fails any PR that removes
+`security-review`'s entry, drops its `mandatory: true` line, or sets
+`enabled: false` on it — closing the "quietly slips through in a larger
+diff, nobody notices" version of this gap. It does not, and cannot, stop a
+human approver from consciously approving a PR that does one of these
+things anyway: this repo's `OWNERS` file governs approval (Prow-style
+approvers/reviewers lists, not GitHub-native CODEOWNERS — there's no
+per-path ownership mechanism here to route this specific file to a
+particular reviewer), and human approval judgment is the actual control
+against a deliberate, reviewed bypass, same as for any other change to
+this repo.
 
 ## Adding a reviewer
 

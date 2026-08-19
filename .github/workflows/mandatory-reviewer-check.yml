@@ -1,0 +1,27 @@
+name: Mandatory Reviewer Check
+
+# paths filter is safe here: the check only inspects one file, so the
+# filter scope matches the check scope exactly and cannot drift out of
+# sync the way a broader job's filter could.
+on:
+  pull_request:
+    paths:
+      - 'skills/.config/create-pr-reviewers.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mandatory-reviewer-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check-mandatory-reviewers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check mandatory reviewers
+        run: bash tools/check-mandatory-reviewers.sh
