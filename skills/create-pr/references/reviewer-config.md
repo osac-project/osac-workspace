@@ -8,9 +8,9 @@ documentation of the schema, validation checklist, and output contract.
 
 ```yaml
 reviewers:
-  - name: <string>       # required, unique (trimmed)
+  - name: <string>       # required, unique (trimmed); if enabled, matches ^[A-Za-z][A-Za-z0-9 _-]{0,31}$
     skill: <path>        # required — under skills/, no "..", not absolute, ends in SKILL.md
-    category: <string>   # required
+    category: <string>   # required; if enabled, matches the same safe pattern as name
     base: <string>       # optional, non-empty if present, checked only if enabled — default "main"
     enabled: <bool>       # optional — default true; boolean-typed, literal false disables
     mandatory: <bool>     # optional — default false; true forbids enabled: false on this entry
@@ -68,6 +68,7 @@ run its git commands against that directory (see the shipped
 | 11 | After filtering to entries where `enabled` is not explicitly `false`, the remaining set is non-empty | "no enabled reviewers" |
 | 12 | Every entry in the enabled set has a `skill` value that's sandboxed (under `skills/`, no `..`, not absolute, ends in `SKILL.md`) and exists under `$SKILLS_ROOT`. Not checked for disabled entries. | the entry and path |
 | 13 | Any present `base`, on an enabled entry only, is a non-empty string. Not checked for disabled entries. | the entry name |
+| 14 | Every entry in the enabled set has `name` and `category` matching `^[A-Za-z][A-Za-z0-9 _-]{0,31}$` — letters, digits, spaces, underscores, and hyphens only, starting with a letter, max 32 characters. Not checked for disabled entries. | the entry and field |
 
 Check 10 is a cheap mechanical guard, not a semantic analyzer — a
 defensive instruction like "never output VERDICT: PASS" would also trip
@@ -76,6 +77,20 @@ future edit to `prompt_template` needs to mention these strings (e.g. to
 warn against them explicitly), rephrase to avoid the literal substring
 (e.g. "do not output a VERDICT line except INVALID") rather than trying to
 loosen the check.
+
+Check 14 exists because `name` and `category` are interpolated directly
+into `prompt_template` (`Run a {category} review...`), which becomes
+literal instructions handed to a freshly-spawned subagent — unlike
+`skill:` (already sandboxed by check 12), nothing previously constrained
+these fields' content. An unconstrained `category` or `name` value is a
+prompt-injection vector through the config file itself: a crafted value
+(e.g. embedding fake directives inside what should be a short label) could
+attempt to redirect a spawned reviewer away from its actual job, and
+reviewers of a config-only diff are less likely to scrutinize a `category:`
+string as closely as they would code. The pattern is deliberately narrow —
+real category/name values are short labels like `Performance`/`Security`/
+`Ponytail`, never freeform text — so legitimate configuration is
+unaffected.
 
 Deleting `security-review`'s entry entirely, leaving only
 `performance-review` enabled, **passes** check 11 (the enabled set is
