@@ -392,6 +392,21 @@ particular reviewer), and human approval judgment is the actual control
 against a deliberate, reviewed bypass, same as for any other change to
 this repo.
 
+**That "human approval is the control" framing has a gap of its own:** the
+CI check verifies `skills/.config/create-pr-reviewers.yaml`'s content, but
+nothing verifies the integrity of `tools/check-mandatory-reviewers.{sh,py}`
+or `.github/workflows/mandatory-reviewer-check.yml` themselves. A single PR
+that both weakens the `security-review` entry *and* edits the checker to
+always exit `0` still shows a green check — a reviewer skimming "CI is
+green" gets false confidence that goes beyond what this section has
+documented so far, since the caveat above only covers editing the
+YAML/skill, not the enforcement script that validates it. There's no
+narrow technical fix shipped for this yet (a `pull_request_target`-based
+workflow that runs the base branch's copy of the checker against the PR's
+data file would close it, but introduces its own well-known
+elevated-privilege risks and a nontrivial mixed-checkout setup) — this
+paragraph exists so the gap is visible rather than silently assumed away.
+
 ## Adding a reviewer
 
 1. Write the reviewer's own `SKILL.md`, following `skills/review-gate/
