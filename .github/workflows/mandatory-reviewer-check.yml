@@ -27,7 +27,7 @@ jobs:
           persist-credentials: false
 
       - name: Install PyYAML
-        run: pip install --quiet --user pyyaml
+        run: pip install --quiet --user pyyaml==6.0.2
 
       - name: Check mandatory reviewers
         run: bash tools/check-mandatory-reviewers.sh

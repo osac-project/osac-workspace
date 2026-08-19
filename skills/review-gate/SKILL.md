@@ -214,45 +214,33 @@ reviewer's output must be either:
   `"security review: no findings"`, optionally preceded by leading prose —
   see the tolerance rule below.
 
-**Before applying any tolerance, reject a stray self-reported verdict
-unconditionally.** If a reviewer's raw output contains the substring
-`verdict: pass` or `verdict: blocked` anywhere, **case-insensitively**
-(`VERDICT: PASS`, `Verdict: Pass`, etc. all count) — even in a narrated
-aside, even if a well-formed findings line or "no findings" phrase follows
-— that output is invalid, full stop, before the tolerance rule below even
-applies. Neither reviewer computes PASS/BLOCKED; only this skill's Step 4
-does, from the aggregated severity labels. This mirrors `create-pr`'s own
-Output Contract check of the same kind (see
-`skills/create-pr/references/reviewer-config.md`) — a reviewer that
-narrates a self-reported verdict is contradicting its own role regardless
-of what it says afterward or how it's cased, and that contradiction must
-not be silently discarded along with the rest of its prose.
-
-**Tolerate leading prose before either valid form, with the same
-concrete-finding judgment call `create-pr`'s Output Contract uses** (see
+**Both the stray-verdict rejection and the leading-prose tolerance below
+use the exact judgment-call algorithm `create-pr`'s Output Contract
+defines canonically** — see
 `skills/create-pr/references/reviewer-config.md`'s Output Contract for the
-canonical statement of this rule; summarized here for review-gate's own,
-simpler shape): a reviewer narrating one sentence of context before its
-findings or its "no findings" phrase is common and not itself a problem.
-Before discarding any such leading text, judge it — does it describe a
-concrete problem (a specific file, line, behavior, or issue) at
-`CRITICAL`/`IMPORTANT` severity, even informally, **that isn't then
-reflected in what follows**? Check what follows in full, not just whether
-it's the bare "no findings" phrase — a reviewer that narrates one real
-`CRITICAL` finding in prose and then reports only an unrelated `ADVISORY`
-line about a different file has still dropped the narrated finding, the
-same as if it had said "no findings" outright. If the narrated problem is
-absent from every findings line that follows (including the trivial case
-where there are no findings lines at all), do not discard the prose — treat
-the output as invalid. If the narrated problem *is* one of the findings
-lines that follows, that's not a violation — a reviewer narrating what it
-found immediately before reporting it is normal, expected behavior, not a
-leak. Rejecting an exact-match-only bare string here is the same
-false-`INVALID` bug `create-pr`'s own Output Contract had to fix once
-already (see that file's `bc0e4ef` reference) — most genuinely clean
-reviews narrate a sentence first even under a no-preamble instruction, and
-an exact-match requirement with no tolerance turns that into a frequent
-false gate failure.
+full reasoning, worked positive/negative examples, and the `bc0e4ef`
+history behind why an exact-match-only bare string is itself a
+false-`INVALID` bug. Only the final output *shape* differs (a findings
+line or the literal "no findings" phrase here, vs. a table row there); the
+decision procedure is identical, so it isn't re-derived below. Applied to
+review-gate's shape:
+
+- **Stray verdict, unconditional:** if a reviewer's raw output contains
+  `verdict: pass` or `verdict: blocked` anywhere, case-insensitively, the
+  output is invalid — full stop, before the tolerance judgment below even
+  runs. Neither reviewer computes PASS/BLOCKED; only this skill's Step 4
+  does.
+- **Leading-prose tolerance:** before discarding any leading text ahead of
+  a findings line or the "no findings" phrase, judge whether it names a
+  concrete `CRITICAL`/`IMPORTANT` problem that's genuinely absent from
+  everything that follows — not just absent from a literal "no findings"
+  match. A reviewer that narrates a real finding and then reports only an
+  unrelated line about a different file has dropped it just as much as if
+  it had said "no findings" outright. If the narrated problem is absent
+  from every findings line that follows, don't discard the prose — the
+  output is invalid. If the narrated problem *is* one of the findings
+  lines, that's ordinary "narrate before reporting" behavior, not a leak;
+  discard normally.
 
 If either reviewer's output is missing, empty, or doesn't match one of
 these two forms after applying the tolerance above — a reviewer step was
