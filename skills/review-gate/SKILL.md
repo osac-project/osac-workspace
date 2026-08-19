@@ -215,16 +215,17 @@ reviewer's output must be either:
   see the tolerance rule below.
 
 **Before applying any tolerance, reject a stray self-reported verdict
-unconditionally.** If a reviewer's raw output contains the literal
-substring `Verdict: PASS`, `Verdict: BLOCKED`, `VERDICT: PASS`, or
-`VERDICT: BLOCKED` anywhere — even in a narrated aside, even if a
-well-formed findings line or "no findings" phrase follows — that output is
-invalid, full stop, before the tolerance rule below even applies. Neither
-reviewer computes PASS/BLOCKED; only this skill's Step 4 does, from the
-aggregated severity labels. This mirrors `create-pr`'s own Output Contract
-check of the same kind (see `skills/create-pr/references/reviewer-config.md`)
-— a reviewer that narrates a self-reported verdict is contradicting its
-own role regardless of what it says afterward, and that contradiction must
+unconditionally.** If a reviewer's raw output contains the substring
+`verdict: pass` or `verdict: blocked` anywhere, **case-insensitively**
+(`VERDICT: PASS`, `Verdict: Pass`, etc. all count) — even in a narrated
+aside, even if a well-formed findings line or "no findings" phrase follows
+— that output is invalid, full stop, before the tolerance rule below even
+applies. Neither reviewer computes PASS/BLOCKED; only this skill's Step 4
+does, from the aggregated severity labels. This mirrors `create-pr`'s own
+Output Contract check of the same kind (see
+`skills/create-pr/references/reviewer-config.md`) — a reviewer that
+narrates a self-reported verdict is contradicting its own role regardless
+of what it says afterward or how it's cased, and that contradiction must
 not be silently discarded along with the rest of its prose.
 
 **Tolerate leading prose before either valid form, with the same
@@ -235,12 +236,20 @@ simpler shape): a reviewer narrating one sentence of context before its
 findings or its "no findings" phrase is common and not itself a problem.
 Before discarding any such leading text, judge it — does it describe a
 concrete problem (a specific file, line, behavior, or issue) at
-`CRITICAL`/`IMPORTANT` severity, even informally? If yes, and what follows
-is the bare "no findings" phrase rather than a findings line reflecting
-that problem, do not discard the prose — treat the output as invalid
-instead of "no findings". Rejecting an exact-match-only bare string here is
-the same false-`INVALID` bug `create-pr`'s own Output Contract had to fix
-once already (see that file's `bc0e4ef` reference) — most genuinely clean
+`CRITICAL`/`IMPORTANT` severity, even informally, **that isn't then
+reflected in what follows**? Check what follows in full, not just whether
+it's the bare "no findings" phrase — a reviewer that narrates one real
+`CRITICAL` finding in prose and then reports only an unrelated `ADVISORY`
+line about a different file has still dropped the narrated finding, the
+same as if it had said "no findings" outright. If the narrated problem is
+absent from every findings line that follows (including the trivial case
+where there are no findings lines at all), do not discard the prose — treat
+the output as invalid. If the narrated problem *is* one of the findings
+lines that follows, that's not a violation — a reviewer narrating what it
+found immediately before reporting it is normal, expected behavior, not a
+leak. Rejecting an exact-match-only bare string here is the same
+false-`INVALID` bug `create-pr`'s own Output Contract had to fix once
+already (see that file's `bc0e4ef` reference) — most genuinely clean
 reviews narrate a sentence first even under a no-preamble instruction, and
 an exact-match requirement with no tolerance turns that into a frequent
 false gate failure.

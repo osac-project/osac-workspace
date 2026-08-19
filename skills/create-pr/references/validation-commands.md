@@ -6,6 +6,17 @@ block matching `$TOUCHED_COMPONENTS` — if it lists more than one, run
 covering multiple mono-repo components. Read the component's CLAUDE.md if
 unsure which commands apply.
 
+Every `make` target below was checked against each component's actual
+`Makefile` and `AGENTS.md` in this workspace's bootstrap-managed sibling
+directories (e.g. `osac-operator/Makefile`, `bare-metal-fulfillment-operator/
+Makefile` — present on disk even though gitignored from *this* repo's own
+tracking; don't assume "gitignored" means "not cloned here"). The
+`osac-operator`/`bare-metal-fulfillment-operator` blocks below aren't
+symmetric on purpose: `osac-operator`'s `Makefile` has a real
+`test-kustomize` target and `bare-metal-fulfillment-operator`'s does not —
+confirmed by reading both Makefiles directly, not inferred from one and
+assumed for the other.
+
 ### fulfillment-service
 
 ```bash

@@ -141,6 +141,17 @@ REFERENCE_REPOS=(
 # skills/create-pr/references/validation-commands.md's per-component
 # "### <name>" sections, if a future component merges into osac or one of
 # these is later split out.
+#
+# KNOWN GAP: AGENTS.md's own component table already lists `osac-metering`
+# as a mono-repo subdirectory, but it isn't in this array (or the other
+# three lists above) yet, and AGENTS.md's Build/Test quick-reference shows
+# "—" for it across the board — there's no build/lint/test tooling defined
+# for it anywhere yet to add here correctly. A PR touching only
+# osac/osac-metering/** currently gets zero component-specific validation
+# from create-pr Step 2 (TOUCHED_COMPONENTS comes back empty, which SKILL.md
+# treats as "doc/config outside all six subdirectories"). Wire it into all
+# four lists once osac-metering has real bootstrap/build tooling to point at
+# — don't add it with guessed commands before then.
 MERGED_COMPONENTS=(
   "fulfillment-service"
   "osac-operator"

@@ -1,12 +1,15 @@
 name: Mandatory Reviewer Check
 
-# paths filter is safe here: the check only inspects one file, so the
-# filter scope matches the check scope exactly and cannot drift out of
-# sync the way a broader job's filter could.
+# No paths filter, deliberately (same reasoning skillsaw.yml documents for
+# itself): the check + a pip install take a few seconds in CI, so filtering
+# triggers isn't worth the risk of the filter list drifting out of sync
+# with what the check actually depends on. An earlier version of this file
+# filtered on just the config YAML, which meant a PR could edit
+# tools/check-mandatory-reviewers.sh, tools/check-mandatory-reviewers.py,
+# or this workflow file itself -- neutering the check -- without ever
+# triggering it to run.
 on:
-  pull_request:
-    paths:
-      - 'skills/.config/create-pr-reviewers.yaml'
+  pull_request: {}
 
 permissions:
   contents: read
@@ -22,6 +25,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
+      - name: Install PyYAML
+        run: pip install --quiet --user pyyaml
 
       - name: Check mandatory reviewers
         run: bash tools/check-mandatory-reviewers.sh

@@ -139,12 +139,20 @@ Check 12's real-path requirement matters because this repo's own `skills/`
 directory already contains real symlinks pointing outside the tracked
 tree (`skills/bugfix`, `skills/design`, `skills/e2e`, `skills/implement`,
 `skills/prd`, `skills/_shared` — all bootstrap-managed links into the
-gitignored `.ai-workflows/`). A `skill:` value that lexically satisfies
-"under `skills/`, ends in `SKILL.md`" could still resolve, via a new
-symlink added under `skills/` in the same PR, to a file entirely outside
-`$SKILLS_ROOT/skills/` — and that file's contents become literal
-instructions handed to a tool-using background agent. A lexical-only
-check would miss this; resolving the real path closes it.
+gitignored `.ai-workflows/`) — proof that "under `skills/`, ends in
+`SKILL.md`" is a lexical check a real file layout can already legitimately
+violate, so an attacker adding a *new* symlink under `skills/` in the same
+PR as a crafted `skill:` value could point a reviewer at a file entirely
+outside `$SKILLS_ROOT/skills/`, whose contents then become literal
+instructions handed to a tool-using background agent. Resolving the real
+path and requiring it stay under `$SKILLS_ROOT/skills/` closes that. This
+means the existing bootstrap-managed symlinks above are correctly rejected
+by check 12 too, same as any other path resolving outside `skills/` — none
+of them are valid `skill:` targets for a create-pr reviewer today, and
+that's fine, since nothing currently points a `reviewers[]` entry at one.
+If a future reviewer legitimately needed to reuse one of those skills, that
+would need its own deliberate design conversation about widening check
+12's boundary, not a workaround.
 
 Deleting `security-review`'s entry entirely, leaving only
 `performance-review` enabled, **passes** check 11 (the enabled set is
@@ -181,20 +189,34 @@ that produced the false-`INVALID` bug this file's own commit history
 (`bc0e4ef`) already had to fix once, for the table shape alone.
 
 **Before normalizing anything, reject stray self-reported verdicts
-unconditionally.** If the raw, unmodified response contains the literal
-substring `VERDICT: PASS` or `VERDICT: BLOCKED` anywhere — even inside text
-that would otherwise be discarded as leading prose — the response is
-`INVALID`, full stop, before any other normalization step runs. Reviewers
-never compute PASS/BLOCKED; only `create-pr` does, from the aggregated
-severity labels. A reviewer that writes one of these lines (even in a
-narrated aside, even if a clean table follows it) is contradicting its own
-role, and that contradiction must not be silently stripped away along with
-the rest of the preamble.
+unconditionally.** If the raw, unmodified response contains the substring
+`verdict: pass` or `verdict: blocked` anywhere, **case-insensitively** (so
+`VERDICT: PASS`, `Verdict: Pass`, `verdict: PASS`, etc. all count, not only
+the all-caps spelling) — even inside text that would otherwise be discarded
+as leading prose, even as part of a casual aside like "...so my verdict:
+pass, nothing else to add" — the response is `INVALID`, full stop, before
+any other normalization step runs. Reviewers never compute PASS/BLOCKED;
+only `create-pr` does, from the aggregated severity labels. A reviewer that
+writes one of these lines in any casing (even in a narrated aside, even if
+a clean table follows it) is contradicting its own role, and that
+contradiction must not be silently stripped away along with the rest of
+the preamble.
 
 **Normalize next, in this order:**
 
 1. Trim leading/trailing whitespace and blank lines.
-2. **Tolerate leading prose before the table, but only if it doesn't itself
+2. Strip a single wrapping markdown code fence, if present — **before**
+   evaluating leading-prose tolerance below, not after. If code-fence
+   stripping ran last, a response that wraps its *entire* answer (prose and
+   table together) in one fence could never expose the tolerance rule's
+   required boundary: "the rest of the response, in full, is a complete
+   table with nothing after it" is never true while a closing fence marker
+   still trails the table, so a legitimately clean, fenced response would
+   fail to get its leading sentence tolerated and be misclassified
+   `INVALID` for no reason connected to its actual content. Stripping the
+   fence first means the tolerance check in step 3 sees the same content
+   whether or not the reviewer happened to wrap it.
+3. **Tolerate leading prose before the table, but only if it doesn't itself
    describe a finding that the table then fails to report.** If the text
    doesn't already start with the table's exact header row, look for a
    point where the *rest of the response, in full,* is a complete, valid
@@ -249,7 +271,6 @@ the rest of the preamble.
      applies and normalization stops here. Trailing content after the
      table is **never** tolerated — the table must be the exact, unbroken
      end of the response.
-3. Strip a single wrapping markdown code fence, if present.
 
 Then match the normalized text against the table grammar: exactly the
 template's 4 header names, a separator row, ≥1 body rows of exactly 4 cells
@@ -314,9 +335,10 @@ an unbounded-wait harness, a bare `"no findings"` string (no longer a valid
 shape, native-phrased or not), a `NONE` or `INVALID` row combined with any
 other row, a malformed table (even a "mostly valid" one), any trailing
 content after the table, a response where the header text appears but is
-never followed by a genuinely complete table, or a stray `VERDICT: PASS`/
-`VERDICT: BLOCKED` line anywhere in the raw response. Any spawned reviewer's
-unparseable or missing result makes the **overall** verdict `INVALID`.
+never followed by a genuinely complete table, or a stray `verdict: pass`/
+`verdict: blocked` line (case-insensitive) anywhere in the raw response.
+Any spawned reviewer's unparseable or missing result makes the **overall**
+verdict `INVALID`.
 **Whenever the overall verdict is `INVALID` for any reason, show every
 spawned reviewer's output in the report** (raw if unparsed, its findings if
 parsed) — not only the one that caused the `INVALID`.
@@ -355,12 +377,15 @@ constrain a field whose entire purpose is to carry free-form instructions
 the way there is for `name`/`category`/`base`. This is mistake-prevention
 against an accidental single-field disable only. A GitHub Actions check
 (`.github/workflows/mandatory-reviewer-check.yml`, running
-`tools/check-mandatory-reviewers.sh`) fails any PR that removes
-`security-review`'s entry, drops its `mandatory: true` line, or sets
-`enabled: false` on it — closing the "quietly slips through in a larger
-diff, nobody notices" version of this gap. It does not, and cannot, stop a
-human approver from consciously approving a PR that does one of these
-things anyway: this repo's `OWNERS` file governs approval (Prow-style
+`tools/check-mandatory-reviewers.sh`, a thin wrapper around
+`tools/check-mandatory-reviewers.py` — a real YAML parse, not a text-pattern
+approximation) fails any PR that removes `security-review`'s entry, drops
+its `mandatory: true` line, sets `enabled: false` on it (in any YAML
+boolean spelling, not just the literal string `false`), or repoints its
+`skill:` field to a different file — closing the "quietly slips through in
+a larger diff, nobody notices" version of this gap. It does not, and
+cannot, stop a human approver from consciously approving a PR that does
+one of these things anyway: this repo's `OWNERS` file governs approval (Prow-style
 approvers/reviewers lists, not GitHub-native CODEOWNERS — there's no
 per-path ownership mechanism here to route this specific file to a
 particular reviewer), and human approval judgment is the actual control
