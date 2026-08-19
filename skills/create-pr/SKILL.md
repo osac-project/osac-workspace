@@ -43,7 +43,10 @@ eval "$_resolve_out"
 `$REPO_DIR` may itself already be the workspace root (e.g. running `create-pr`
 from `osac-workspace` directly, not a component subdirectory) — check for
 `tools/resolve-remotes.sh` there first before falling back to the parent,
-the same self-check-then-fallback idiom Step 4.1 uses for `$SKILLS_ROOT`.
+the same self-check-then-fallback idiom Step 4.1 uses for `$SKILLS_ROOT`
+(see [reviewer-config.md](references/reviewer-config.md)'s Path Resolution
+section for why these two are kept as separate, un-factored-out blocks
+rather than one shared helper).
 
 This sets `$UPSTREAM_REMOTE` (the osac-project remote) and `$PUSH_REMOTE` (developer's push target). Run `tools/resolve-remotes.sh --print` to see current detection.
 

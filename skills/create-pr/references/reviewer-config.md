@@ -45,7 +45,14 @@ for a separate purpose (remote resolution, not skill/config file reading)
 whether `$REPO_DIR` itself already has the file being looked for before
 falling back to the parent) after Step 1's version of this bug was fixed.
 The config file and every `skill:` value are read from
-`$SKILLS_ROOT/<path>`.
+`$SKILLS_ROOT/<path>`. Deliberately not factored into one shared
+function: the two blocks check for different marker files and finish with
+different commands (`git rev-parse --show-toplevel` here vs. `pwd` there),
+appear at exactly 2 call sites total in instructional documentation (not
+an executable script where sourcing a shared helper is free), and each is
+3-4 lines — extracting a parameterized shared snippet for that would trade
+a small amount of prose duplication for a new sourcing/invocation question
+neither file currently has to answer.
 
 **Reviewer git-command anchoring is separate from file-path resolution.**
 `$SKILLS_ROOT` only governs where `create-pr` itself reads config/skill
