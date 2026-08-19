@@ -24,6 +24,12 @@ reviewers:
     enabled: true
     mandatory: true
 
+  - name: ponytail-review
+    skill: skills/ponytail-review/SKILL.md
+    category: Ponytail
+    base: main
+    enabled: true
+
 prompt_template: |
   Run a {category} review on the current branch's changes, using {skill}
   for scope and what to check. Ignore {skill}'s own "## Output" section for

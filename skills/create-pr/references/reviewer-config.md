@@ -85,19 +85,31 @@ proving this).
 
 ## Output Contract
 
+The exact header row quoted throughout this section
+(`| Severity | File:Line | Issue | Suggestion |`) must stay byte-identical
+to the one in `skills/.config/create-pr-reviewers.yaml`'s `prompt_template`
+— it's the anchor the leading-paragraph tolerance below scans for. The two
+copies aren't derived from one another; if a future change adds a column
+or renames one, update both together, or every reviewer's otherwise-clean
+output will stop matching the anchor.
+
 **Normalize first, in this order:**
 
 1. Trim leading/trailing whitespace and blank lines.
-2. **Tolerate at most one short leading paragraph before the payload** —
-   if the text doesn't already start with `VERDICT:` or the table's exact
-   header row, scan for the first line that is *exactly*
-   `| Severity | File:Line | Issue | Suggestion |` and, if that line
-   appears within the first 5 lines and the discarded prefix is at most
-   500 characters, drop everything before it. If no such header line
-   exists in the first place, or it exists but only past that 5-line/
-   500-char bound, don't drop anything (the too-long case is itself a
-   normalization failure — see below). Trailing content after the table
-   is **not** given this tolerance — only a leading paragraph is.
+2. **Tolerate any amount of leading prose before the payload** — if the
+   text doesn't already start with `VERDICT:` or the table's exact header
+   row, look for a point in the response where the *rest of the response,
+   in full,* is a complete, valid table: the exact header row, a separator
+   row, and one or more well-formed body rows, with nothing after it. If
+   such a point exists, drop everything before it — there is no limit on
+   how much leading prose is tolerated. An occurrence of the header text
+   that isn't immediately followed by a genuinely complete, valid table
+   (e.g. a sentence describing the format rather than the payload itself)
+   doesn't count as that point; if no such point exists anywhere in the
+   response, no tolerance applies and normalization stops here. Trailing
+   content after the table is **never** tolerated — the table (or the
+   two-line `VERDICT: INVALID` form) must be exactly how the response
+   ends.
 3. Strip a single wrapping markdown code fence, if present.
 
 Then match the normalized text against exactly one of:
@@ -131,11 +143,22 @@ narrower: tolerate the leading sentence itself, rather than trying to
 design a shape immune to it. The exact-match header-row anchor (as
 opposed to, say, a JSON array's bare `[`) matters because it makes false
 positives effectively impossible — a preamble sentence would have to
-coincidentally contain the literal 4-column header string to be
-mistaken for the payload boundary. The length/line cap exists so this
-tolerance can't be used to bury an arbitrary amount of content ahead of a
-"clean" table; anything past that bound is treated as a normalization
-failure (unparseable), not silently accepted.
+coincidentally contain the literal 4-column header string, *and* be
+immediately followed by a complete, well-formed table with nothing after
+it, to be mistaken for the payload boundary. An earlier version of this
+rule additionally capped the tolerated preamble at 5 lines/500 characters,
+on the theory that an unbounded cap could be used to bury arbitrary
+content ahead of a "clean" table. Live testing found that cap itself was
+the bug: a legitimate, substantive `security-review` explanation ran to
+971 characters and was incorrectly rejected as unparseable under the
+5-line/500-char bound, despite the table that followed being perfectly
+well-formed. The cap was removed rather than re-tuned to a larger number,
+because the actual safety property was never the preamble's length — it's
+that the table (or the `VERDICT: INVALID` form) must be the exact,
+unbroken end of the response, which is already enforced independently of
+how much comes before it. A length limit was solving a problem ("bury
+content ahead of a clean table") that the trailing-forbidden rule already
+solves on its own.
 
 **Reviewers never self-report PASS or BLOCKED.** `create-pr` alone computes
 PASS/BLOCKED from severity labels; a reviewer's `NONE` row is its
@@ -145,8 +168,9 @@ was under the old bare-string shape.
 **Anything not matching one of the two shapes is unparseable** — including
 a timeout, an unbounded-wait harness, a bare `"no findings"` string (no
 longer a valid shape, native-phrased or not), a `NONE` row combined with
-real-finding rows, a malformed table (even a "mostly valid" one), a
-leading paragraph longer than the 5-line/500-char tolerance, or a stray
+real-finding rows, a malformed table (even a "mostly valid" one), any
+trailing content after the table, a response where the header text
+appears but is never followed by a genuinely complete table, or a stray
 `VERDICT: PASS`/`VERDICT: BLOCKED` line. Any spawned reviewer's
 unparseable or missing result makes the **overall** verdict `INVALID`.
 **Whenever the overall verdict is `INVALID` for any reason, show every
@@ -178,7 +202,18 @@ CI is the control against deliberate bypass.
 ## Adding a reviewer
 
 1. Write the reviewer's own `SKILL.md`, following `skills/review-gate/
-   SKILL.md`'s Severity Vocabulary.
+   SKILL.md`'s Severity Vocabulary for the severity tokens it uses
+   (`CRITICAL`/`IMPORTANT`/`ADVISORY`). Its own `## Output` section is free
+   to describe whatever native format suits standalone use (as
+   `performance-review`/`security-review`/`ponytail-review` all do) —
+   it does **not** need to match create-pr's wire format, because
+   `create-pr`'s `prompt_template` overrides it for every invocation made
+   through this gate. What the reviewer must actually emit when spawned by
+   `create-pr` is the Output Contract above: the table with this
+   template's four columns and a `CRITICAL`/`IMPORTANT`/`ADVISORY`
+   severity per finding row, or a single `NONE` row for a clean result —
+   never the reviewer's own native line format. `ponytail-review`'s
+   `## Output` section shows the pattern for stating this explicitly.
 2. Add a `reviewers[]` entry.
 3. No `SKILL.md` changes needed.
 

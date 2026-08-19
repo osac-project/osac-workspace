@@ -220,8 +220,9 @@ Agent tool calls (all enabled reviewers, same message):
              substituted for this reviewer>
 ```
 
-With the current config this produces the same two calls as before.
-`security-review` cannot be disabled via `enabled: false` while its entry
+The number of calls this produces always matches the config's enabled
+entries — adding, removing, or disabling a reviewer changes it without any
+edit to this file. `security-review` cannot be disabled via `enabled: false` while its entry
 keeps `mandatory: true` (check 9) — but deleting the entry outright is not
 itself blocked; that's an accepted limitation, not a bug.
 
@@ -234,10 +235,11 @@ option to note the limitation and keep waiting.
 
 For each spawned reviewer, normalize its output per
 [reviewer-config.md](references/reviewer-config.md)'s Output Contract:
-trim whitespace/blank lines, tolerate at most one short leading paragraph
-before the table (only if the exact header row appears within 5 lines/500
-chars — anything before that bound is discarded; anything past it makes
-the response unparseable), then strip a single wrapping code fence. Then
+trim whitespace/blank lines, tolerate any amount of leading prose before
+the table (discard everything before the point where the *rest* of the
+response is a complete, valid table with nothing after it — an incidental
+mention of the header text that isn't followed by a genuinely complete
+table doesn't count), then strip a single wrapping code fence. Then
 check the result against the contract: exactly `VERDICT: INVALID` + one
 explanation line and nothing else, or a results table matching the exact
 grammar (any single deviation invalidates the whole table, and this
