@@ -55,6 +55,12 @@ prompt_template: |
   |----------|-----------|-------|------------|
   | [CRITICAL|IMPORTANT|ADVISORY|NONE|INVALID] | path:line | description | fix |
 
+  The bracketed list in that last row's first cell is notation showing your
+  five choices for that one cell, not literal content — replace the whole
+  `[...]` with exactly one of those five words, and don't read it as
+  permission to leave unescaped `|` characters in your own real cell
+  content (see the escaping rule below).
+
   - If you have no findings, respond with exactly one row: `| NONE | - |
     <one-line rationale> | - |`.
   - If your own scope computation fails (e.g. `git merge-base` errors),

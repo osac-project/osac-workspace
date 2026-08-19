@@ -79,16 +79,25 @@ actually touches instead of assuming a single component:
 ```bash
 # Keep the (fulfillment-service|osac-operator|osac-aap|osac-installer|
 # bare-metal-fulfillment-operator|osac-csi-driver) list in sync with
-# bootstrap.sh's MERGED_COMPONENTS array and references/file-classification.md
-# (Step 3) if a future component merges into osac or one of these splits
-# out.
+# bootstrap.sh's MERGED_COMPONENTS array, references/file-classification.md
+# (Step 3), and references/validation-commands.md's per-component
+# "### <name>" sections (Step 2) if a future component merges into osac or
+# one of these splits out.
 if [[ "$REPO_NAME" == "osac" ]]; then
-  # Split the diff and the filter into two steps: a `git diff` failure must
-  # still propagate under `set -e`/`pipefail`, but "no merged-component
-  # subdirectory touched" is a valid, empty-string-producing outcome — awk
-  # exits 0 on zero matching lines, so no trailing `|| true` is needed (which
-  # would otherwise mask a genuine `git diff` failure too).
-  CHANGED_PATHS=$(git diff main..HEAD --name-only)
+  # Diff from the merge-base, not a raw two-ref diff against main's current
+  # tip — the same reasoning review-gate's Step 1 documents in full: if
+  # main has gained unrelated commits since this branch diverged, a raw
+  # `git diff main..HEAD` pulls those in too, misclassifying which
+  # components this branch actually touched.
+  #
+  # Split the merge-base, diff, and filter into separate steps: a `git
+  # merge-base`/`git diff` failure must still propagate under
+  # `set -e`/`pipefail`, but "no merged-component subdirectory touched" is
+  # a valid, empty-string-producing outcome — awk exits 0 on zero matching
+  # lines, so no trailing `|| true` is needed (which would otherwise mask a
+  # genuine `git diff` failure too).
+  MERGE_BASE_FOR_COMPONENTS=$(git merge-base main HEAD)
+  CHANGED_PATHS=$(git diff "$MERGE_BASE_FOR_COMPONENTS" --name-only)
   TOUCHED_COMPONENTS=$(printf '%s\n' "$CHANGED_PATHS" \
     | awk -F/ '$1 ~ /^(fulfillment-service|osac-operator|osac-aap|osac-installer|bare-metal-fulfillment-operator|osac-csi-driver)$/ { print $1 }' \
     | sort -u)
@@ -195,7 +204,8 @@ itself:
 ```bash
 SKILLS_ROOT="$REPO_DIR"
 [[ -f "$SKILLS_ROOT/skills/.config/create-pr-reviewers.yaml" ]] || SKILLS_ROOT="$REPO_DIR/.."
-SKILLS_ROOT=$(cd "$SKILLS_ROOT" && pwd) || { echo "Failed to resolve SKILLS_ROOT at $SKILLS_ROOT"; exit 1; }
+_skills_root_candidate="$SKILLS_ROOT"
+SKILLS_ROOT=$(cd "$SKILLS_ROOT" && pwd) || { echo "Failed to resolve SKILLS_ROOT at $_skills_root_candidate"; exit 1; }
 ```
 
 Read `$SKILLS_ROOT/skills/.config/create-pr-reviewers.yaml` with `Read`.
@@ -236,11 +246,19 @@ itself blocked; that's an accepted limitation, not a bug.
 Wait for all agents to complete. **A reviewer that hasn't returned within
 10 minutes — or if this harness provides no way to detect/bound a hung
 subagent's runtime at all — is `INVALID`** (see Step 4.2); there is no
-option to note the limitation and keep waiting. If the harness reports
-elapsed wall-clock time per agent call (e.g. a `duration_ms` field on a
-completion notification), use that to apply the 10-minute bound; if it
-reports no such signal at all for a given call, that absence is itself the
-"no way to detect/bound" case above.
+option to note the limitation and keep waiting. Where the harness offers
+an actual wall-clock timeout parameter on the agent-spawning tool itself,
+set it to 10 minutes so a hung call is force-terminated rather than
+waited on indefinitely. Where it doesn't, be honest about what a
+`duration_ms`-style field (present on completion notifications in this
+session) can and can't do here: it only ever arrives *after* a call
+finishes, so it can flag a reviewer that eventually returned but took too
+long, but it gives no signal at all for a reviewer that never returns —
+there is no live/polling mechanism to check an in-flight call's elapsed
+time from inside a single blocking spawn. For that genuinely-hung case,
+the "no way to detect/bound a hung subagent's runtime at all" branch above
+is the honest description of the situation, not a fallback this
+`duration_ms` check quietly resolves.
 
 ### 4.2: Validate Outputs and Aggregate Results
 

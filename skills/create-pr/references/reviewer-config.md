@@ -8,10 +8,10 @@ documentation of the schema, validation checklist, and output contract.
 
 ```yaml
 reviewers:
-  - name: <string>       # required, unique (trimmed); if enabled, matches ^[A-Za-z][A-Za-z0-9 _-]{0,31}$
-    skill: <path>        # required — under skills/, no "..", not absolute, ends in SKILL.md
-    category: <string>   # required; if enabled, matches the same safe pattern as name
-    base: <string>       # optional, checked only if enabled — default "main"; matches ^[A-Za-z0-9][A-Za-z0-9._/-]{0,99}$ (valid git-ref characters)
+  - name: <string>       # required, unique (trimmed) — not interpolated into prompt_template, no charset pattern
+    skill: <path>        # required — under skills/, no "..", not absolute, ends in SKILL.md, no embedded newline
+    category: <string>   # required, unique among enabled entries (trimmed); if enabled, full-string matches ^[A-Za-z][A-Za-z0-9 _-]{0,31}$
+    base: <string>       # optional, checked only if enabled — default "main"; full-string matches ^[A-Za-z0-9][A-Za-z0-9._/-]{0,99}$ (valid git-ref characters)
     enabled: <bool>       # optional — default true; boolean-typed, literal false disables
     mandatory: <bool>     # optional — default false; true forbids enabled: false on this entry
 
@@ -30,7 +30,8 @@ validation rather than being silently ignored.
 ```bash
 SKILLS_ROOT="$REPO_DIR"
 [[ -f "$SKILLS_ROOT/skills/.config/create-pr-reviewers.yaml" ]] || SKILLS_ROOT="$REPO_DIR/.."
-SKILLS_ROOT=$(cd "$SKILLS_ROOT" && pwd) || { echo "Failed to resolve SKILLS_ROOT at $SKILLS_ROOT"; exit 1; }
+_skills_root_candidate="$SKILLS_ROOT"
+SKILLS_ROOT=$(cd "$SKILLS_ROOT" && pwd) || { echo "Failed to resolve SKILLS_ROOT at $_skills_root_candidate"; exit 1; }
 ```
 
 Checking for the config file itself, not merely a `skills/` directory,
@@ -38,10 +39,13 @@ matters if a component repo ever acquires its own `skills/` without the
 config file in it — the file-specific check falls through to the parent
 correctly in that case instead of stopping at the wrong root.
 
-Independent of Step 1's `$WORKSPACE_ROOT`, which is wrong when `$REPO_DIR`
-is `osac-workspace` itself (out of scope to fix here — see
-`skills/create-pr/SKILL.md` Step 1 and this feature's design doc). The
-config file and every `skill:` value are read from `$SKILLS_ROOT/<path>`.
+Independent of Step 1's `$WORKSPACE_ROOT` — a separate variable computed
+for a separate purpose (remote resolution, not skill/config file reading)
+— even though both now use the same self-check-then-fallback idiom (check
+whether `$REPO_DIR` itself already has the file being looked for before
+falling back to the parent) after Step 1's version of this bug was fixed.
+The config file and every `skill:` value are read from
+`$SKILLS_ROOT/<path>`.
 
 **Reviewer git-command anchoring is separate from file-path resolution.**
 `$SKILLS_ROOT` only governs where `create-pr` itself reads config/skill
@@ -66,10 +70,11 @@ run its git commands against that directory (see the shipped
 | 9 | No entry has `mandatory: true` and `enabled: false` simultaneously | the entry name |
 | 10 | `prompt_template` is a non-empty YAML string (not a list/map), contains `{skill}`, `{base}`, `{category}`, `{repo_dir}`, and does not contain the literal substring `VERDICT: PASS` or `VERDICT: BLOCKED` | which condition failed |
 | 11 | After filtering to entries where `enabled` is not explicitly `false`, the remaining set is non-empty | "no enabled reviewers" |
-| 12 | Every entry in the enabled set has a `skill` value that's sandboxed (under `skills/`, no `..`, not absolute, ends in `SKILL.md`) and exists under `$SKILLS_ROOT`. Not checked for disabled entries. | the entry and path |
+| 12 | Every entry in the enabled set has a `skill` value that's sandboxed (under `skills/`, no `..`, not absolute, ends in `SKILL.md`), contains no embedded newline or control character, and exists under `$SKILLS_ROOT`. Not checked for disabled entries. | the entry and path |
 | 13 | Any present `base`, on an enabled entry only, is a non-empty string. Not checked for disabled entries. | the entry name |
-| 14 | Every entry in the enabled set has `name` and `category` matching `^[A-Za-z][A-Za-z0-9 _-]{0,31}$` — letters, digits, spaces, underscores, and hyphens only, starting with a letter, max 32 characters. Not checked for disabled entries. | the entry and field |
-| 15 | Any present `base`, on an enabled entry only, matches `^[A-Za-z0-9][A-Za-z0-9._/-]{0,99}$` — valid git-ref characters only (alphanumeric, dot, underscore, slash, hyphen), no spaces/newlines/control characters, max 100 characters. Not checked for disabled entries. | the entry name |
+| 14 | Every entry in the enabled set has `category` matching `^[A-Za-z][A-Za-z0-9 _-]{0,31}$` as a full-string match against the *entire* value — letters, digits, spaces, underscores, and hyphens only, starting with a letter, max 32 characters, rejected outright if it contains a newline anywhere. Not checked for disabled entries. | the entry and field |
+| 15 | Any present `base`, on an enabled entry only, matches `^[A-Za-z0-9][A-Za-z0-9._/-]{0,99}$` as a full-string match against the *entire* value — valid git-ref characters only (alphanumeric, dot, underscore, slash, hyphen), no spaces or control characters anywhere in the value, max 100 characters, rejected outright if it contains a newline anywhere. Not checked for disabled entries. | the entry name |
+| 16 | No two entries in the enabled set share the same `category` (trimmed). Not checked for disabled entries — a disabled entry's `category` never appears in an aggregated report. | the duplicate |
 
 Check 10 is a cheap mechanical guard, not a semantic analyzer — a
 defensive instruction like "never output VERDICT: PASS" would also trip
@@ -79,26 +84,53 @@ warn against them explicitly), rephrase to avoid the literal substring
 (e.g. "do not output a VERDICT line except INVALID") rather than trying to
 loosen the check.
 
-Checks 14 and 15 exist because `name`, `category`, and `base` are all
-interpolated directly into `prompt_template` (`Run a {category}
-review...`, `BASE: {base}`), which becomes literal instructions handed to
-a freshly-spawned subagent — unlike `skill:` (already sandboxed by check
-12), nothing previously constrained these fields' content. An
-unconstrained value in any of them is a prompt-injection vector through
-the config file itself: a crafted value (e.g. a YAML block scalar smuggling
-embedded newlines and fake directives into what should be a short label or
-a git ref) could attempt to redirect a spawned reviewer away from its
-actual job, and reviewers of a config-only diff are less likely to
-scrutinize a `category:` or `base:` string as closely as they would code.
-This was found live: check 14 was added first, after which a re-run of
-`security-review` against this exact fix immediately found the identical
-gap on `base` — a reminder that a security fix scoped to "the field that
-was just flagged" rather than "every field with the same interpolation
+Checks 14 and 15 exist because `category` and `base` are both interpolated
+directly into `prompt_template` (`Run a {category} review...`, `BASE:
+{base}`), which becomes literal instructions handed to a freshly-spawned
+subagent — unlike `skill:` (already sandboxed by check 12), nothing
+previously constrained these two fields' content. `name` is validated for
+non-emptiness (check 6) and uniqueness (check 7), but never appears in
+`prompt_template` at all — grep the shipped template to confirm — so it
+carries no equivalent injection exposure and needs no charset pattern of
+its own. An unconstrained value in `category` or `base` is a
+prompt-injection vector through the config file itself: a crafted value
+(e.g. a YAML block scalar smuggling embedded newlines and fake directives
+into what should be a short label or a git ref) could attempt to redirect
+a spawned reviewer away from its actual job, and reviewers of a
+config-only diff are less likely to scrutinize a `category:` or `base:`
+string as closely as they would code. This was found live: check 14 was
+added first (initially, and incorrectly, also covering `name` — corrected
+once a later review pass grepped the template and found `name` isn't
+substituted anywhere in it), after which a re-run of `security-review`
+against this exact fix immediately found the identical interpolation gap
+on `base` — a reminder that a security fix scoped to "the field that was
+just flagged" rather than "every field with the same interpolation
 exposure" tends to leave siblings unfixed. `{repo_dir}` needs no equivalent
 check — it's computed by `create-pr` itself from `$REPO_DIR`, not read from
 this YAML file, so it isn't attacker-controlled through a config edit the
-way `name`/`category`/`base` are. Both patterns are deliberately narrow:
-real category/name values are short labels like `Performance`/`Security`/
+way `category`/`base` are.
+
+Both checks must match the **entire** value, not merely find a match
+somewhere within it or on one of its lines — a multi-line YAML scalar
+(e.g. `base: |` followed by `  main` on the first line and injected
+content on a second) can have a first line that alone satisfies the
+pattern while carrying arbitrary additional content afterward; a check
+implemented as a per-line or `MULTILINE`-mode search rather than a true
+whole-string match would incorrectly let such a value through. Reject any
+candidate value containing an embedded newline outright, rather than
+trying to pattern-match around one — this is why both checks above state
+"rejected outright if it contains a newline anywhere" as a condition
+distinct from the character-class pattern itself.
+
+Check 16 covers `category`'s uniqueness the way check 7 already covers
+`name`'s. `category`, not `name`, is what the Step 4.2 aggregated report
+actually displays per finding, so two enabled reviewers sharing a
+`category` value would make findings from two different underlying skills
+indistinguishable in that report, even though every other check (including
+check 7's `name` uniqueness) passes.
+
+Both charset patterns are deliberately narrow:
+real `category` values are short labels like `Performance`/`Security`/
 `Ponytail`, and `base` must resolve to an actual git ref for `git
 merge-base {base} HEAD` to succeed in the first place — so legitimate
 configuration is unaffected by either constraint.
@@ -111,11 +143,13 @@ proving this).
 
 ## Output Contract
 
-`docs/superpowers/specs/2026-08-10-config-driven-reviewers-design.md` and its
-matching implementation plan describe an earlier, two-shape version of this
-contract (a `VERDICT: INVALID` string as a separate top-level format from the
-results table) — those are historical/frozen design records; this section is
-authoritative for current behavior.
+An earlier design pass (local-only planning documents, gitignored under
+`docs/*` and not tracked in this repo — not accessible to anyone besides
+whoever wrote them, so not cited by path here) described an earlier,
+two-shape version of this contract (a `VERDICT: INVALID` string as a
+separate top-level format from the results table). This section is
+authoritative for current behavior regardless of what any such prior
+planning document says.
 
 The exact header row quoted throughout this section
 (`| Severity | File:Line | Issue | Suggestion |`) must stay byte-identical
@@ -150,28 +184,45 @@ the rest of the preamble.
 
 1. Trim leading/trailing whitespace and blank lines.
 2. **Tolerate leading prose before the table, but only if it doesn't itself
-   describe a concrete finding.** If the text doesn't already start with the
-   table's exact header row, look for a point where the *rest of the
-   response, in full,* is a complete, valid table: the exact header row, a
-   separator row, and one or more well-formed body rows, with nothing after
-   it. If such a point exists, before dropping the discarded prefix, judge
-   it: **does this prefix describe a concrete problem — a specific file,
-   line, behavior, or issue — and characterize it as `CRITICAL`/`IMPORTANT`
-   severity, even informally?** If yes, do **not** drop it; the response is
-   `INVALID` instead of normalized. If the mention is purely definitional or
-   hedging — discussing what `CRITICAL` vs. `IMPORTANT` *means*, or
-   reasoning about which bucket something might fall into without ever
-   naming a concrete issue — that does not trigger this rule; discard
-   normally.
+   describe a finding that the table then fails to report.** If the text
+   doesn't already start with the table's exact header row, look for a
+   point where the *rest of the response, in full,* is a complete, valid
+   table: the exact header row, a separator row, and one or more
+   well-formed body rows, with nothing after it. If such a point exists,
+   before dropping the discarded prefix, judge it: **does this prefix
+   describe a concrete problem — a specific file, line, behavior, or
+   issue — characterized as `CRITICAL`/`IMPORTANT` severity, even
+   informally, AND is that same problem then absent from the table that
+   follows (e.g. the table is a solo `NONE` row, or omits that specific
+   finding entirely)?** Only if both are true — a real finding named, and
+   the table not reporting it — do **not** drop the prefix; the response is
+   `INVALID` instead of normalized. If the prefix names a concrete finding
+   that the table *does* go on to report correctly (a normal, common
+   pattern — a reviewer narrating what it found immediately before tabling
+   it), that is not a violation; discard the prefix normally. If the
+   mention is purely definitional or hedging — discussing what `CRITICAL`
+   vs. `IMPORTANT` *means*, or reasoning about which bucket something might
+   fall into without ever naming a concrete issue — that also does not
+   trigger this rule; discard normally.
    - **Positive example (triggers `INVALID`):** a preamble says "this DAO
      query builds without a tenant-scoping clause, which is a CRITICAL
      leak" and the response then ends in a solo `NONE` row — the finding
-     was real and got silently discarded; don't let that happen.
-   - **Negative example (does not trigger, discard normally):** a preamble
-     says "I couldn't decide if this is IMPORTANT or CRITICAL, but both are
-     blocking so it doesn't matter" with no file, line, or behavior named —
-     this is the reviewer reasoning about the severity vocabulary in the
-     abstract, not reporting a finding.
+     was real, the table doesn't report it, and it got silently discarded;
+     don't let that happen.
+   - **Negative example — finding correctly tabled (does not trigger,
+     discard normally):** a preamble says "this DAO query builds without a
+     tenant-scoping clause, which is CRITICAL" and the table that follows
+     has exactly one row: `| CRITICAL | foo.go:42 | missing tenant-scoping
+     clause | add tenant filter |`. The prefix named a real finding, but
+     the table reports that same finding — nothing was discarded or hidden,
+     so this is ordinary "narrate before the final answer" behavior, not a
+     leak.
+   - **Negative example — no concrete finding named (does not trigger,
+     discard normally):** a preamble says "I couldn't decide if this is
+     IMPORTANT or CRITICAL, but both are blocking so it doesn't matter"
+     with no file, line, or behavior named — this is the reviewer reasoning
+     about the severity vocabulary in the abstract, not reporting a
+     finding, regardless of what the table says afterward.
    - This is a judgment call the executing agent makes, not a literal
      string search — a bare scan for the words `CRITICAL`/`IMPORTANT`
      was considered and rejected, because it can't tell the two examples
@@ -236,9 +287,11 @@ prose and then emitting a fabricated clean `NONE` row, silently discarding
 the narrated finding along with the rest of the preamble and contributing
 to an undeserved PASS. The content-based check above closes that hole
 directly, without reintroducing a length-based false-positive class: a
-discarded preamble that actually describes a concrete finding blocks the
-discard regardless of how short it is, while a preamble that merely reasons
-about severity in the abstract (however long) still discards cleanly.
+discarded preamble that names a concrete finding the table then fails to
+report blocks the discard regardless of how short the preamble is, while a
+preamble that names a finding the table *does* correctly report, or that
+merely reasons about severity in the abstract, still discards cleanly no
+matter how long it is.
 
 **Reviewers never self-report PASS or BLOCKED.** `create-pr` alone computes
 PASS/BLOCKED from severity labels; a reviewer's `NONE` row is its

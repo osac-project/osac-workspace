@@ -54,6 +54,16 @@ directly on `main`) and you're running this standalone — otherwise the
 merge-base lands on where the *parent* branch diverged from `main`,
 pulling the parent's entire contents into scope.
 
+`git diff` alone misses untracked files — a brand-new file that's never
+been `git add`-ed produces no diff output. If `git ls-files --others
+--exclude-standard` lists anything, read each file in full and review it
+exactly as if it were an added file in the diff — a hand-rolled stdlib
+reimplementation or a copy-pasted 40-line function sitting in a file
+that's never been staged is exactly the kind of thing this review exists
+to catch.
+
+If both are empty, say so and stop — there's nothing to review yet.
+
 **For `duplicate:` specifically, look past the diff itself.** The other
 four categories only need the changed lines; duplication needs one more
 step: for each new or substantially-rewritten non-trivial function/block

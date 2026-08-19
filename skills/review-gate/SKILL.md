@@ -1,6 +1,6 @@
 ---
 name: review-gate
-description: Local pre-flight review gate that runs performance and security reviews against everything this branch has changed since diverging from a base ref (main by default, via merge-base — not a raw diff against the base's current tip) before PR submission, covering committed, staged, and unstaged changes uniformly. Orchestrates the performance-review and security-review skills in sequence and aggregates their findings into one actionable report. Use standalone before opening a PR, or automatically as a step in create-pr. Blocks on critical/important findings from either reviewer.
+description: Local pre-flight review gate that runs performance and security reviews against everything this branch has changed since diverging from a base ref (main by default, via merge-base — not a raw diff against the base's current tip) before PR submission, covering committed, staged, and unstaged changes uniformly. Orchestrates the performance-review and security-review skills in sequence and aggregates their findings into one actionable report. Use standalone before opening a PR — create-pr's own Step 4 pre-flight gate invokes reviewers directly per its config-driven list (skills/.config/create-pr-reviewers.yaml) and does not call this skill. Blocks on critical/important findings from either reviewer.
 allowed-tools: Read, Grep, Bash, Glob
 ---
 
@@ -10,13 +10,18 @@ Runs OSAC's local review swarm — `performance-review` then `security-review`
 — against **the diff from where this branch last agreed with `{BASE}`**,
 plus any untracked files: everything this branch has changed since it
 diverged, committed or not, staged or not, and even files never `git add`-ed
-at all. `{BASE}` is `main` by default — see Parameters. Uniform whether run
-standalone mid-work or invoked by `create-pr` right before push. See Step 1
-for why "since it diverged" and not just "diff against `{BASE}`" matters.
+at all. `{BASE}` is `main` by default — see Parameters. See Step 1 for why
+"since it diverged" and not just "diff against `{BASE}`" matters.
 
-This is the last local checkpoint before a change leaves the machine: run it
-standalone whenever you want a pre-flight pass, or let `create-pr` invoke it
-automatically as its final gate before pushing.
+This is a pre-flight checkpoint for a change before it leaves the machine:
+run it standalone whenever you want a two-reviewer pass without going
+through `create-pr`. `create-pr`'s own Step 4 pre-flight gate does **not**
+invoke this skill — it spawns reviewers directly from
+`skills/.config/create-pr-reviewers.yaml`'s config-driven list (currently
+three reviewers, not the two this skill always pairs), using a different
+output contract (a results table, not this skill's `[SEVERITY] file:line —
+description — fix` line format). See
+`skills/create-pr/references/reviewer-config.md` for that mechanism.
 
 **Announce at start:** "Using the review-gate skill to run the pre-flight review."
 
@@ -208,6 +213,19 @@ reviewer's output must be either:
 - the exact phrase `"performance review: no findings"` /
   `"security review: no findings"`, optionally preceded by leading prose —
   see the tolerance rule below.
+
+**Before applying any tolerance, reject a stray self-reported verdict
+unconditionally.** If a reviewer's raw output contains the literal
+substring `Verdict: PASS`, `Verdict: BLOCKED`, `VERDICT: PASS`, or
+`VERDICT: BLOCKED` anywhere — even in a narrated aside, even if a
+well-formed findings line or "no findings" phrase follows — that output is
+invalid, full stop, before the tolerance rule below even applies. Neither
+reviewer computes PASS/BLOCKED; only this skill's Step 4 does, from the
+aggregated severity labels. This mirrors `create-pr`'s own Output Contract
+check of the same kind (see `skills/create-pr/references/reviewer-config.md`)
+— a reviewer that narrates a self-reported verdict is contradicting its
+own role regardless of what it says afterward, and that contradiction must
+not be silently discarded along with the rest of its prose.
 
 **Tolerate leading prose before either valid form, with the same
 concrete-finding judgment call `create-pr`'s Output Contract uses** (see

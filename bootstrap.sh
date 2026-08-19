@@ -136,10 +136,11 @@ REFERENCE_REPOS=(
 # to .legacy-repos/<name>/ via `mv` below (never deleted; all local git
 # state, including uncommitted changes and unpushed commits, stays intact).
 # Keep in sync with skills/create-pr/SKILL.md's merged-component detection
-# (Step 1's TOUCHED_COMPONENTS regex) and
-# skills/create-pr/references/file-classification.md's File Classification
-# table if a future component merges into osac or one of these is later
-# split out.
+# (Step 1's TOUCHED_COMPONENTS regex), skills/create-pr/references/
+# file-classification.md's File Classification table, and
+# skills/create-pr/references/validation-commands.md's per-component
+# "### <name>" sections, if a future component merges into osac or one of
+# these is later split out.
 MERGED_COMPONENTS=(
   "fulfillment-service"
   "osac-operator"
