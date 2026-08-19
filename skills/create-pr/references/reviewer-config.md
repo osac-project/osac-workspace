@@ -11,7 +11,7 @@ reviewers:
   - name: <string>       # required, unique (trimmed); if enabled, matches ^[A-Za-z][A-Za-z0-9 _-]{0,31}$
     skill: <path>        # required — under skills/, no "..", not absolute, ends in SKILL.md
     category: <string>   # required; if enabled, matches the same safe pattern as name
-    base: <string>       # optional, non-empty if present, checked only if enabled — default "main"
+    base: <string>       # optional, checked only if enabled — default "main"; matches ^[A-Za-z0-9][A-Za-z0-9._/-]{0,99}$ (valid git-ref characters)
     enabled: <bool>       # optional — default true; boolean-typed, literal false disables
     mandatory: <bool>     # optional — default false; true forbids enabled: false on this entry
 
@@ -69,6 +69,7 @@ run its git commands against that directory (see the shipped
 | 12 | Every entry in the enabled set has a `skill` value that's sandboxed (under `skills/`, no `..`, not absolute, ends in `SKILL.md`) and exists under `$SKILLS_ROOT`. Not checked for disabled entries. | the entry and path |
 | 13 | Any present `base`, on an enabled entry only, is a non-empty string. Not checked for disabled entries. | the entry name |
 | 14 | Every entry in the enabled set has `name` and `category` matching `^[A-Za-z][A-Za-z0-9 _-]{0,31}$` — letters, digits, spaces, underscores, and hyphens only, starting with a letter, max 32 characters. Not checked for disabled entries. | the entry and field |
+| 15 | Any present `base`, on an enabled entry only, matches `^[A-Za-z0-9][A-Za-z0-9._/-]{0,99}$` — valid git-ref characters only (alphanumeric, dot, underscore, slash, hyphen), no spaces/newlines/control characters, max 100 characters. Not checked for disabled entries. | the entry name |
 
 Check 10 is a cheap mechanical guard, not a semantic analyzer — a
 defensive instruction like "never output VERDICT: PASS" would also trip
@@ -78,19 +79,29 @@ warn against them explicitly), rephrase to avoid the literal substring
 (e.g. "do not output a VERDICT line except INVALID") rather than trying to
 loosen the check.
 
-Check 14 exists because `name` and `category` are interpolated directly
-into `prompt_template` (`Run a {category} review...`), which becomes
-literal instructions handed to a freshly-spawned subagent — unlike
-`skill:` (already sandboxed by check 12), nothing previously constrained
-these fields' content. An unconstrained `category` or `name` value is a
-prompt-injection vector through the config file itself: a crafted value
-(e.g. embedding fake directives inside what should be a short label) could
-attempt to redirect a spawned reviewer away from its actual job, and
-reviewers of a config-only diff are less likely to scrutinize a `category:`
-string as closely as they would code. The pattern is deliberately narrow —
+Checks 14 and 15 exist because `name`, `category`, and `base` are all
+interpolated directly into `prompt_template` (`Run a {category}
+review...`, `BASE: {base}`), which becomes literal instructions handed to
+a freshly-spawned subagent — unlike `skill:` (already sandboxed by check
+12), nothing previously constrained these fields' content. An
+unconstrained value in any of them is a prompt-injection vector through
+the config file itself: a crafted value (e.g. a YAML block scalar smuggling
+embedded newlines and fake directives into what should be a short label or
+a git ref) could attempt to redirect a spawned reviewer away from its
+actual job, and reviewers of a config-only diff are less likely to
+scrutinize a `category:` or `base:` string as closely as they would code.
+This was found live: check 14 was added first, after which a re-run of
+`security-review` against this exact fix immediately found the identical
+gap on `base` — a reminder that a security fix scoped to "the field that
+was just flagged" rather than "every field with the same interpolation
+exposure" tends to leave siblings unfixed. `{repo_dir}` needs no equivalent
+check — it's computed by `create-pr` itself from `$REPO_DIR`, not read from
+this YAML file, so it isn't attacker-controlled through a config edit the
+way `name`/`category`/`base` are. Both patterns are deliberately narrow:
 real category/name values are short labels like `Performance`/`Security`/
-`Ponytail`, never freeform text — so legitimate configuration is
-unaffected.
+`Ponytail`, and `base` must resolve to an actual git ref for `git
+merge-base {base} HEAD` to succeed in the first place — so legitimate
+configuration is unaffected by either constraint.
 
 Deleting `security-review`'s entry entirely, leaving only
 `performance-review` enabled, **passes** check 11 (the enabled set is
