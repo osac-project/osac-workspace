@@ -134,3 +134,6 @@ docs/pr-dashboard/data.json
 # AI Tooling
 .cursor/
 .gemini/
+
+# Local review-artifact scratch (adversarial review transcripts, etc.)
+.tmp/

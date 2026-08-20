@@ -80,7 +80,7 @@ This workspace has no build step of its own. Each component repo documents build
 | `osac-test-infra/`                      | —            | —                        | `make lint`           |
 | `osac-ui/`                              | `pnpm build` | `pnpm test`              | `pnpm lint`            |
 
-`osac/osac-installer/`'s `make helm-lint` fails unconditionally as shipped — `charts/osac/`'s values schema requires non-empty `service.externalHostname`/`internalHostname`, which every real values file leaves blank for runtime injection. See `skills/create-pr/SKILL.md`'s `osac-installer` validation block for the `--set` overrides needed to actually run it.
+`osac/osac-installer/`'s `make helm-lint` fails unconditionally as shipped — `charts/osac/`'s values schema requires non-empty `service.externalHostname`/`internalHostname`, which every real values file leaves blank for runtime injection. See `skills/create-pr/references/validation-commands.md`'s `osac-installer` validation block for the `--set` overrides needed to actually run it.
 
 ### Quick Reference
 
