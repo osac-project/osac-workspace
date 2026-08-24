@@ -116,14 +116,18 @@ Use the **component** field as the primary grouping key:
 | Infrastructure | Infrastructure |
 | BMaaS | BMaaS — Bare Metal Lifecycle |
 | Metering, Billing and Quota | Metering & Quota |
-| UI | UI |
+| UI | *(do not create a standalone UI group — assign to the other service component instead)* |
 | MaaS | MaaS — Model as a Service |
 
 Keyword fallback applies if no component is set (scan summary).
 
 **Spikes**: Any feature whose title starts with "Spike:" or "[spike]" is an investigation, not a delivered capability. **Do not include spikes in the Service Offering Matrix.** They may appear in the Use Case Cards and Feature Inventory with a clear "Spike" label, but never as a capability in a matrix cell.
 
-**Component takes precedence over summary keywords**: If a feature has a component set, always use the component for grouping — never override with summary-based inference. Example: a feature titled "Key Management Service" with `component=Core` belongs in "Core — Multi-Tenancy & Platform", not Storage, regardless of the word "storage" being related to its function.
+**Component takes precedence over summary keywords**: If a feature has a component set, always use the component for grouping — never override with summary-based inference. Examples:
+- A feature titled "Key Management Service" with `component=Core` belongs in "Core — Multi-Tenancy & Platform", not Storage
+- OSAC-3046 "Per-Service Enablement" with `component=Core` belongs in Core, not Infrastructure
+- OSAC-1644 "Cross-cluster authentication" with `component=Core,Infrastructure` belongs in Core (use the first non-Infrastructure component; Infrastructure is a delivery concern, not a use-case grouping)
+- If a feature has multiple components, use the most specific service component (CaaS, VMaaS, BMaaS, Storage, Networking, MaaS, Core) and ignore Infrastructure/Enclave as primary grouping keys
 
 ### Step 4: Build the Cumulative Capability View
 
@@ -154,15 +158,16 @@ Core Security:
 
 ### Step 5: Build the Service Offering Matrix
 
-For each of the three core services (CaaS, VMaaS, BMaaS), evaluate five dimensions across all versions:
+For each of the four core services (CaaS, VMaaS, BMaaS, MaaS), evaluate four dimensions across all versions:
 
-1. **API** — Core API capabilities
-2. **Multi-Tenancy** — Tenant isolation
-3. **Networking** — Networking capabilities
-4. **Storage** — Storage capabilities
-5. **UI** — UI surfaces
+1. **API** — Core provisioning and lifecycle capabilities
+2. **Networking** — Network fabric, connectivity, tenant network isolation
+3. **Storage** — Storage backends, CSI, encryption, volume management
+4. **UI** — User-facing surfaces, wizards, consoles
 
-Each cell shows cumulative layers with version labels. Use human-readable capability descriptions only — **never put Jira keys (e.g., OSAC-1436) in the matrix cells**. Extract a concise description from the feature title or description.
+**Do NOT include a Multi-Tenancy row.** Multi-tenancy (Keycloak auth, OPA RBAC, tenant/project scoping) is a platform-level concern that applies equally across all services. It is not meaningfully different per service and repeating it across columns adds noise. Multi-tenancy progression is covered in the Cumulative Capability Progression section under Core.
+
+Each cell shows cumulative layers with version labels. Use human-readable capability descriptions only — **never put Jira keys (e.g., OSAC-1436) in the matrix cells, and never use raw Jira feature titles**. Extract a concise, user-facing capability description from the feature description or summary. Transform verbose Jira titles into plain capability phrases: "CaaS - Provision Clusters via OSAC API Using Auto-Provisioned Agents from File/BCM Inventory - Part 1" → "Cluster provisioning via HyperShift + Metal3 + BCM inventory". "Catalog Items v2 - Field Governance Redesign" → "Catalog item field governance". Keep descriptions short (5–8 words max per bullet).
 
 The matrix has **4 service columns**: CaaS, VMaaS, BMaaS, MaaS. Include MaaS even if it only has content in one or two versions.
 
@@ -354,12 +359,13 @@ Use a clean, professional style with:
 - Color-coded cards per use case
 - Each card lists new capabilities in the target version with customer tags
 - Feature names are links
+- **Do NOT include a standalone "UI" use case card.** UI work is always tied to a specific service (serial console belongs to VMaaS, configuration wizard to CaaS/VMaaS, tenant management UI to Core). The matrix UI row already captures cross-service UI coverage. A separate UI card creates confusion and duplication.
 
 **Section 4: Customer Requirements Coverage**
 - NCP: all 13 requirements table, which version covers each
-- Telefónica RFP: open items with version coverage
-- MOC: features grouped by addressed (0.3/0.4) vs backlog
-- Telenor: features with `customer:telenor` label by version
+- Per customer: table with Key (link), Feature title, Version, Status — where **Status is the actual Jira status** fetched per feature: use "Done ✅" for Closed features, "In Progress" for in-progress, "Review" for in review, "Planned" for New/not-started. Never hard-code "New" for all rows regardless of actual status.
+- MOC: show ALL features with customer:moc label with version and actual status
+- Telenor: features with `customer:telenor` label by version and actual status
 
 **Section 5: Cumulative Capability Progression**
 - For each use case: a table showing what was added version by version
@@ -367,17 +373,20 @@ Use a clean, professional style with:
 - Feature names are links to Jira: `<a href="https://redhat.atlassian.net/browse/OSAC-XXXX">Feature Title</a>`
 - Target version row highlighted (different background, `+VERSION` prefix)
 - Omit rows for versions that added nothing to a given use case
+- **Do NOT include a standalone "UI" use case section here.** UI capabilities belong in the section of the service they serve (CaaS, VMaaS, Core, etc.). The matrix UI row covers cross-service UI progression.
 
 **Section 6: Feature Inventory**
 - Tables grouped by use case
 - Columns: Jira key (as link), Feature title (**plain text, NOT a link**), Customer tags, Status
 - The Key column already links to Jira — do NOT repeat the link in the Feature column. Feature title is plain text only.
-- **ONLY features queried in Step 1 with `fixVersion = '<TARGET>'`** — this section is a clean list of what this version delivers. Never add features here based on customer label queries (Step 2). If a feature has `fixVersion=0.4` or `fixVersion=Backlog`, it must NOT appear here regardless of its customer labels. OSAC-63 is an example: it has customer labels but fixVersion=0.4, so it belongs only in the NCP/MOC tables in Section 5, never in Section 6.
+- **Status column must reflect actual Jira status** — use the real status from `jira issue view`: Closed, In Progress, Review, New. Never hard-code "New" for all rows. A 0.1 feature that is Closed should show "Closed ✅", In Progress shows "In Progress", Review shows "In Review", New/unstarted shows "Planned".
+- **ONLY features queried in Step 1 with `fixVersion = '<TARGET>'`**
+- **Do NOT include a standalone "UI" group in the Feature Inventory.** Features with component=UI should be grouped under the service they belong to based on their other components (e.g. a feature with components=[UI, VMaaS] goes under VMaaS). If a feature has ONLY component=UI with no other service component, group it under Core. Never create a separate "UI" table in the inventory. — this section is a clean list of what this version delivers. Never add features here based on customer label queries (Step 2). If a feature has `fixVersion=0.4` or `fixVersion=Backlog`, it must NOT appear here regardless of its customer labels. OSAC-63 is an example: it has customer labels but fixVersion=0.4, so it belongs only in the NCP/MOC tables in Section 5, never in Section 6.
 
 **Section 7: Notes & Action Items**
 - Features needing epic decomposition
 - Frozen features, spikes, duplicates
-- Deferred items
+- **Backlog / Future Versions** — list ALL customer-labeled features that are in Backlog or targeted to a version beyond the target. Show every item as a clickable title link: `[Feature Title](https://redhat.atlassian.net/browse/OSAC-XXXX)`. Never truncate with "and N more" — show all of them. Group by customer if there are many.
 
 ### Step 7: Open and Present
 
