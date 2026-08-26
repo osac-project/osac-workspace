@@ -23,7 +23,7 @@ Workflows from AGENTS.md are invoked with `/skill:phase` syntax in Claude Code:
 - **bugfix:** `/bugfix:assess`, `/bugfix:reproduce`, `/bugfix:diagnose`, `/bugfix:fix`, `/bugfix:test`, `/bugfix:review`, `/bugfix:document`, `/bugfix:pr`
 - **implement:** `/implement:ingest`, `/implement:plan`, `/implement:code`, `/implement:validate`, `/implement:publish`
 - **PRD:** `/prd:ingest`, `/prd:clarify`, `/prd:draft`, `/prd:publish`, `/prd:respond`
-- **Design:** `/design:ingest`, `/design:research`, `/design:draft`, `/design:publish`, `/design:respond`, `/design:decompose`, `/design:sync`
+- **Design:** `/design:ingest`, `/design:research`, `/design:draft`, `/design:decompose`, `/design:revise`, `/design:publish`, `/design:respond`, `/design:sync`
 - **EP (legacy):** `/ep.create`
 - **E2E:** `/e2e`, `/debug-e2e`
 

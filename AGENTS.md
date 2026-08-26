@@ -223,7 +223,7 @@ Two-stage enhancement proposal flow. See the Enhancement Proposals section above
 
 **Stage 1 — PRD:** ingest → clarify → draft → publish → respond
 
-**Stage 2 — Design (EP):** ingest → research → draft → publish → respond → decompose → sync
+**Stage 2 — Design (EP):** ingest → research → draft → decompose → revise → publish → respond → sync
 
 **Single-step (legacy):** `/ep.create` (registered legacy skill name; see `CLAUDE.md` for Claude command syntax)
 
