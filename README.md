@@ -74,7 +74,7 @@ This workspace provides a pre-configured AI-assisted development environment:
 | `CLAUDE.md` | Thin wrapper that loads `AGENTS.md` plus Claude-specific command syntax |
 | `tools/link-agent-skills.sh` | Consumer wrapper: materializes `skills/` from vendored `osac-ai-skills`, then links `.claude`/`.cursor`/`.gemini` skills |
 | `.claude/settings.json` | Pre-approved shell commands (git, ls, cat, etc.) so Claude doesn't prompt for routine operations |
-| `AI-assisted-development-workflow.md` | AI-assisted development workflow: Feature → PRD → Design → Jira sync → Implement |
+| `AI-assisted-development-workflow.md` | Stub — canonical Feature → PRD → Design → Implement sequence lives in [osac-ai-skills](https://github.com/osac-project/osac-ai-skills#recommended-skill-sequence) |
 | `skills/` | Bootstrap-managed overlay (symlinks into vendored `osac-ai-skills` + ai-workflows) — not an editable source |
 | `.osac-ai-skills/` | Vendored clone of [`osac-project/osac-ai-skills`](https://github.com/osac-project/osac-ai-skills) (gitignored; or prefer `~/.osac-ai-skills`) |
 | `.gitignore` | Ignores cloned repos, `.planning/`, `.claude/`, `.cursor/`, `.gemini/`, credentials, editor files, and build artifacts |
@@ -188,7 +188,11 @@ grpcurl -insecure -H "Authorization: Bearer $TOKEN" $ROUTE:443 osac.public.v1.Vi
 
 ## AI-Assisted Development Workflow
 
-See [`AI-assisted-development-workflow.md`](AI-assisted-development-workflow.md) for the full workflow: Feature → PRD → Design → Jira sync → Implement.
+See the Recommended Skill Sequence in
+[`osac-ai-skills`](https://github.com/osac-project/osac-ai-skills#recommended-skill-sequence)
+(local after bootstrap: `.osac-ai-skills/README.md`) for the full workflow:
+Feature → PRD → Design → Jira sync → Implement. A local stub remains at
+[`AI-assisted-development-workflow.md`](AI-assisted-development-workflow.md).
 
 **Prerequisites:** `./bootstrap.sh` (vendors `osac-ai-skills`, installs ai-workflows, links agent skill directories), `gh` (authenticated), `jira` CLI, `rg`
 
