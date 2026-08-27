@@ -207,8 +207,9 @@ without one. Any automation creating an OSAC issue must set it:
 
 See the Recommended Skill Sequence in
 [`osac-ai-skills`](https://github.com/osac-project/osac-ai-skills#recommended-skill-sequence)
-(local after bootstrap: `.osac-ai-skills/README.md`) for the full workflow:
-Feature → PRD → Design → Jira sync → Implement. A local stub remains at
+(local after bootstrap: `~/.osac-ai-skills/README.md` or `.osac-ai-skills/README.md`)
+for the full workflow: Feature → PRD → Design → Jira sync → Implement → E2E.
+A local stub remains at
 [`AI-assisted-development-workflow.md`](AI-assisted-development-workflow.md).
 
 Installed via `bootstrap.sh` from [flightctl/ai-workflows](https://github.com/flightctl/ai-workflows). Available in Claude Code, Cursor, and other AI tools (command syntax varies by tool).
