@@ -104,7 +104,7 @@ guess.
    phases) depend on it being present, and `osac-workspace`'s bootstrap
    already clones it today. Build this as an extensible, declarative list of
    siblings to clone (starting with the new skills repo and
-   `enhancement-proposals`; `osac-ux`/`osac-test-infra`/others added as
+   `enhancement-proposals`; `osac-test-infra`/others added as
    concrete skill needs are identified), not a one-off hardcoded case that
    has to be re-architected every time another sibling turns out to be
    needed.
@@ -208,7 +208,7 @@ themselves skill-management CLIs that create their own local `ai-skills`/
 far more generic, far more commonly-chosen term — so the case against
 dropping the prefix is at least as strong. It also matches the org's
 existing convention: every live OSAC product/tooling repo carries the
-`osac-` prefix (`osac`, `osac-ui`, `osac-ux`, `osac-workspace`,
+`osac-` prefix (`osac`, `osac-ui`, `osac-workspace`,
 `osac-test-infra`, `osac-aap`, `osac-installer`, `osac-csi-driver`,
 `osac-operator` and its variants); the unprefixed exceptions
 (`enhancement-proposals`, `docs`) are content repos whose names are
@@ -238,7 +238,7 @@ precise one than `osac-ai-tooling` would have been for the broader content.
 
 - **Fold skills directly into `osac/`, no dedicated repo.** Rejected: most
   current OSAC skills are inherently cross-repo by nature (they operate
-  across `osac`, `osac-ui`/`osac-ux`, `enhancement-proposals`, etc.), which
+  across `osac`, `osac-ui`, `enhancement-proposals`, etc.), which
   doesn't fit living inside any single component repo. Also loses the
   structural separation Flight Control specifically credits for forcing
   decoupled thinking, and collapses the natural boundary that keeps a
@@ -612,8 +612,8 @@ precise one than `osac-ai-tooling` would have been for the broader content.
   introduce just for the new skills repo.
 - **`osac/`'s bootstrap clones `enhancement-proposals` too, not skills
   alone** (Decision item 2). **Still open:** which
-  additional siblings beyond `enhancement-proposals` (`osac-ux`,
-  `osac-test-infra`) actually need to be in that default clone list versus
+  additional siblings beyond `enhancement-proposals` (`osac-test-infra`)
+  actually need to be in that default clone list versus
   added only when a concrete skill need identifies them, and whether
   automated frameworks need the same sibling set or their own narrower
   answer per framework. Decision item 2 asks for this to be built as an

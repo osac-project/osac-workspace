@@ -36,22 +36,6 @@ separate questions, tracked elsewhere.
   UI-only PR doesn't trigger Go builds and vice versa, and path-based
   `CODEOWNERS` so review routing stays team-scoped without needing repo
   boundaries to enforce it.
-- **Keep `osac-ux` separate, permanently — not a retirement candidate.**
-  `osac-ux` has its own commit history independent of `osac-ui` (`git log`:
-  `Init mid demo app`, `catalog items`, active dependabot branches), its own
-  live deploy pipeline (a `gh-pages` branch with `fix pages deploy` commits,
-  plus its own `deploy/chart` and `deploy/demo`), and at least one feature
-  `osac-ui` doesn't have — a generated **API Diff** coverage report
-  (`pnpm gen:api-diff`) that classifies every `@temp-api` route as
-  real/temp-api/proto-no-hook. More fundamentally, `osac-workspace/AGENTS.md`'s
-  own "UI Reference" section documents that those same `@temp-api` fields are
-  read as literal **proto input** during `/design:research`/`/implement:ingest`
-  — "fields the UI needs but the backend has not yet returned... real
-  requirements, not speculation." That makes `osac-ux` UX's equivalent of
-  `enhancement-proposals`: a forward-looking proposal surface the design
-  process consumes, not a competing app expected to converge with `osac-ui`
-  over time. It's excluded from this merge for that reason, not pending
-  further investigation.
 - **Keep `osac-test-infra` separate.** Unlike `osac-ui`, this one is
   genuinely a closer call, but I'd lean toward not merging it even ideally:
   it tests the system as a black box across component boundaries, often
@@ -136,24 +120,17 @@ Technically low-risk, but not something to execute unilaterally:
    unrelated builds.
 5. Confirm or redesign the `osac-installer` → `osac-ui` OCI-image versioning
    relationship now that they share a repo.
-6. No `osac-ux` action needed — it's out of scope for this merge (see
-   Proposed Direction). If a specific feature (e.g. the API Diff report)
-   later looks worth surfacing inside `osac-ui` too, that's a separate,
-   later product decision, not implied or required by this one.
-7. Update the current sibling-repo clone list to drop `osac-ui`. As of this
+6. Update the current sibling-repo clone list to drop `osac-ui`. As of this
    writing that's `osac-workspace`'s `bootstrap.sh` and `AGENTS.md`; if
    [0001](0001-dedicated-ai-skills-repo.md)'s transition has landed by the
    time this executes, the equivalent list lives in `osac/`'s own bootstrap
-   instead. `osac-ux` stays on whichever list is authoritative at that
-   point, unaffected by this record.
+   instead.
 
 ## Non-Goals
 
 - This record does not decide anything by itself — it exists so the option
   is written down durably instead of only living in chat history.
 - Does not propose merging `osac-test-infra` or `enhancement-proposals`.
-- Does not propose retiring, merging, or otherwise changing `osac-ux` — see
-  Proposed Direction for why it stays separate.
 - Does not set a timeline. No urgency is implied by writing this down.
 
 ## References
@@ -163,9 +140,6 @@ Technically low-risk, but not something to execute unilaterally:
 - OSAC-1739 — recent backend mono-repo consolidation, proof of migration mechanics
 - `AGENTS.md`'s Deployment Coordination section — current `osac-ui` OCI-image versioning relationship
 - [Josh](https://github.com/josh-project/josh) — Rust project's git-subtree replacement, relevant to Migration Path step 3
-- Direct inspection of `osac-ux`'s git history, deploy pipeline, and README
-  (2026-08-05) — basis for keeping it permanently separate from `osac-ui`,
-  per `osac-workspace/AGENTS.md`'s existing "UI Reference" section
 - Direct check (`grep`/`find` against live `osac/.github/workflows/` and
   top-level `OWNERS` files) confirming path-scoped CI already exists (12
   workflows) though `CODEOWNERS` specifically does not (7 `OWNERS` files

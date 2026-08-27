@@ -124,13 +124,6 @@ REPOS=(
   "docs:osac-docs"
 )
 
-# Reference repos — cloned read-only from osac-project, no fork remote added.
-# Used by AI agents for context during /design and /implement phases only.
-# GITHUB_ORG resolves these to https://github.com/osac-project/<repo>.git
-REFERENCE_REPOS=(
-  "osac-ux"
-)
-
 # Components merged into osac-project/osac as of OSAC-1739. Old standalone
 # top-level clones (if present) are no longer bootstrap-managed — quarantined
 # to .legacy-repos/<name>/ via `mv` below (never deleted; all local git
