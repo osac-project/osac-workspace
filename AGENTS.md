@@ -60,7 +60,6 @@ Note: `fulfillment-api` and `fulfillment-common` were merged into `fulfillment-s
 | `osac/osac-metering` | Metering pipeline for resource usage events and Kafka publishing | Yes |
 | [`osac-test-infra`](https://github.com/osac-project/osac-test-infra) | Integration testing infrastructure | — |
 | [`osac-ui`](https://github.com/osac-project/osac-ui) | OSAC UI web console | Yes |
-| [`osac-ux`](https://github.com/osac-project/osac-ux) | React 19 + PatternFly 6 UI console — read-only UI reference | Yes (`osac-ux/AGENTS.md`) |
 | [`enhancement-proposals`](https://github.com/osac-project/enhancement-proposals) | Design documents and RFCs | — |
 | [`docs`](https://github.com/osac-project/docs) | Architecture docs and guides (see `osac-docs/architecture/`) | — |
 
@@ -300,36 +299,6 @@ The osac-operator uses controller-runtime to reconcile OSAC custom resources on 
 - **Namespace isolation**: Networking controllers filter to a configured namespace via `NetworkingNamespacePredicate`
 
 When fixing bugs or adding features, **check all controllers** that follow the same pattern — a bug in one controller likely exists in others. A missing feature in one controller is also a bug if all controllers are expected to behave consistently.
-
-## UI Reference (osac-ux)
-
-`osac-ux/` is cloned read-only from [osac-project/osac-ux](https://github.com/osac-project/osac-ux).
-No PRs are created against it from backend workflow sessions (no push remote configured).
-
-### What to read during /design:research and /implement:ingest
-
-| Path | Purpose |
-|------|---------|
-| `osac-ux/libs/ui-components/src/pages/tenant/` | Tenant screens — form fields, list columns, actions |
-| `osac-ux/libs/ui-components/src/pages/provider/` | Provider admin screens |
-| `osac-ux/libs/ui-components/src/pages/admin/` | Tenant admin screens |
-| `osac-ux/libs/ui-components/src/api/v1/` | @temp-api types — use as primary proto field input |
-| `osac-ux/apps/e2e/cypress/e2e/flows/` | User journeys for Cypress scenario planning |
-
-### @temp-api types are primary proto input
-
-For **any EP** (new resource or existing resource enhancement), check whether
-a matching `@temp-api` file exists at `osac-ux/libs/ui-components/src/api/v1/<resource>.ts`.
-If it does, read it and use the TypeScript fields as the source for proto field names
-(converting camelCase → snake_case). The EP must include a `## UX Alignment` section
-with a field-by-field mapping table and a justification for any deviation.
-
-For existing resources, the @temp-api file may contain fields the UI needs but the
-backend has not yet returned — these are real requirements, not speculation.
-
-### API coverage audit
-
-Run `cd osac-ux && node scripts/gen-api-diff.mjs` to surface API gaps against the current UI.
 
 ## Common Fix Locations (osac/fulfillment-service)
 
