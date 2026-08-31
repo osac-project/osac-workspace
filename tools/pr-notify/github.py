@@ -56,7 +56,7 @@ def _build_graphql_query(repos: list[str]) -> str:
                 committedDate
                 statusCheckRollup {{
                   state
-                  contexts(first: 100) {{
+                  contexts(first: 20) {{
                     pageInfo {{ hasNextPage }}
                     nodes {{
                       __typename
@@ -109,7 +109,7 @@ def _parse_pr_nodes(repo_name: str, pr_nodes: list[dict]) -> list[PRData]:
             contexts_data = rollup.get("contexts", {})
             if contexts_data.get("pageInfo", {}).get("hasNextPage"):
                 logger.warning(
-                    "PR '%s' has more than 100 check contexts; results truncated",
+                    "PR '%s' has more than 20 check contexts; results truncated",
                     pr.get("title", ""),
                 )
             for node in contexts_data.get("nodes", []):
