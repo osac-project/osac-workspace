@@ -2,6 +2,8 @@
 marp: true
 theme: redhat
 paginate: true
+title: "OSAC Storage Framework"
+description: "StorageBackends, StorageTiers, Tenant and CaaS Storage Provisioning"
 ---
 
 <style>
