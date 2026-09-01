@@ -2,6 +2,8 @@
 marp: true
 theme: redhat
 paginate: true
+title: "OSAC Taxonomy & Architecture"
+description: "Aligning Technical Definitions"
 ---
 
 <!-- _class: title -->
