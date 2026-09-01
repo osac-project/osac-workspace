@@ -18,7 +18,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pr-dashboard-pages
   cancel-in-progress: false
 
 jobs:
