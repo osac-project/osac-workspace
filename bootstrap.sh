@@ -510,3 +510,6 @@ if [ "$NO_FORK" = true ]; then
   echo "   or add your fork manually:"
   echo "   cd <repo> && git remote add <name> \$(gh config get git_protocol | grep -q ssh && echo git@github.com: || echo https://github.com/)\$(gh api user -q .login)/<repo>.git"
 fi
+
+# Repeat after clone/update so the notice is still on screen.
+print_workspace_deprecation_notice
