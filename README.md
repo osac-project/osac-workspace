@@ -29,17 +29,15 @@ Install tools directly on your host.
 
 ## Getting Started
 
-These clone steps are for existing osac-workspace checkouts. New work should use a standalone [osac](https://github.com/osac-project/osac) clone and `tools/bootstrap.sh` there.
+New work should use a standalone [osac](https://github.com/osac-project/osac) clone and `tools/bootstrap.sh` there (see the notice above).
+
+### Existing osac-workspace checkout
 
 ```bash
-# Clone the workspace
-git clone https://github.com/osac-project/osac-workspace.git
-cd osac-workspace
-
-# Bootstrap all component repos with fork setup (requires gh CLI)
+cd /path/to/osac-workspace
 ./bootstrap.sh
 
-# Or clone read-only without forking
+# Or update read-only without forking
 ./bootstrap.sh --no-fork
 ```
 
@@ -48,6 +46,16 @@ The bootstrap script clones all OSAC repos into the workspace. Each repo is an i
 `resolve-remotes.sh` (vendored via `osac-ai-skills`, at `~/.osac-ai-skills` or `./.osac-ai-skills`) detects remotes by URL, so all skills and hooks work regardless of naming.
 
 Use `--no-fork` if you only need read-only access or are running in CI. To override fork repo names (e.g., if your fork of `docs` is named `osac-docs`), copy `fork-overrides.sh.example` to `fork-overrides.sh` and edit it.
+
+### Legacy: clone this workspace
+
+Only if you already depend on the meta-workspace layout:
+
+```bash
+git clone https://github.com/osac-project/osac-workspace.git
+cd osac-workspace
+./bootstrap.sh
+```
 
 ## Components
 
