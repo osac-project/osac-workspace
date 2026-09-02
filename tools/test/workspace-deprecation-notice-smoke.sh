@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Smoke test for the osac-workspace deprecation notice on ./bootstrap.sh.
+# Smoke test for the osac-workspace deprecation notice on ./bootstrap.sh
+# and the matching README banner.
 # Run from osac-workspace: bash tools/test/workspace-deprecation-notice-smoke.sh
 set -euo pipefail
 
@@ -42,3 +43,15 @@ if grep -Fq "OSAC_ALLOW_WORKSPACE_BOOTSTRAP" "$BOOTSTRAP"; then
   fail "bootstrap.sh must not mention OSAC_ALLOW_WORKSPACE_BOOTSTRAP"
 fi
 pass "bootstrap.sh does not mention OSAC_ALLOW_WORKSPACE_BOOTSTRAP"
+
+README="${ROOT}/README.md"
+[[ -f "$README" ]] || fail "missing $README"
+readme=$(cat "$README")
+contains "$readme" "New work is in" || fail "README.md missing 'New work is in'"
+contains "$readme" "osac-project/osac" || fail "README.md missing 'osac-project/osac'"
+contains "$readme" "Do not start a new osac-workspace checkout" || fail "README.md missing 'Do not start a new osac-workspace checkout'"
+contains "$readme" "osac/tools/bootstrap.sh" || fail "README.md missing 'osac/tools/bootstrap.sh'"
+contains "$readme" "osac-workspace/osac" || fail "README.md missing 'osac-workspace/osac'"
+contains "$readme" "https://github.com/osac-project/osac" || fail "README.md missing link to osac-project/osac"
+contains "$readme" 'Clone `osac-project/osac` and run `tools/bootstrap.sh` there' || fail "README.md missing clone-and-bootstrap sentence"
+pass "README.md contains the deprecation bullets"
