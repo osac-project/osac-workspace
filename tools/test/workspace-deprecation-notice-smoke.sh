@@ -39,6 +39,14 @@ pass "./bootstrap.sh --help stdout contains the deprecation bullets"
 contains "$help_out" "Usage: ./bootstrap.sh" || fail "./bootstrap.sh --help stdout missing usage text"
 pass "./bootstrap.sh --help still prints usage"
 
+help_notice_count=$(grep -cF "Do not start a new osac-workspace checkout" <<<"$help_out" || true)
+[[ "$help_notice_count" -eq 1 ]] || fail "./bootstrap.sh --help printed the notice ${help_notice_count} times (expected 1; footer is for full runs only)"
+pass "./bootstrap.sh --help prints the notice once"
+
+tail -n 20 "$BOOTSTRAP" | grep -qx 'print_workspace_deprecation_notice' \
+  || fail "bootstrap.sh must reprint the notice at the end of a full run"
+pass "bootstrap.sh reprints the notice at the end of a full run"
+
 if grep -Fq "OSAC_ALLOW_WORKSPACE_BOOTSTRAP" "$BOOTSTRAP"; then
   fail "bootstrap.sh must not mention OSAC_ALLOW_WORKSPACE_BOOTSTRAP"
 fi
