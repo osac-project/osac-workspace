@@ -33,6 +33,22 @@ Prerequisites:
 EOF
 }
 
+print_workspace_deprecation_notice() {
+  cat <<'EOF'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+New work is in osac-project/osac. Do not start a new osac-workspace checkout.
+Clone osac-project/osac and run tools/bootstrap.sh there.
+Do not run osac/tools/bootstrap.sh from osac-workspace/osac.
+Existing checkouts remain supported; this script will continue.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EOF
+}
+
+# Before argument parsing so every invocation including --help prints this.
+print_workspace_deprecation_notice
+
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --no-fork) NO_FORK=true; shift ;;
