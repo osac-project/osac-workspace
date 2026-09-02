@@ -1,5 +1,6 @@
 # OSAC Project
 
+> [!IMPORTANT]
 > **New work is in [osac-project/osac](https://github.com/osac-project/osac).** Do not start a new osac-workspace checkout. Clone `osac-project/osac` and run `tools/bootstrap.sh` there. Do not run `osac/tools/bootstrap.sh` from `osac-workspace/osac`.
 
 Development workspace for the Open Sovereign AI Cloud (OSAC) project. This repo provides a meta-workspace that bootstraps all OSAC components for cross-component development and testing, with AI-assisted workflows for Claude Code, Cursor, and Gemini CLI.
