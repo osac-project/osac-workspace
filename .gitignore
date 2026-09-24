@@ -132,6 +132,7 @@ docs/pr-dashboard/data.json
 !.artifacts/prd/config.json
 
 # AI Tooling
+.agents/
 .cursor/
 .gemini/
 

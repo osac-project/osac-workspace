@@ -57,13 +57,13 @@ Re-run `./bootstrap.sh` anytime to update all repos to latest `main`.
 
 ## Repository Structure
 
-Meta-workspace — run `./bootstrap.sh` to clone/update all component repos to latest `main`. **In component repos, read `CLAUDE.md` first** (progressive disclosure). Use that component's `AGENTS.md` where the table below shows **Yes** for tool-agnostic build/test conventions.
+Meta-workspace — run `./bootstrap.sh` to clone/update all component repos to latest `main`. In the `osac/` mono-repo, read its root `AGENTS.md` and the `AGENTS.md` of each affected component. Follow each separate repository's own instructions when working there.
 
 Note: `fulfillment-api` and `fulfillment-common` were merged into `fulfillment-service`, which was then merged with `osac-operator`, `osac-aap`, `osac-installer`, `bare-metal-fulfillment-operator`, and `osac-csi-driver` into the `osac` mono-repo below.
 
 | Component | Description | AGENTS.md |
 |-----------|-------------|-----------|
-| [`osac`](https://github.com/osac-project/osac) | Mono-repo: `fulfillment-service` + `osac-operator` + `osac-aap` + `osac-installer` + `bare-metal-fulfillment-operator` + `osac-csi-driver` + `osac-metering` (see subdirectories below) | — |
+| [`osac`](https://github.com/osac-project/osac) | Mono-repo: fulfillment, operators, AAP, installer, CSI, metering, and UI (see subdirectories below) | Yes |
 | `osac/fulfillment-service` | gRPC server + REST gateway, PostgreSQL, integrated API definitions | Yes |
 | `osac/osac-operator` | Kubernetes operator for OpenShift clusters via Hosted Control Planes | Yes |
 | `osac/osac-aap` | Ansible Automation Platform roles for infrastructure provisioning | Yes |
@@ -71,14 +71,19 @@ Note: `fulfillment-api` and `fulfillment-common` were merged into `fulfillment-s
 | `osac/bare-metal-fulfillment-operator` | Kubernetes operator for bare metal fulfillment | Yes |
 | `osac/osac-csi-driver` | CSI storage driver, routes to vendor backends via fulfillment-service storage tiers | Yes |
 | `osac/osac-metering` | Metering pipeline for resource usage events and Kafka publishing | Yes |
+| `osac/osac-ui` | Web console (React, PatternFly 6, pnpm workspace) | Yes |
 | [`osac-test-infra`](https://github.com/osac-project/osac-test-infra) | Integration testing infrastructure | — |
-| [`osac-ui`](https://github.com/osac-project/osac-ui) | OSAC UI web console | Yes |
+| [`osac-ui`](https://github.com/osac-project/osac-ui) | Separate UI checkout still created by workspace bootstrap | Yes |
 | [`enhancement-proposals`](https://github.com/osac-project/enhancement-proposals) | Design documents and RFCs | — |
-| [`docs`](https://github.com/osac-project/docs) | Architecture docs and guides (see `osac-docs/architecture/`) | — |
+| `osac/docs` | Architecture docs and guides | Yes |
+| [`docs`](https://github.com/osac-project/docs) | Separate docs checkout still created by workspace bootstrap (`osac-docs/`) | — |
+
+Current mono-repo UI and documentation changes belong under `osac/osac-ui/`
+and `osac/docs/`. Workspace bootstrap still creates the separate checkouts above.
 
 ## Build and Test
 
-This workspace has no build step of its own. Each component repo documents build and test commands in its `AGENTS.md` or `CLAUDE.md`.
+This workspace has no build step of its own. OSAC components document their build and test commands in their `AGENTS.md` files; separate repositories provide their own instructions.
 
 | Component                               | Build        | Unit Tests               | Lint                  |
 |------------------------------------------|--------------|--------------------------|-----------------------|
@@ -90,6 +95,7 @@ This workspace has no build step of its own. Each component repo documents build
 | `osac/osac-csi-driver/`                 | `make build` | `make test`              | `make lint`           |
 | `osac/osac-metering/`                   | —            | —                        | —                     |
 | `osac-test-infra/`                      | —            | —                        | `make lint`           |
+| `osac/osac-ui/`                         | `pnpm build` | `pnpm test`              | `pnpm lint`            |
 | `osac-ui/`                              | `pnpm build` | `pnpm test`              | `pnpm lint`            |
 
 `osac/osac-installer/`'s `make helm-lint` fails unconditionally as shipped — `charts/osac/`'s values schema requires non-empty `service.externalHostname`/`internalHostname`, which every real values file leaves blank for runtime injection. See `skills/create-pr/references/validation-commands.md`'s `osac-installer` validation block for the `--set` overrides needed to actually run it.
@@ -126,13 +132,10 @@ up).
 
 ### Cross-Component Changes
 
-`fulfillment-service`, `osac-operator`, `osac-aap`, `osac-installer`,
-`bare-metal-fulfillment-operator`, and `osac-csi-driver` all live in one
-mono-repo (`osac/`) — a feature spanning any of them (proto definitions,
-CRD types, Ansible roles/playbooks, Helm values) lands in a single branch
-and PR there.
-
-Link PRs in descriptions: "Depends on osac-project/osac#123".
+Changes spanning OSAC components belong in one branch and PR in `osac/`.
+For work that also changes a separate repository, read the
+[cross-repository workflow](guidance/cross-repo-workflow.md) for worktrees,
+dependency order, remotes, and linked PRs.
 
 ## Deployment Coordination
 
@@ -258,9 +261,13 @@ Agent discovery after bootstrap:
 | Claude Code | `.claude/skills/` → `skills/` | `.claude/commands/` (ai-workflows) |
 | Cursor | `.cursor/skills/` → `skills/` | `.cursor/commands/` (ai-workflows) |
 | Gemini CLI | `.gemini/skills/` → `skills/` | — |
+| Codex | `.agents/skills/` → `skills/` | — |
 | GitHub Copilot | `AGENTS.md` conventions only | — |
 
-`.claude/`, `.cursor/`, and `.gemini/` are gitignored except project settings; bootstrap recreates agent skill symlinks via `tools/link-agent-skills.sh` (thin wrapper around the vendored fan-out).
+Agent discovery links are generated under `.claude/`, `.cursor/`, `.gemini/`,
+and `.agents/`. The `.gitignore` excludes generated entries while retaining
+tracked project files; bootstrap recreates the skill links via
+`tools/link-agent-skills.sh` (thin wrapper around the vendored fan-out).
 
 Consumers that skip `./bootstrap.sh` (for example the jira-autofix `osac-workspace` profile) must import `osac-ai-skills` themselves and run the same consumer fan-out — otherwise OSAC-native skills will be missing after clone.
 
@@ -277,17 +284,19 @@ Author and lint skills in [`osac-ai-skills`](https://github.com/osac-project/osa
 ## Architecture
 
 ```text
-osac/                              Mono-repo: fulfillment-service + osac-operator + osac-aap + osac-installer + bare-metal-fulfillment-operator + osac-csi-driver
+osac/                              Mono-repo: fulfillment-service + osac-operator + osac-aap + osac-installer + bare-metal-fulfillment-operator + osac-csi-driver + osac-ui + docs
   fulfillment-service              gRPC/REST API server, PostgreSQL, resource lifecycle
   osac-operator                    Kubernetes operator, provisions via AAP + Hosted Control Planes
   osac-aap                         Ansible playbooks for infrastructure provisioning
   osac-installer                   Helm charts, deploys all components to OpenShift
   bare-metal-fulfillment-operator  Kubernetes operator for bare metal fulfillment
   osac-csi-driver                  CSI storage driver, routes to vendor backends via storage tiers
+  osac-ui                          Tracked web console
+  docs                             Current architecture docs and guides
 osac-test-infra                    E2E test playbooks against fulfillment-service gRPC API
-osac-ui                            Web console (React, PatternFly 6, pnpm workspace)
+osac-ui                            Separate UI checkout created by workspace bootstrap
 enhancement-proposals              Design documents and RFCs
-osac-docs                          Architecture docs and guides
+osac-docs                          Separate docs checkout created by workspace bootstrap
 ```
 
 ### Resource Hierarchy
